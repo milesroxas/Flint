@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "public",
+    "target": "es6",
+    "lib": ["es6", "dom"],
+    "typeRoots": ["./node_modules/@types", "./node_modules/@webflow"],
+    "jsx": "react",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "webpack.config.mjs", "postcss.config.mjs"],
+  "exclude": ["node_modules"]
+}
