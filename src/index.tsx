@@ -49,10 +49,10 @@ const App: React.FC = () => {
     <div className="">
       <Header />
 
-      <div className="flex flex-col gap-4 p-2 text-foreground h-full">
+      <div className="p-2 text-foreground h-full">
         <div className="flex flex-col gap-2">
-          <h2 className="text-md font-medium">Issues found</h2>
-          <Accordion type="multiple" className="w-full space-y-2">
+          <h2 className="text-md text-red-500">Issues found</h2>
+          <Accordion type="multiple" className="w-full">
             {styleDetails.map((style, index) => {
               const isEmpty = !hasProperties(style);
 
@@ -60,22 +60,23 @@ const App: React.FC = () => {
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className={cn(
-                    "border-none bg-card text-card-foreground",
-                    isEmpty && "opacity-70"
-                  )}
+                  className={cn("border-none bg-card")}
                 >
                   <AccordionTrigger
                     className={cn(
-                      "text-destructive px-4",
-                      isEmpty && "cursor-not-allowed"
+                      "font-normal py-2",
+                      isEmpty
+                        ? "text-muted-foreground cursor-not-allowed"
+                        : "text-primary"
                     )}
                     disabled={isEmpty}
                   >
-                    <span className="text-sm font-medium">{style.Name}</span>
+                    <span className="text-xs font-medium w-2/3">
+                      {style.Name}
+                    </span>
                     {isEmpty && (
-                      <span className="text-xs text-muted-foreground ml-2 bg-card">
-                        (No properties)
+                      <span className="text-xs text-muted-foreground bg-card w-1/3 text-right">
+                        <span className="text-muted">No properties</span>
                       </span>
                     )}
                   </AccordionTrigger>
@@ -85,10 +86,10 @@ const App: React.FC = () => {
                       <div className="flex flex-col divide-y divide-border">
                         {Object.entries(style.Properties).map(
                           ([key, value], idx) => (
-                            <div key={`${key}-${idx}`} className="py-2 px-4">
-                              <div className="text-xs flex justify-between items-center">
+                            <div key={`${key}-${idx}`} className="py-2">
+                              <div className="text-xs flex justify-between">
                                 <span className="text-foreground">{key}:</span>
-                                <span className="text-accent-foreground ml-2  rounded-full text-xs px-2">
+                                <span className="text-accent-foreground rounded-full text-xs">
                                   {String(value)}
                                 </span>
                               </div>
