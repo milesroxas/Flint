@@ -57,10 +57,9 @@ export const LintPanel: React.FC = () => {
           {violations.length}
         </span>
       </div>
-
-      {/* Multiple so users can open more than one violation at once */}
-      <Accordion type="multiple" className="w-full">
-        <ScrollArea className="max-h-40">
+      <ScrollArea className="max-h-40">
+        {/* Multiple so users can open more than one violation at once */}
+        <Accordion type="multiple" className="w-full">
           {violations.map((v, i) => {
             const sev = v.severity as Severity;
             const id = `${v.ruleId}-${v.className || "unknown"}-${i}`;
@@ -100,8 +99,8 @@ export const LintPanel: React.FC = () => {
               </AccordionItem>
             );
           })}
-        </ScrollArea>
-      </Accordion>
+        </Accordion>
+      </ScrollArea>
     </div>
   );
 };
