@@ -7,5 +7,5 @@ export interface NamingRule {
     test: (className: string, ctx?: RuleTestCtx) => boolean;
     severity: Severity;
     enabled: boolean;
-    isCombo: boolean;
+    isCombo?: boolean;
   }

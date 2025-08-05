@@ -23,7 +23,6 @@ export const lumosUtilityClassRule: NamingRule = {
     /^u-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(className),
   severity: "error",
   enabled: true,
-  isCombo: false,
 };
 
 /** 4. Combo classes (start with is-, dashes only) */

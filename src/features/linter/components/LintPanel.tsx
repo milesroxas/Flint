@@ -84,8 +84,6 @@ export const LintPanel: React.FC = () => {
 
   if (!violations.length) return null;
 
-  // If there's exactly one violation, auto-open that one item.
-  // Build its id the same way you do in the map below:
   const singleOpenId =
     violations.length === 1
       ? `${violations[0].ruleId}-${violations[0].className || "unknown"}-0`

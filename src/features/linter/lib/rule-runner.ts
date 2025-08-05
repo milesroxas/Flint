@@ -1,0 +1,129 @@
+import { RuleResult, Severity, Rule, ClassType } from "@/features/linter/types"
+import { StyleInfo } from "./style-service"
+import { UtilityClassAnalyzer, UtilityClassDuplicateInfo } from "./utility-class-analyzer"
+import { RuleRegistry } from "./rule-registry"
+
+export class RuleRunner {
+  constructor(
+    private ruleRegistry: RuleRegistry,
+    private utilityAnalyzer: UtilityClassAnalyzer
+  ) {}
+
+  runRulesOnStyles(styles: StyleInfo[]): RuleResult[] {
+    const results: RuleResult[] = []
+    
+    console.log('Running lint rules on applied styles...')
+    for (const { id, name, properties } of styles) {
+      console.log(`Processing style - ID: ${id}, Name: ${name}`)
+
+      const classType = this.getClassType(name)
+      const applicableRules = this.ruleRegistry.getRulesByClassType(classType)
+        .filter(rule => {
+          const config = this.ruleRegistry.getRuleConfiguration(rule.id)
+          return config?.enabled ?? rule.enabled
+        })
+
+      for (const rule of applicableRules) {
+        const ruleResults = this.executeRule(rule, name, properties)
+        results.push(...ruleResults)
+      }
+    }
+    
+    return results
+  }
+
+  private executeRule(rule: Rule, className: string, properties: any): RuleResult[] {
+    const config = this.ruleRegistry.getRuleConfiguration(rule.id)
+    const effectiveSeverity = config?.severity ?? rule.severity
+
+    if (rule.type === "naming") {
+      return this.executeNamingRule(rule, className, effectiveSeverity)
+    } else if (rule.type === "property") {
+      return this.executePropertyRule(rule, className, properties, effectiveSeverity)
+    }
+
+    return []
+  }
+
+  private executeNamingRule(rule: Rule & { type: "naming" }, className: string, severity: Severity): RuleResult[] {
+    if (!rule.test(className)) {
+      console.log(`  Failed ${rule.category} rule: ${className}`)
+      return [{
+        ruleId: rule.id,
+        name: rule.name,
+        message: rule.description,
+        severity,
+        className,
+        isCombo: className.startsWith("is-"),
+      }]
+    }
+    
+    console.log(`  Passed ${rule.category} rule: ${className}`)
+    return []
+  }
+
+  private executePropertyRule(rule: Rule & { type: "property" }, className: string, properties: any, severity: Severity): RuleResult[] {
+    // Handle special utility class duplicate rules
+    if (rule.id.includes("duplicate") && className.startsWith("u-")) {
+      return this.handleUtilityDuplicateRules(rule, className, properties, severity)
+    }
+
+    // For custom property rules, use the rule's analyze function
+    const context = {
+      allStyles: [], // Would need to be passed in if needed
+      utilityClassPropertiesMap: new Map(),
+      propertyToClassesMap: new Map()
+    }
+    
+    const violations = rule.analyze(className, properties, context)
+    return violations.map(violation => ({
+      ruleId: violation.ruleId,
+      name: violation.name,
+      message: violation.message,
+      severity,
+      className: violation.className,
+      isCombo: violation.isCombo,
+    }))
+  }
+
+  private handleUtilityDuplicateRules(rule: Rule, className: string, properties: any, severity: Severity): RuleResult[] {
+    const duplicateInfo: UtilityClassDuplicateInfo | null = this.utilityAnalyzer.analyzeDuplicates(className, properties)
+    if (!duplicateInfo) {
+      console.log(`  Passed utility class rules: ${className}`)
+      return []
+    }
+
+    // Check if this specific rule should fire based on duplicate type
+    const isExactDuplicateRule = rule.id === "lumos-utility-class-exact-duplicate"
+    const isDuplicatePropertiesRule = rule.id === "lumos-utility-class-duplicate-properties"
+
+    if ((isExactDuplicateRule && !duplicateInfo.isExactMatch) ||
+        (isDuplicatePropertiesRule && duplicateInfo.isExactMatch)) {
+      return []
+    }
+
+    const dupPropMessages = Array.from(duplicateInfo.duplicateProperties.entries())
+      .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`)
+    
+    const message = duplicateInfo.isExactMatch
+      ? `This utility class is an exact duplicate of another single-property class: ${dupPropMessages.join('; ')}. Consolidate these classes.`
+      : `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`
+
+    console.log(`  ${duplicateInfo.isExactMatch ? 'Failed' : 'Suggestion for'} utility class: ${className}`)
+    
+    return [{
+      ruleId: rule.id,
+      name: rule.name,
+      message,
+      severity,
+      className,
+      isCombo: false,
+    }]
+  }
+
+  private getClassType(className: string): ClassType {
+    if (className.startsWith("is-")) return "combo"
+    if (className.startsWith("u-")) return "utility"
+    return "custom"
+  }
+}

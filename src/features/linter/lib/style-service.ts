@@ -1,0 +1,102 @@
+export interface StyleInfo {
+  id: string
+  name: string
+  properties: any
+  order: number
+}
+
+export class StyleService {
+  async getAllStylesWithProperties(): Promise<StyleInfo[]> {
+    console.log('Fetching ALL styles from the entire Webflow site...')
+    const allStyles: Style[] = await webflow.getAllStyles()
+    console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`)
+    
+    console.log('Extracting names and properties from all styles...')
+    const allStylesWithProperties = await Promise.all(
+      allStyles.map(async (style, index) => {
+        try {
+          const name = await style.getName()
+          let properties = {}
+          
+          if (name && name.startsWith('u-')) {
+            try {
+              properties = await style.getProperties({ breakpoint: 'main' })
+            } catch (err) {
+              console.error(`Error getting properties for style ${name}:`, err)
+            }
+          }
+          
+          return { 
+            id: style.id, 
+            name: name?.trim() || "",
+            properties,
+            index
+          }
+        } catch (err) {
+          console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err)
+          return { id: style.id, name: "", properties: {}, index }
+        }
+      })
+    )
+    
+    const validStyles = allStylesWithProperties.filter(style => style.name)
+    console.log(`Found ${validStyles.length} valid styles with names out of ${allStyles.length} total styles`)
+    
+    return validStyles.map((style, index) => ({
+      ...style,
+      order: index
+    }))
+  }
+
+  async getAppliedStyles(element: any): Promise<StyleInfo[]> {
+    console.log('Getting styles applied to the selected element...')
+    const appliedStyles: Style[] = await element.getStyles()
+    console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`)
+    
+    if (!appliedStyles?.length) {
+      return []
+    }
+
+    const seenIds = new Set<string>()
+    const uniqueStyles: StyleInfo[] = []
+
+    console.log('Processing applied styles...')
+    for (let i = 0; i < appliedStyles.length; i++) {
+      try {
+        const style = appliedStyles[i]
+        const id = style.id
+        const name = await style.getName()
+        const trimmedName = name?.trim() || ""
+        
+        if (id && !seenIds.has(id)) {
+          seenIds.add(id)
+          
+          let properties = {}
+          if (trimmedName.startsWith('u-')) {
+            try {
+              properties = await style.getProperties({ breakpoint: 'main' })
+            } catch (err) {
+              console.error(`Error getting properties for style ${trimmedName}:`, err)
+            }
+          }
+          
+          uniqueStyles.push({ id, name: trimmedName, properties, order: i })
+          console.log(`Added unique style: ${trimmedName} (ID: ${id})`)
+        }
+      } catch (err) {
+        console.error(`Error processing applied style at index ${i}:`, err)
+      }
+    }
+
+    return uniqueStyles
+  }
+
+  sortStylesByType(styles: StyleInfo[]): StyleInfo[] {
+    return [...styles].sort((a, b) => {
+      const aIsCombo = a.name.startsWith("is-")
+      const bIsCombo = b.name.startsWith("is-")
+      if (aIsCombo !== bIsCombo) return aIsCombo ? 1 : -1
+      return a.order - b.order
+    })
+  }
+}

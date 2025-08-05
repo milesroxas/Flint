@@ -1,5 +1,3 @@
-// File: src/index.tsx
-
 import "./styles/globals.css";
 import React from "react";
 import { createRoot } from "react-dom/client";
