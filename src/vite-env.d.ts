@@ -8,6 +8,3 @@ interface AnyElement {
   getStyles(): Promise<any[]>;
 }
 
-declare const webflow: {
-  subscribe(event: string, callback: (element: AnyElement | null) => void): () => void;
-};

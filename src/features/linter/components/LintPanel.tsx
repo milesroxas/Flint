@@ -1,11 +1,15 @@
-// File: src/features/linter/components/LintPanel.tsx
-
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { runLint } from "@/features/linter/engine";
-import { RuleResult } from "@/features/linter/types";
+import { RuleResult, Severity } from "@/features/linter/types";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void;
@@ -30,48 +34,49 @@ export const LintPanel: React.FC = () => {
   if (!violations.length) return null;
 
   return (
-    <div className="p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-gray-900">
-            Lint Issues ({violations.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-64">
-            {violations.map((v, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "flex items-start gap-3 p-2 border-b last:border-b-0",
-                  v.severity === "error"
-                    ? "bg-red-50"
-                    : v.severity === "warning"
-                    ? "bg-yellow-50"
-                    : "bg-blue-50"
-                )}
-              >
-                <div className="flex-1">
-                  <p className="text-sm text-gray-800">{v.message}</p>
-                  <p className="mt-1 text-xs text-gray-600">
-                    Class: <code>{v.className}</code>
-                  </p>
-                </div>
-                <span
+    <div className="p-2">
+      <Accordion type="single" collapsible>
+        <AccordionItem value="violations">
+          <AccordionTrigger>Lint Issues ({violations.length})</AccordionTrigger>
+          <AccordionContent>
+            <ScrollArea className="h-48">
+              {violations.map((v, i) => (
+                <div
+                  key={i}
                   className={cn(
-                    "flex-shrink-0 w-3 h-3 rounded-full mt-1",
+                    "flex items-start gap-4 p-4 border-b last:border-b-0 transition-colors",
                     v.severity === "error"
-                      ? "bg-red-600"
+                      ? "bg-destructive/5 "
                       : v.severity === "warning"
-                      ? "bg-yellow-600"
-                      : "bg-blue-600"
+                      ? "bg-yellow-50 border-yellow-200"
+                      : "bg-muted/50 border-muted"
                   )}
-                />
-              </div>
-            ))}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col gap-1 mb-2">
+                      <Badge severity={v.severity as Severity}>
+                        {v.severity}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground font-mono">
+                        {v.name}
+                      </div>
+                    </div>
+                    <p className="text-sm text-foreground leading-relaxed mb-2">
+                      {v.message}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Class:</span>
+                      <code className="bg-muted px-2 py-1 rounded font-mono text-xs">
+                        {v.className}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </ScrollArea>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };

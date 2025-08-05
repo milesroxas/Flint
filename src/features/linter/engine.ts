@@ -27,6 +27,7 @@ export async function runLint(element: any): Promise<RuleResult[]> {
     if (!rule.test(className)) {
       results.push({
         ruleId:   rule.id,
+        name: rule.name,
         message:  rule.description,
         severity: rule.severity as Severity,
         className,
