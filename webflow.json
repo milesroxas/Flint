@@ -1,5 +1,5 @@
 {
-  "name": "audit-tool",
+  "name": "lintflow",
   "publicDir": "public",
   "size": "default",
   "apiVersion": "2"
