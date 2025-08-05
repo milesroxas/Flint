@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RuleResult, Severity } from "@/features/linter/types/rule-types";
 import {
@@ -31,21 +37,24 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   const formattedProperty = violation.metadata?.formattedProperty;
 
   return (
-    <AccordionItem key={id} value={id} className="border-b last:border-b-0">
-      <AccordionTrigger className="py-1 px-1.5 text-[12px] font-medium">
-        <div className="flex min-w-0 items-center gap-2">
+    <AccordionItem key={id} value={id} className="border-b last:border-b-0 ">
+      <AccordionTrigger className="py-1 px-1.5 text-[12px] font-medium w-full">
+        <div className="flex min-w-0 items-center gap-2 w-full">
           <span
-            className={cn("h-2 w-2 rounded-full", severityDot[sev])}
+            className={cn(
+              "h-2 w-2 rounded-full flex-shrink-0",
+              severityDot[sev]
+            )}
             aria-hidden
             title={violation.severity}
           />
-          <span className={cn("font-semibold", severityText[sev])}>
+          <span className={cn("font-semibold truncate", severityText[sev])}>
             {violation.name}
           </span>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="px-2 pb-2 pt-0">
-        <div className="text-[12px] leading-5">
+      <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
+        <div className="text-[12px] leading-5 w-full min-w-0 overflow-hidden">
           {formattedProperty ? (
             <FormattedPropertyMessage property={formattedProperty} />
           ) : parsedMessage ? (
@@ -74,11 +83,11 @@ interface FormattedPropertyMessageProps {
 const FormattedPropertyMessage: React.FC<FormattedPropertyMessageProps> = ({
   property,
 }) => (
-  <div className="space-y-2">
+  <div className="space-y-2  min-w-0 overflow-hidden">
     <p className="text-muted-foreground">
       This utility class is an exact duplicate of another single-property class:
     </p>
-    <div className="space-y-1.5 pl-2 border-l-2 border-muted">
+    <div className="space-y-1.5 pl-2 border-l-2 border-muted w-full min-w-0 overflow-hidden">
       <PropertyDuplicate property={property} />
     </div>
     <p className="text-[11px] text-muted-foreground italic">
@@ -94,9 +103,9 @@ interface DuplicatePropertiesMessageProps {
 const DuplicatePropertiesMessage: React.FC<DuplicatePropertiesMessageProps> = ({
   parsedMessage,
 }) => (
-  <div className="space-y-2">
+  <div className="space-y-2 w-full min-w-0 overflow-hidden">
     <p className="text-muted-foreground">{parsedMessage.intro}</p>
-    <div className="space-y-1.5 pl-2 border-l-2 border-muted">
+    <div className="space-y-1.5 pl-2 border-l-2 border-muted w-full min-w-0 overflow-hidden">
       {parsedMessage.properties.map((prop, idx) => (
         <PropertyDuplicate key={idx} property={prop} />
       ))}
@@ -115,27 +124,51 @@ interface PropertyDuplicateProps {
   };
 }
 
-const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => (
-  <div className="text-[11px]">
-    <div className="mt-0.5 text-[10px] text-muted-foreground mb-2">
-      <p className="text-muted-foreground">Duplicate classes: </p>
-      {property.classes.map((cls, clsIdx) => (
-        <React.Fragment key={clsIdx}>
-          <Badge isCombo={false} copyable>
-            {cls}
-          </Badge>
-          {clsIdx < property.classes.length - 1 && " "}
-        </React.Fragment>
-      ))}
+const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
+  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+
+  return (
+    <div className="text-[11px] w-full min-w-0">
+      <div className="flex flex-col items-start gap-1 w-full">
+        <Collapsible
+          open={isPropertiesOpen}
+          onOpenChange={setIsPropertiesOpen}
+          className="w-full"
+        >
+          <CollapsibleTrigger className="flex items-start gap-1 hover:opacity-80 transition-opacity w-full">
+            <Badge
+              variant="inheritedProperty"
+              className="break-words whitespace-normal max-w-full"
+            >
+              <span className="text-left">
+                {property.property}: {property.value}
+              </span>
+            </Badge>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200 flex-shrink-0 mt-0.5",
+                isPropertiesOpen ? "rotate-180" : ""
+              )}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-1 w-full">
+            {property.classes.map((cls, clsIdx) => (
+              <div key={clsIdx} className="flex flex-col gap-2 w-full min-w-0">
+                <Badge
+                  isCombo={false}
+                  copyable
+                  className="break-words whitespace-normal max-w-full"
+                >
+                  {cls}
+                </Badge>
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
     </div>
-    <div className="flex items-start gap-1">
-      <p className="text-muted-foreground">property: </p>
-      <Badge variant="inheritedProperty">
-        {property.property}: {property.value}
-      </Badge>
-    </div>
-  </div>
-);
+  );
+};
 
 interface DefaultMessageProps {
   message: string;
@@ -161,12 +194,18 @@ interface ClassBadgeProps {
 }
 
 const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
-  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-    <span className="opacity-80">Class:</span>
-    <Badge isCombo={violation.isCombo} comboIndex={violation.comboIndex}>
-      <code className="font-mono text-[10px]">
-        {violation.className || "—"}
-      </code>
+  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground w-full min-w-0">
+    <span className="opacity-80 flex-shrink-0">Class:</span>
+    <Badge
+      isCombo={violation.isCombo}
+      comboIndex={violation.comboIndex}
+      className="truncate max-w-full"
+    >
+      <span className="text-left">
+        <code className="font-mono text-[10px]">
+          {violation.className || "—"}
+        </code>
+      </span>
     </Badge>
   </div>
 );

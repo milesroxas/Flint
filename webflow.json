@@ -1,6 +1,6 @@
 {
   "name": "lintflow",
   "publicDir": "dist",
-  "size": "default",
+  "size": "custom",
   "apiVersion": "2"
 }
