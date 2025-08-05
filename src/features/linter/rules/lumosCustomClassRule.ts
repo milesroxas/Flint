@@ -8,4 +8,5 @@ export const lumosCustomClassRule: NamingRule = {
   test: (className) => /^[a-z0-9]+(_[a-z0-9]+){0,3}$/.test(className),
   severity: "error",
   enabled: true,
+  isCombo: false,
 };

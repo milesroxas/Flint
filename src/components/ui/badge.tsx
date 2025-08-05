@@ -24,6 +24,11 @@ const badgeVariants = cva(
         warning: "bg-yellow-500 text-white",
         suggestion: "bg-blue-500 text-white",
       },
+      isCombo: {
+        true: "bg-gray-500 text-white text-xs rounded-xs font-light",
+        false:
+          "bg-[#006ACC] text-primary-foreground text-xs rounded-xs font-light",
+      },
     },
     defaultVariants: {
       variant: "default",
@@ -36,11 +41,15 @@ function Badge({
   variant,
   asChild = false,
   severity,
+  isCombo,
+
   ...props
 }: React.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants> & {
     asChild?: boolean;
-    severity: Severity;
+    severity?: Severity;
+    isCombo?: boolean;
+    comboIndex?: number;
   }) {
   const Comp = asChild ? Slot : "span";
 
@@ -51,6 +60,7 @@ function Badge({
         badgeVariants({
           variant,
           severity: severity as "error" | "warning" | "suggestion",
+          isCombo,
         }),
         className
       )}
