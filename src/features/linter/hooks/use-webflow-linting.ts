@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { runLint } from "@/features/linter/engine"
-import { RuleResult } from "@/features/linter/types"
+import { RuleResult } from "@/features/linter/types/rule-types"
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void

@@ -1,7 +1,7 @@
 import { RuleRegistry } from "@/features/linter/lib/rule-registry"
 import { defaultRules } from "../rules/default-rules"
 import { RuleConfigurationService } from "@/features/linter/lib/rule-configuration-service"
-import { Rule } from "../types"
+import { Rule } from "../types/rule-types"
 
 // Global registry instance
 export const ruleRegistry = new RuleRegistry()

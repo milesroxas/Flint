@@ -1,7 +1,7 @@
-import { RuleConfiguration } from "@/features/linter/types"
+import { RuleConfiguration } from "@/features/linter/types/rule-types"
 
 export class RuleConfigurationService {
-  private storageKey = "webflow-linter-rules-config"
+  // private storageKey = "webflow-linter-rules-config"
 
   saveConfiguration(configurations: RuleConfiguration[]): void {
     try {

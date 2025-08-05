@@ -1,4 +1,4 @@
-import { Severity } from "@/features/linter/types"
+import { Severity } from "@/features/linter/types/rule-types"
 
 export const severityDot: Record<Severity, string> = {
   error: "bg-red-500",

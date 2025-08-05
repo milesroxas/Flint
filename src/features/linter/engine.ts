@@ -1,4 +1,4 @@
-import { RuleResult } from "@/features/linter/types"
+import { RuleResult } from "@/features/linter/types/rule-types"
 import { StyleService } from "./lib/style-service"
 import { UtilityClassAnalyzer } from "./lib/utility-class-analyzer"
 import { RuleRunner } from "./lib/rule-runner"

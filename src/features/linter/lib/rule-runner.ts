@@ -1,4 +1,4 @@
-import { RuleResult, Severity, Rule, ClassType } from "@/features/linter/types"
+import { RuleResult, Severity, Rule, ClassType } from "@/features/linter/types/rule-types"
 import { StyleInfo } from "./style-service"
 import { UtilityClassAnalyzer, UtilityClassDuplicateInfo } from "./utility-class-analyzer"
 import { RuleRegistry } from "./rule-registry"
@@ -55,6 +55,7 @@ export class RuleRunner {
         severity,
         className,
         isCombo: className.startsWith("is-"),
+        example: rule.example
       }]
     }
     
@@ -83,6 +84,7 @@ export class RuleRunner {
       severity,
       className: violation.className,
       isCombo: violation.isCombo,
+      example: rule.example
     }))
   }
 
@@ -102,12 +104,20 @@ export class RuleRunner {
       return []
     }
 
-    const dupPropMessages = Array.from(duplicateInfo.duplicateProperties.entries())
-      .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`)
+    // Use the formatted property for exact matches if available
+    let message: string;
     
-    const message = duplicateInfo.isExactMatch
-      ? `This utility class is an exact duplicate of another single-property class: ${dupPropMessages.join('; ')}. Consolidate these classes.`
-      : `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`
+    if (duplicateInfo.isExactMatch && duplicateInfo.formattedProperty) {
+      const { property, value, classes } = duplicateInfo.formattedProperty;
+      message = `This utility class is an exact duplicate of another single-property class: ${property}:${value} (also in: ${classes.join(', ')}). Consolidate these classes.`;
+    } else {
+      const dupPropMessages = Array.from(duplicateInfo.duplicateProperties.entries())
+        .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`)
+      
+      message = duplicateInfo.isExactMatch
+        ? `This utility class is an exact duplicate of another single-property class: ${dupPropMessages.join('; ')}. Consolidate these classes.`
+        : `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`
+    }
 
     console.log(`  ${duplicateInfo.isExactMatch ? 'Failed' : 'Suggestion for'} utility class: ${className}`)
     
@@ -118,6 +128,10 @@ export class RuleRunner {
       severity,
       className,
       isCombo: false,
+      // Include formatted property data in metadata for better UI rendering
+      metadata: duplicateInfo.formattedProperty ? { 
+        formattedProperty: duplicateInfo.formattedProperty 
+      } : undefined
     }]
   }
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion } from "@/components/ui/accordion";
-import { RuleResult } from "@/features/linter/types";
+import { RuleResult } from "@/features/linter/types/rule-types";
 import { ViolationItem } from "./ViolationItem";
 
 interface ViolationsListProps {

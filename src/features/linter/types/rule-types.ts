@@ -1,8 +1,6 @@
-import { StyleInfo } from "./lib/style-service";
+import { StyleInfo } from "../lib/style-service";
 
 export type Severity = "suggestion" | "warning" | "error";
-
-export type RuleTestCtx = { isCombo?: boolean; comboIndex?: number };
 
 
 export interface RuleResult {
@@ -13,6 +11,8 @@ export interface RuleResult {
     className: string
     isCombo: boolean
     comboIndex?: number
+    example?: string
+    metadata?: Record<string, any>
   }
 
 
@@ -23,6 +23,7 @@ export interface RuleResult {
     severity: Severity
     enabled: boolean
     category: RuleCategory
+    example?: string
   }
   
   export interface NamingRule extends BaseRule {
@@ -50,6 +51,7 @@ export interface RuleResult {
     className: string
     isCombo: boolean
     metadata?: Record<string, any>
+    example?: string
   }
   
   export interface RuleContext {

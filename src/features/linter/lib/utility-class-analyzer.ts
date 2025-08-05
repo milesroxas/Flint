@@ -4,6 +4,12 @@ export interface UtilityClassDuplicateInfo {
   className: string
   duplicateProperties: Map<string, string[]>
   isExactMatch: boolean
+  // Add formatted property information for better display
+  formattedProperty?: {
+    property: string
+    value: string
+    classes: string[]
+  }
 }
 
 export class UtilityClassAnalyzer {
@@ -56,6 +62,7 @@ export class UtilityClassAnalyzer {
   analyzeDuplicates(className: string, properties: any): UtilityClassDuplicateInfo | null {
     const duplicateProps = new Map<string, string[]>()
     const propCount = Object.keys(properties).length
+    let formattedProperty: { property: string; value: string; classes: string[] } | undefined;
     
     // Check each property for duplicates
     for (const [propName, propValue] of Object.entries(properties)) {
@@ -67,6 +74,15 @@ export class UtilityClassAnalyzer {
         
         if (duplicates.length > 0) {
           duplicateProps.set(propKey, duplicates)
+          
+          // For single property matches, store the formatted property info
+          if (propCount === 1) {
+            formattedProperty = {
+              property: propName,
+              value: typeof propValue === 'string' ? propValue : JSON.stringify(propValue),
+              classes: duplicates
+            }
+          }
         }
       }
     }
@@ -94,7 +110,8 @@ export class UtilityClassAnalyzer {
     return {
       className,
       duplicateProperties: duplicateProps,
-      isExactMatch
+      isExactMatch,
+      formattedProperty
     }
   }
 }

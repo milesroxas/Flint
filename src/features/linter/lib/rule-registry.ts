@@ -1,4 +1,4 @@
-import { Rule, RuleConfiguration, ClassType } from "@/features/linter/types"
+import { Rule, RuleConfiguration, ClassType } from "@/features/linter/types/rule-types"
 
 export class RuleRegistry {
   private rules = new Map<string, Rule>()
