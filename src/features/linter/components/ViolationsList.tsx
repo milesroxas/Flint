@@ -19,7 +19,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const defaultOpenIds = singleOpenId ? [singleOpenId] : [];
 
   return (
-    <ScrollArea className="max-h-40">
+    <ScrollArea className="max-h-64">
       <Accordion
         key={violations.length}
         type="multiple"

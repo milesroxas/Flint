@@ -151,9 +151,9 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
               )}
             />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2 space-y-1 w-full">
+          <CollapsibleContent className="mt-2 space-y-1 w-full pl-2 border-l pb-4">
             {property.classes.map((cls, clsIdx) => (
-              <div key={clsIdx} className="flex flex-col gap-2 w-full min-w-0">
+              <div key={clsIdx} className="flex flex-col gap-2 w-full min-w-0 ">
                 <Badge
                   isCombo={false}
                   copyable
