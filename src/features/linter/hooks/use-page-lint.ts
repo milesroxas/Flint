@@ -1,57 +1,52 @@
+// src/features/linter/hooks/use-page-lint.ts
+import { useState, useCallback } from "react";
+import type { RuleResult } from "@/features/linter/types/rule-types";
+import { createPageLintService } from "@/features/linter/lib/page-lint-service";
 import { StyleService } from "@/features/linter/lib/style-service";
 import { RuleRunner } from "@/features/linter/lib/rule-runner";
-import type { RuleResult } from "@/features/linter/types/rule-types";
+import { RuleRegistry } from "@/features/linter/lib/rule-registry";
+import { UtilityClassAnalyzer } from "@/features/linter/lib/utility-class-analyzer";
+import { defaultRules } from "@/features/linter/rules/default-rules";
 
-/**
- * Factory for creating a PageLintService with injected dependencies.
- * This service lints styles used on the current page, utilizing site-wide style definitions
- * for context and rule evaluation.
- *
- * @param styleService  - Service to fetch style definitions and applied styles
- * @param ruleRunner    - Engine to execute lint rules against given styles
- */
-export function createPageLintService(
-  styleService: StyleService,
-  ruleRunner: RuleRunner
-) {
-  /**
-   * Perform a lint scan on the current page's styles.
-   * It uses all style definitions from the site to evaluate rules, but only runs
-   * the rules against styles actually applied on this page.
-   *
-   * @param elements - Array of Webflow elements from the current page
-   * @returns Array of lint rule violations and suggestions
-   */
-  async function lintCurrentPage(
-    elements: any[]
-  ): Promise<RuleResult[]> {
-    console.log("[PageLintService] Starting lint for current page...");
-
-    // 1. Load site-wide style definitions for context
-    const allStyles = await styleService.getAllStylesWithProperties();
-    console.log(
-      `[PageLintService] Loaded ${allStyles.length} style definitions for context.`
-    );
-
-    // 2. Gather applied styles from all page elements
-    const nested = await Promise.all(
-      elements.map((el) => styleService.getAppliedStyles(el))
-    );
-    const appliedStyles = nested.flat();
-    console.log(
-      `[PageLintService] Collected ${appliedStyles.length} applied style instances on this page.`
-    );
-
-    // 3. Deduplicate and sort styles, then execute rules
-    const results = ruleRunner.runRulesOnStyles(appliedStyles);
-    console.log(
-      `[PageLintService] Lint complete. Found ${results.length} issue${
-        results.length === 1 ? "" : "s"
-      }.`
-    );
-
-    return results;
+declare global {
+  interface Window {
+    webflow: {
+      getAllElements: () => Promise<any[]>;
+      getAllStyles: () => Promise<any[]>;
+    };
   }
+}
 
-  return { lintCurrentPage };
+// Initialize dependencies
+const styleService = new StyleService();
+const utilityAnalyzer = new UtilityClassAnalyzer();
+const ruleRegistry = new RuleRegistry();
+ruleRegistry.registerRules(defaultRules);
+const ruleRunner = new RuleRunner(ruleRegistry, utilityAnalyzer);
+
+// Create the page lint service
+const pageLintService = createPageLintService(styleService, ruleRunner);
+
+export function usePageLint() {
+  const [results, setResults] = useState<RuleResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const lintPage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const elements = await window.webflow.getAllElements();
+      const res = await pageLintService.lintCurrentPage(elements);
+      setResults(res);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { results, loading, error, lintPage };
 }

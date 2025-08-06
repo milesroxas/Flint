@@ -1,3 +1,9 @@
+interface Style {
+  id: string;
+  getName: () => Promise<string>;
+  getProperties: (options?: { breakpoint: string }) => Promise<any>;
+}
+
 export interface StyleInfo {
   id: string
   name: string
@@ -8,7 +14,7 @@ export interface StyleInfo {
 export class StyleService {
   async getAllStylesWithProperties(): Promise<StyleInfo[]> {
     console.log('Fetching ALL styles from the entire Webflow site...')
-    const allStyles: Style[] = await webflow.getAllStyles()
+    const allStyles: Style[] = await window.webflow.getAllStyles()
     console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`)
     
     console.log('Extracting names and properties from all styles...')
@@ -50,8 +56,21 @@ export class StyleService {
 
   async getAppliedStyles(element: any): Promise<StyleInfo[]> {
     console.log('Getting styles applied to the selected element...')
-    const appliedStyles: Style[] = await element.getStyles()
-    console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`)
+    
+    // Check if element has getStyles method
+    if (!element || typeof element.getStyles !== 'function') {
+      console.error('Element does not have getStyles method', element)
+      return []
+    }
+    
+    let appliedStyles: Style[] = []
+    try {
+      appliedStyles = await element.getStyles()
+      console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`)
+    } catch (err) {
+      console.error('Error calling element.getStyles():', err)
+      return []
+    }
     
     if (!appliedStyles?.length) {
       return []
