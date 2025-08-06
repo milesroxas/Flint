@@ -83,6 +83,7 @@ const wfDesignerExtensionPlugin = (): Plugin => {
 };
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     wfDesignerExtensionPlugin(),
