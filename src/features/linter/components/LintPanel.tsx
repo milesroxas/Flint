@@ -1,10 +1,10 @@
 import React from "react";
-import { useWebflowLinting } from "@/features/linter/hooks/use-webflow-linting";
+import { useElementLint } from "@/features/linter/hooks/use-element-lint";
 import { LintPanelHeader } from "./LintPanelHeader";
 import { ViolationsList } from "./ViolationsList";
 
 export const LintPanel: React.FC = () => {
-  const { violations, isLoading } = useWebflowLinting();
+  const { violations, isLoading } = useElementLint();
 
   if (!violations.length && !isLoading) {
     return null;
