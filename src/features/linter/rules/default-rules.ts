@@ -46,6 +46,18 @@ const lumosCustomClassFormatRule: NamingRule = {
     className: string,
     context?: { config?: Record<string, unknown> }
   ): RuleResult | null => {
+    // First, check if the className is in the correct format
+    if (!lumosCustomClassFormatRule.test(className)) {
+      return {
+        ruleId: lumosCustomClassFormatRule.id,
+        name: lumosCustomClassFormatRule.name,
+        message: `"${className}" is not a valid custom class format. Must be lowercase, underscore-separated, with 2 or 3 segments (type_element or type_variant_element).`,
+        severity: "error",
+        className,
+        isCombo: false
+      };
+    }
+
     const segments = className.split("_");
     const element = segments[segments.length - 1];
 
@@ -61,14 +73,7 @@ const lumosCustomClassFormatRule: NamingRule = {
     const isCombo = false;
 
     if (knownElements.includes(element)) {
-      return {
-        ruleId: lumosCustomClassFormatRule.id,
-        name: lumosCustomClassFormatRule.name,
-        message: `"${className}" uses a valid element name "${element}".`,
-        severity: "error",
-        className,
-        isCombo,
-      };
+      return null;
     }
 
     if (projectTerms.includes(element)) {
@@ -89,6 +94,7 @@ const lumosCustomClassFormatRule: NamingRule = {
       severity: "suggestion",
       className,
       isCombo,
+      metadata: { unrecognizedElement: true }
     };
   }
 };

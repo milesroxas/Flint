@@ -31,7 +31,15 @@ export async function runLint(element: any): Promise<RuleResult[]> {
     
     if (appliedStyles.length === 0) {
       console.log('No styles applied to the selected element, returning empty results')
-      return []
+      return [{
+        ruleId: "no-styles-or-classes",
+        name: "Element must have styles or classes",
+        message: "This element has no styles or classes applied.",
+        severity: "error",
+        className: "",
+        isCombo: false,
+        example: "header_wrap, u-padding-32, is-active"
+      }]
     }
 
     // 3. Sort styles by type (combo classes last)

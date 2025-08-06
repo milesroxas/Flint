@@ -15,7 +15,7 @@ export default function ExtensionWrapper({
     async function resizeExtension() {
       try {
         // custom size (clamped to min 240×360, max 1200×800)
-        await webflow.setExtensionSize({ width: 375, height: 360 });
+        await webflow.setExtensionSize({ width: 400, height: 360 });
         console.log("Extension UI resized to 600×500");
       } catch (err) {
         console.error("Error resizing extension UI", err);

@@ -51,6 +51,17 @@ export class RuleRunner {
   }
 
   private executeNamingRule(rule: Rule & { type: "naming" }, className: string, severity: Severity): RuleResult[] {
+    // If the rule has an evaluate function, use it
+    if (typeof rule.evaluate === "function") {
+      // Get the actual config values for this rule
+      const configObj = this.ruleRegistry.getRuleConfiguration(rule.id)?.customSettings;
+      const result = rule.evaluate(className, { config: configObj });
+      if (result) {
+        // Use the severity from the result, unless config severity is explicitly set and different
+        return [{ ...result, severity: result.severity ?? severity }];
+      }
+    }
+    // Fallback to test logic
     if (!rule.test(className)) {
       console.log(`  Failed ${rule.category} rule: ${className}`)
       return [{

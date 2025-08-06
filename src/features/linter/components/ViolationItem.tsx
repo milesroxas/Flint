@@ -31,6 +31,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
 }) => {
+  console.log("ViolationItem severity:", violation.severity, violation);
   const sev = violation.severity as Severity;
   const id = `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
   const parsedMessage = parseDuplicateMessage(violation.message);
@@ -51,6 +52,14 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
           <span className={cn("font-semibold truncate", severityText[sev])}>
             {violation.name}
           </span>
+          {violation.metadata?.unrecognizedElement && (
+            <Badge
+              variant="outline"
+              className="ml-2 text-orange-600 border-orange-300 bg-orange-50 text-[10px]"
+            >
+              Unrecognized Element
+            </Badge>
+          )}
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
@@ -65,7 +74,9 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               example={violation.example}
             />
           )}
-          <ClassBadge violation={violation} />
+          {violation.ruleId !== "no-styles-or-classes" && (
+            <ClassBadge violation={violation} />
+          )}
         </div>
       </AccordionContent>
     </AccordionItem>
@@ -201,7 +212,7 @@ const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
       comboIndex={violation.comboIndex}
       className="truncate max-w-full"
     >
-      <span className="text-left">
+      <span className="text-left flex items-center">
         <code className="font-mono text-[10px]">
           {violation.className || "—"}
         </code>
