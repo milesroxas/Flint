@@ -43,47 +43,44 @@ A comprehensive linting system for Webflow Designer that helps maintain consiste
 
 ### Core Components
 
-#### Engine (`features/linter/engine.ts`)
-
-The main entry point that orchestrates the linting process:
-
-```typescript
-import { runLint } from "@/features/linter/engine";
-
-const results = await runLint(selectedElement);
-```
-
-#### Style Service (`features/linter/lib/style-service.ts`)
-
-Handles all Webflow API interactions:
-
-- Fetches all site styles with properties
-- Gets styles applied to specific elements
-- Sorts styles by type for proper rule execution
-
 #### Rule Registry (`features/linter/lib/rule-registry.ts`)
 
 Manages rule registration and configuration:
 
-- Registers default and custom rules
-- Handles user configuration overrides
+- Registers default and custom rules, seeding default config from each rule's schema
+- Handles user configuration overrides, merging nested custom settings
 - Provides rule filtering by type and category
+- Supports import/export of rule configurations, merging with defaults and validating schemas
 
 #### Rule Runner (`features/linter/lib/rule-runner.ts`)
 
 Executes rules against styles:
 
-- Runs naming rules for format validation
-- Executes property rules for semantic analysis
-- Respects user configuration settings
+- Runs naming rules for format validation and property rules for semantic analysis
+- Handles utility class duplicate detection with detailed messages and metadata
+- Uses effective severity and enabled state from the registry/config
 
 #### Utility Class Analyzer (`features/linter/lib/utility-class-analyzer.ts`)
 
 Specialized analysis for utility classes:
 
-- Builds property maps for duplicate detection
-- Identifies exact duplicates vs partial overlaps
-- Provides detailed duplicate analysis
+- Builds property maps for duplicate detection, accessible via getters
+- Identifies exact duplicates vs partial overlaps, providing formatted property info for UI
+- Logs duplicate properties for debugging
+
+#### Rule Configuration Service (`features/linter/lib/rule-configuration-service.ts`)
+
+Handles persistence and loading of rule configurations:
+
+- Saves and loads configs from localStorage (or other adapters)
+- Merges user configs with defaults, validates against rule schemas
+- Supports import/export for sharing configurations
+
+#### Registry Initialization (`features/linter/lib/registry.ts`)
+
+- Exports a global `ruleRegistry` and `ruleConfigService`
+- `initializeRuleRegistry()` registers built-in rules and applies user configs at startup
+- `addCustomRule()` allows dynamic rule registration
 
 ## Default Rules
 
@@ -265,33 +262,52 @@ interface RuleContext {
 ### Core Types
 
 ```typescript
-interface RuleResult {
+export interface RuleResult {
   ruleId: string;
   name: string;
   message: string;
   severity: Severity;
   className: string;
   isCombo: boolean;
+  comboIndex?: number;
+  example?: string;
   metadata?: Record<string, any>;
 }
 
-type Severity = "error" | "warning" | "suggestion";
-type ClassType = "custom" | "utility" | "combo";
+export type Severity = "error" | "warning" | "suggestion";
+export type ClassType = "custom" | "utility" | "combo";
+export type RuleCategory =
+  | "format"
+  | "semantics"
+  | "performance"
+  | "accessibility"
+  | "custom";
+export type RuleType = "naming" | "property";
+
+export interface RuleConfigField {
+  label: string;
+  type: "string" | "string[]" | "number" | "boolean" | "enum";
+  description?: string;
+  default: unknown;
+  options?: string[];
+}
+
+export type RuleConfigSchema = Record<string, RuleConfigField>;
+
+export interface RuleContext {
+  allStyles: StyleInfo[];
+  utilityClassPropertiesMap: Map<string, { name: string; properties: any }[]>;
+  propertyToClassesMap: Map<string, Set<string>>;
+}
 ```
 
 ### Main Functions
 
-#### `runLint(element: any): Promise<RuleResult[]>`
-
-Runs all enabled rules against the selected element's styles.
-
-#### `ruleRegistry.updateRuleConfiguration(ruleId: string, config: Partial<RuleConfiguration>): void`
-
-Updates configuration for a specific rule.
-
-#### `addCustomRule(rule: Rule): void`
-
-Registers a new custom rule.
+- `runLint(element: any): Promise<RuleResult[]>` — Runs all enabled rules against the selected element's styles.
+- `ruleRegistry.updateRuleConfiguration(ruleId: string, config: Partial<RuleConfiguration>): void` — Updates configuration for a specific rule, merging custom settings.
+- `addCustomRule(rule: Rule): void` — Registers a new custom rule.
+- `ruleRegistry.exportConfiguration(): string` — Exports all rule configurations as JSON.
+- `ruleRegistry.importConfiguration(json: string): void` — Imports and merges rule configurations from JSON.
 
 ## Performance Considerations
 
@@ -308,16 +324,16 @@ Registers a new custom rule.
 features/linter/
 ├── engine.ts                     # Main linting orchestrator
 ├── types/
-│   └── rule-types.ts             # Type definitions
+│   └── rule-types.ts             # Type definitions (updated for config schemas, context, etc.)
 ├── lib/
 │   ├── style-service.ts          # Webflow API interactions
-│   ├── rule-registry.ts          # Rule management
-│   ├── rule-runner.ts            # Rule execution
-│   ├── utility-class-analyzer.ts # Utility class analysis
-│   └── rule-configuration-service.ts # Configuration persistence
+│   ├── rule-registry.ts          # Rule management (now with config merging)
+│   ├── rule-runner.ts            # Rule execution (now with richer context)
+│   ├── utility-class-analyzer.ts # Utility class analysis (now with formatted property info)
+│   ├── rule-configuration-service.ts # Configuration persistence (now with schema validation)
+│   └── registry.ts               # Global registry, config service, and initialization
 ├── rules/
-│   ├── registry.ts               # Global registry instance
-│   └── default-rules.ts          # Built-in rules
+│   ├── default-rules.ts          # Built-in rules (now with config schemas)
 └── components/
     └── LintPanel.tsx             # UI component
 ```

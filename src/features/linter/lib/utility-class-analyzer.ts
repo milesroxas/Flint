@@ -15,6 +15,15 @@ export interface UtilityClassDuplicateInfo {
 export class UtilityClassAnalyzer {
   private utilityClassPropertiesMap = new Map<string, {name: string, properties: any}[]>()
   private propertyToClassesMap = new Map<string, Set<string>>()
+  
+  // Add these getters
+  getUtilityClassPropertiesMap() {
+    return this.utilityClassPropertiesMap;
+  }
+  
+  getPropertyToClassesMap() {
+    return this.propertyToClassesMap;
+  }
 
   buildPropertyMaps(allStyles: StyleInfo[]): void {
     console.log('Building utility class properties map...')

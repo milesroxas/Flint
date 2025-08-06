@@ -33,16 +33,21 @@ export class RuleRunner {
   }
 
   private executeRule(rule: Rule, className: string, properties: any): RuleResult[] {
-    const config = this.ruleRegistry.getRuleConfiguration(rule.id)
-    const effectiveSeverity = config?.severity ?? rule.severity
+    try {
+      const config = this.ruleRegistry.getRuleConfiguration(rule.id)
+      const effectiveSeverity = config?.severity ?? rule.severity
 
-    if (rule.type === "naming") {
-      return this.executeNamingRule(rule, className, effectiveSeverity)
-    } else if (rule.type === "property") {
-      return this.executePropertyRule(rule, className, properties, effectiveSeverity)
+      if (rule.type === "naming") {
+        return this.executeNamingRule(rule, className, effectiveSeverity)
+      } else if (rule.type === "property") {
+        return this.executePropertyRule(rule, className, properties, effectiveSeverity)
+      }
+      
+      return []
+    } catch (err) {
+      console.error(`Error executing rule ${rule.id} on class ${className}:`, err)
+      return []
     }
-
-    return []
   }
 
   private executeNamingRule(rule: Rule & { type: "naming" }, className: string, severity: Severity): RuleResult[] {
@@ -71,9 +76,9 @@ export class RuleRunner {
 
     // For custom property rules, use the rule's analyze function
     const context = {
-      allStyles: [], // Would need to be passed in if needed
-      utilityClassPropertiesMap: new Map(),
-      propertyToClassesMap: new Map()
+      allStyles: [], // This would need to be passed from the engine
+      utilityClassPropertiesMap: this.utilityAnalyzer.getUtilityClassPropertiesMap(),
+      propertyToClassesMap: this.utilityAnalyzer.getPropertyToClassesMap()
     }
     
     const violations = rule.analyze(className, properties, context)
