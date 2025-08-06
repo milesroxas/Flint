@@ -19,7 +19,8 @@ A comprehensive linting system for Webflow Designer that helps maintain consiste
 - Use underscores only
 - Lowercase alphanumeric characters
 - Maximum 3 underscores
-- Examples: `hero`, `hero_primary`, `hero_primary_button`
+- **Note:** Custom classes must have 2 or 3 segments (e.g., `type_element` or `type_variant_element`). Single-segment classes like `hero` are **not** valid per the current linter rules.
+- Examples: `hero_primary`, `hero_primary_button`
 
 ### Utility Classes
 
@@ -27,7 +28,7 @@ A comprehensive linting system for Webflow Designer that helps maintain consiste
 
 - Must start with `u-`
 - Use dashes only (no underscores)
-- Should be stacked on custom classes
+- Should be stacked on custom classes (convention only; not enforced by the linter)
 - Examples: `u-margin-top-lg`, `u-text-center`, `u-display-none`
 
 ### Combo Classes
@@ -36,7 +37,7 @@ A comprehensive linting system for Webflow Designer that helps maintain consiste
 
 - Must start with `is-`
 - Use dashes only (no underscores)
-- Modify existing component classes
+- Modify existing component classes (convention only; not enforced by the linter)
 - Examples: `is-active`, `is-hidden`, `is-loading`
 
 ## Architecture
@@ -156,18 +157,11 @@ ruleRegistry.updateRuleConfiguration(
 #### Export/Import Configuration
 
 ```typescript
-import { ruleConfigService } from "@/features/linter/rules/registry";
+// Export all rule configurations as JSON
+const configJson = ruleRegistry.exportConfiguration();
 
-// Export current configuration
-const configJson = ruleConfigService.exportConfiguration(
-  ruleRegistry.getAllConfigurations()
-);
-
-// Import configuration
-const configs = ruleConfigService.importConfiguration(configJson);
-configs.forEach((config) => {
-  ruleRegistry.updateRuleConfiguration(config.ruleId, config);
-});
+// Import and merge configurations from JSON
+ruleRegistry.importConfiguration(configJson);
 ```
 
 ## Extending the Linter
