@@ -1,4 +1,3 @@
-// features/linter/lib/rule-registry.ts
 import {
   Rule,
   RuleConfiguration

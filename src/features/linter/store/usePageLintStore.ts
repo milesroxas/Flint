@@ -3,14 +3,14 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/types/rule-types';
 import { createPageLintService } from '@/features/linter/services/page-lint-service';
-import { StyleService } from '@/features/linter/services/style-service';
+import { createStyleService} from '@/features/linter/services/style-service';
 import { RuleRunner } from '@/features/linter/services/rule-runner'; 
 import { RuleRegistry } from '@/features/linter/services/rule-registry';
 import { UtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
 import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // initialize services once…
-const styleService = new StyleService();
+const styleService = createStyleService();
 const utilityAnalyzer = new UtilityClassAnalyzer();
 const ruleRegistry = new RuleRegistry();
 ruleRegistry.registerRules(defaultRules);

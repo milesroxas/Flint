@@ -1,4 +1,4 @@
-import { StyleService } from "@/features/linter/services/style-service";
+import { createStyleService } from "@/features/linter/services/style-service";
 import { UtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { RuleRunner } from "@/features/linter/services/rule-runner";
 import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/services/registry";
@@ -12,7 +12,7 @@ export function createElementLintService() {
   let registryInitialized = false;
 
   // Instantiate dependencies once
-  const styleService = new StyleService();
+  const styleService = createStyleService();
   const utilityAnalyzer = new UtilityClassAnalyzer();
   const ruleRunner = new RuleRunner(ruleRegistry, utilityAnalyzer);
 
