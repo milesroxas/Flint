@@ -3,18 +3,21 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/types/rule-types';
 import { createPageLintService } from '@/features/linter/services/page-lint-service';
-import { createStyleService} from '@/features/linter/services/style-service';
-import { RuleRunner } from '@/features/linter/services/rule-runner'; 
-import { RuleRegistry } from '@/features/linter/services/rule-registry';
-import { UtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
+import { createStyleService } from '@/features/linter/services/style-service';
+import { createRuleRunner } from '@/features/linter/services/rule-runner'; 
+import { createRuleRegistry } from '@/features/linter/services/rule-registry';
+import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
 import { defaultRules } from '@/features/linter/rules/default-rules';
 
-// initialize services once…
+// Initialize services once using factory functions
 const styleService = createStyleService();
-const utilityAnalyzer = new UtilityClassAnalyzer();
-const ruleRegistry = new RuleRegistry();
+const utilityAnalyzer = createUtilityClassAnalyzer();
+const ruleRegistry = createRuleRegistry();
+
+// Register rules and build initial property maps
 ruleRegistry.registerRules(defaultRules);
-const ruleRunner = new RuleRunner(ruleRegistry, utilityAnalyzer);
+
+const ruleRunner = createRuleRunner(ruleRegistry, utilityAnalyzer);
 const pageLintService = createPageLintService(styleService, ruleRunner);
 
 interface PageLintState {
@@ -46,14 +49,22 @@ export const usePageLintStore = create<PageLintStore>()(
       lintPage: async () => {
         if (get().loading) return;
 
-        // mark that we've run at least once
+        // Mark that we've run at least once
         set({ hasRun: true, loading: true, error: null });
 
         try {
+          // Get all elements from Webflow
           const elements = await webflow.getAllElements();
+          
+          // Build property maps for utility class analysis
+          const allStyles = await styleService.getAllStylesWithProperties();
+          utilityAnalyzer.buildPropertyMaps(allStyles);
+          
+          // Run the page lint with context awareness
           const results = await pageLintService.lintCurrentPage(elements);
           set({ results, loading: false });
         } catch (error) {
+          console.error('[PageLintStore] Error during linting:', error);
           set({
             error: error instanceof Error ? error.message : 'Failed to lint page',
             results: [],

@@ -1,10 +1,6 @@
 /// <reference types="vite/client" />
+/// <reference types="@webflow/designer-extension-typings" />
 
-// Webflow Designer API type definitions
-interface AnyElement {
-  styles?: {
-    getStyles(): Promise<any[]>;
-  };
-  getStyles(): Promise<any[]>;
-}
+// Note: The AnyElement interface is now provided by @webflow/designer-extension-typings
+// and doesn't need to be redefined here
 

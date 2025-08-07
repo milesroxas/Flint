@@ -18,7 +18,7 @@
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "@webflow/designer-extension-typings": "^2.0.2",
+    "@webflow/designer-extension-typings": "^2.0.19",
     "concurrently": "^8.2.2",
     "eslint": "^8.5.7",
     "eslint-plugin-promise": "^6.1.1",

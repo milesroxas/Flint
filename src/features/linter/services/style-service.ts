@@ -1,3 +1,5 @@
+// Update to style-service.ts - Add these interfaces and update the service
+
 interface Style {
   id: string;
   getName: () => Promise<string>;
@@ -9,6 +11,16 @@ export interface StyleInfo {
   name: string;
   properties: any;
   order: number;
+}
+
+// New interfaces for element-style association
+export interface ElementStyleInfo {
+  elementId: string;
+  styles: StyleInfo[];
+}
+
+export interface StyleWithElement extends StyleInfo {
+  elementId: string;
 }
 
 export const createStyleService = () => {
@@ -110,6 +122,17 @@ export const createStyleService = () => {
     return uniqueStyles;
   };
 
+  // New method for getting styles with element association
+  const getAppliedStylesWithElementId = async (
+    element: any
+  ): Promise<StyleWithElement[]> => {
+    const styles = await getAppliedStyles(element);
+    return styles.map(style => ({
+      ...style,
+      elementId: element.id
+    }));
+  };
+
   const sortStylesByType = (styles: StyleInfo[]): StyleInfo[] => {
     return [...styles].sort((a, b) => {
       const aIsCombo = a.name.startsWith("is-");
@@ -122,6 +145,7 @@ export const createStyleService = () => {
   return {
     getAllStylesWithProperties,
     getAppliedStyles,
+    getAppliedStylesWithElementId, // New method
     sortStylesByType
   } as const;
 };

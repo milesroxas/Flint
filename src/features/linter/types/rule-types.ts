@@ -1,4 +1,5 @@
 import { StyleInfo } from "../services/style-service";
+import { ElementContext } from "./element-context";
 
 // -------------------------
 // Severity & Result Types
@@ -15,6 +16,7 @@ export interface RuleResult {
   comboIndex?: number;
   example?: string;
   metadata?: Record<string, any>;
+  context?: ElementContext;
 }
 
 // -------------------------
@@ -49,6 +51,7 @@ export interface BaseRule {
   enabled: boolean;
   category: RuleCategory;
   targetClassTypes: ClassType[];
+  context?: ElementContext;
 }
 
 export interface NamingRule extends BaseRule {

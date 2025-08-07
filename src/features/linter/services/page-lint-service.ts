@@ -1,43 +1,80 @@
 // src/features/linter/services/page-lint-service.ts
-import { StyleService } from "./style-service";
-import { RuleRunner }     from "./rule-runner";
+import { StyleService, StyleWithElement } from "./style-service";
+import { RuleRunner } from "./rule-runner";
 import type { RuleResult } from "../types/rule-types";
+import { createElementContextClassifier } from "./element-context-classifier";
+import type { WebflowElement, ElementWithClassNames } from "../types/element-context";
 
-/**
- * Factory for creating a PageLintService with injected dependencies.
- * @param styleService – fetches site definitions + applied styles
- * @param ruleRunner   – applies lint rules to a list of styles
- */
 export function createPageLintService(
   styleService: StyleService,
   ruleRunner: RuleRunner
 ) {
-  /**
-   * Lints only the current page’s elements, using site-wide styles for rule context.
-   * @param elements – all Webflow elements on the current page
-   */
-  async function lintCurrentPage(elements: any[]): Promise<RuleResult[]> {
+  const elementCtx = createElementContextClassifier({
+    parentClassPatterns: [
+      "section_contain",
+      /^u-section/,
+      /^c-/,
+      // add any other container selectors here
+    ],
+  });
+
+  async function lintCurrentPage(
+    elements: WebflowElement[]
+  ): Promise<RuleResult[]> {
     console.log("[PageLintService] Starting lint for current page…");
 
-    // 1. Load every style definition (for context in rules)
+    // 1. Load every style definition (for rule context)
     const allStyles = await styleService.getAllStylesWithProperties();
     console.log(
       `[PageLintService] Loaded ${allStyles.length} style definitions for context.`
     );
 
-    // 2. Pull only the styles actually applied on this page
-    const nested = await Promise.all(
-      elements.map((el) => styleService.getAppliedStyles(el))
-    );
-    const appliedStyles = nested.flat();
-    console.log(
-      `[PageLintService] Collected ${appliedStyles.length} applied style instances on this page.`
+    // 2. Get styles for each element, maintaining element association
+    const elementStylePairs = await Promise.all(
+      elements.map(async (element) => {
+        const styles = await styleService.getAppliedStyles(element);
+        return {
+          elementId: String(element.id),
+          element,
+          styles: styles.map(style => ({
+            ...style,
+            elementId: String(element.id)
+          })) as StyleWithElement[]
+        };
+      })
     );
 
-    // 3. Run your rules
-    const results = ruleRunner.runRulesOnStyles(appliedStyles);
+    const allAppliedStyles: StyleWithElement[] = elementStylePairs
+      .flatMap(pair => pair.styles);
+
     console.log(
-      `[PageLintService] Lint complete. Found ${results.length} issue${results.length === 1 ? "" : "s"}.`
+      `[PageLintService] Collected ${allAppliedStyles.length} applied style instances on this page.`
+    );
+
+    // 3. Extract class names for each element (needed for context classification)
+    const elementsWithClassNames: ElementWithClassNames[] = elementStylePairs.map(pair => ({
+      element: pair.element,
+      classNames: pair.styles.map(style => style.name).filter(name => name.trim() !== '')
+    }));
+
+    console.log(
+      `[PageLintService] Extracted class names for ${elementsWithClassNames.length} elements.`
+    );
+
+    // 4. Classify elements into contexts using extracted class names
+    const elementContexts = await elementCtx.classifyPageElements(elementsWithClassNames);
+
+    // 5. Run rules with proper element-to-context mapping
+    const results = ruleRunner.runRulesOnStylesWithContext(
+      allAppliedStyles,
+      elementContexts,
+      allStyles
+    );
+
+    console.log(
+      `[PageLintService] Lint complete. Found ${results.length} issue${
+        results.length === 1 ? "" : "s"
+      }.`
     );
 
     return results;
