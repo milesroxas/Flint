@@ -1,7 +1,7 @@
 // src/hooks/use-element-lint.ts
 import { useEffect, useState } from "react"
 import type { RuleResult } from "@/features/linter/types/rule-types"
-import { createElementLintService } from "@/features/linter/lib/element-lint-service"
+import { createElementLintService } from "@/features/linter/services/element-lint-service"
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void

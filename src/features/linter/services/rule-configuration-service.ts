@@ -1,4 +1,4 @@
-import { RuleRegistry } from "@/features/linter/lib/rule-registry";
+import { RuleRegistry } from "@/features/linter/services/rule-registry";
 import {
   RuleConfiguration,
   RuleConfigSchema,

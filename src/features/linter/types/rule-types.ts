@@ -1,4 +1,4 @@
-import { StyleInfo } from "../lib/style-service";
+import { StyleInfo } from "../services/style-service";
 
 // -------------------------
 // Severity & Result Types

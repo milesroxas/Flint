@@ -1,7 +1,7 @@
-import { StyleService } from "@/features/linter/lib/style-service";
-import { UtilityClassAnalyzer } from "@/features/linter/lib/utility-class-analyzer";
-import { RuleRunner } from "@/features/linter/lib/rule-runner";
-import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/lib/registry";
+import { StyleService } from "@/features/linter/services/style-service";
+import { UtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
+import { RuleRunner } from "@/features/linter/services/rule-runner";
+import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/services/registry";
 import type { RuleResult } from "@/features/linter/types/rule-types";
 
 /**

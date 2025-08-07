@@ -25,5 +25,5 @@ export default function ExtensionWrapper({
     void resizeExtension();
   }, []);
 
-  return <div className="">{children}</div>;
+  return <div className="overflow-hidden">{children}</div>;
 }

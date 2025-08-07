@@ -1,7 +1,7 @@
 // features/linter/lib/registry.ts
-import { RuleRegistry } from "@/features/linter/lib/rule-registry";
+import { RuleRegistry } from "@/features/linter/services/rule-registry";
 import { defaultRules } from "@/features/linter/rules/default-rules";
-import { RuleConfigurationService } from "@/features/linter/lib/rule-configuration-service";
+import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import type { Rule } from "@/features/linter/types/rule-types";
 
 // Global registry instance

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Accordion } from "@/components/ui/accordion";
 import { RuleResult } from "@/features/linter/types/rule-types";
 import { ViolationItem } from "./ViolationItem";
@@ -19,23 +19,21 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const defaultOpenIds = singleOpenId ? [singleOpenId] : [];
 
   return (
-    <ScrollArea className="max-h-64">
-      <Accordion
-        key={violations.length}
-        type="multiple"
-        defaultValue={defaultOpenIds}
-        className="w-full"
-      >
-        {violations.map((violation, index) => (
-          <ViolationItem
-            key={`${violation.ruleId}-${
-              violation.className || "unknown"
-            }-${index}`}
-            violation={violation}
-            index={index}
-          />
-        ))}
-      </Accordion>
-    </ScrollArea>
+    <Accordion
+      key={violations.length}
+      type="multiple"
+      defaultValue={defaultOpenIds}
+      className="w-full"
+    >
+      {violations.map((violation, index) => (
+        <ViolationItem
+          key={`${violation.ruleId}-${
+            violation.className || "unknown"
+          }-${index}`}
+          violation={violation}
+          index={index}
+        />
+      ))}
+    </Accordion>
   );
 };

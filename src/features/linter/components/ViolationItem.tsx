@@ -16,11 +16,11 @@ import { RuleResult, Severity } from "@/features/linter/types/rule-types";
 import {
   severityDot,
   severityText,
-} from "@/features/linter/lib/severity-styles";
+} from "@/features/linter/services/severity-styles";
 import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
-} from "@/features/linter/lib/message-parser";
+} from "@/features/linter/services/message-parser";
 
 interface ViolationItemProps {
   violation: RuleResult;
@@ -149,7 +149,7 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
           <CollapsibleTrigger className="flex items-start gap-1 hover:opacity-80 transition-opacity w-full">
             <Badge
               variant="inheritedProperty"
-              className="break-words whitespace-normal max-w-full"
+              className="break-words whitespace-normal"
             >
               <span className="text-left">
                 {property.property}: {property.value}
@@ -162,14 +162,10 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
               )}
             />
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2 space-y-1 w-full pl-2 border-l pb-4">
+          <CollapsibleContent className="mt-2 space-y-1 pl-2 border-l pb-4">
             {property.classes.map((cls, clsIdx) => (
-              <div key={clsIdx} className="flex flex-col gap-2 w-full min-w-0 ">
-                <Badge
-                  isCombo={false}
-                  copyable
-                  className="break-words whitespace-normal max-w-full"
-                >
+              <div key={clsIdx} className="flex flex-col gap-2">
+                <Badge isCombo={false} copyable>
                   {cls}
                 </Badge>
               </div>

@@ -1,39 +1,34 @@
 // src/components/LintPageButton.tsx
-import React from "react";
 import { Button } from "@/components/ui/button";
-import { usePageLint } from "@/features/linter/hooks/use-page-lint";
+import { Loader2 } from "lucide-react";
 
-export const LintPageButton: React.FC = () => {
-  const { results, loading, error, lintPage } = usePageLint();
+interface LintPageButtonProps {
+  onClick: () => void;
+  loading?: boolean;
+  issueCount?: number;
+}
 
+export function LintPageButton({
+  onClick,
+  loading,
+  issueCount,
+}: LintPageButtonProps) {
   return (
-    <div className="space-y-4">
-      <Button onClick={lintPage} disabled={loading}>
-        {loading ? "Linting page…" : "Lint Current Page"}
-      </Button>
-
-      {error && <p className="text-sm text-destructive">Error: {error}</p>}
-
-      {!loading && results.length === 0 && !error && (
-        <p className="text-sm text-muted-foreground">
-          No issues found on this page.
-        </p>
+    <Button
+      onClick={onClick}
+      disabled={loading}
+      size="sm"
+      className="rounded-full"
+      variant={issueCount ? "destructive" : "default"}
+    >
+      {loading ? (
+        <>
+          <Loader2 className="mr-1 h-4 w-4 animate-spin text-muted-foreground" />
+          Linting...
+        </>
+      ) : (
+        <>{issueCount ? "Re-lint" : "Lint Full Page"}</>
       )}
-
-      {results.length > 0 && (
-        <div className="border p-4 rounded-md bg-background">
-          <h3 className="font-medium mb-2">
-            {results.length} issue{results.length > 1 && "s"} found
-          </h3>
-          <ul className="list-disc pl-5 space-y-1 text-sm">
-            {results.map((r, i) => (
-              <li key={r.ruleId ?? i}>
-                <strong>{r.name}</strong>: {r.message}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    </Button>
   );
-};
+}

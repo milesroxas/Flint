@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Severity } from "@/features/linter/types/rule-types";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  "inline-flex items-center justify-center leading-none rounded-sm border-none px-1.5 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:self-center [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
   {
     variants: {
       variant: {
@@ -20,9 +20,8 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         inheritedProperty:
-          "bg-amber-200/50 rounded-xs px-2 font-mono font-semibold text-yellow-700",
-        newProperty:
-          "bg-blue-200/50 rounded-xs px-2 font-mono font-semibold text-blue-700",
+          "bg-amber-200/50 rounded-xs px-2 font-mono  text-yellow-700",
+        newProperty: "bg-blue-200/50 rounded-xs px-2 font-mono text-blue-700",
       },
       severity: {
         error: "bg-destructive text-white",
@@ -30,9 +29,8 @@ const badgeVariants = cva(
         suggestion: "bg-blue-500 text-white",
       },
       isCombo: {
-        true: "bg-gray-500 text-white text-xs rounded-xs font-light",
-        false:
-          "bg-[#006ACC] text-primary-foreground text-xs rounded-xs font-light",
+        true: "bg-gray-500 text-white text-xs rounded-xs ",
+        false: "bg-[#006ACC] text-primary-foreground text-xs rounded-xs",
       },
       copyable: {
         true: "cursor-pointer hover:opacity-90 active:opacity-75",

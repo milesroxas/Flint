@@ -14,7 +14,7 @@ export interface StyleInfo {
 export class StyleService {
   async getAllStylesWithProperties(): Promise<StyleInfo[]> {
     console.log('Fetching ALL styles from the entire Webflow site...')
-    const allStyles: Style[] = await window.webflow.getAllStyles()
+    const allStyles = await webflow.getAllStyles()
     console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`)
     
     console.log('Extracting names and properties from all styles...')
