@@ -44,7 +44,7 @@ export function PageLintSection() {
         )}
 
         {!error && !loading && hasRun && count === 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-600">
             <CheckCircle2 className="h-3 w-3" />
             No issues found
           </div>
