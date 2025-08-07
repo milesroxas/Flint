@@ -1,15 +1,15 @@
 // src/features/linter/components/PageLintSection.tsx
-import { usePageLint } from "@/features/linter/hooks/usePageLint";
+import { usePageLint } from "@/features/linter/store/usePageLintStore";
 import { LintPageButton } from "@/features/linter/components/LintPageButton";
 import { ViolationsList } from "@/features/linter/components/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function PageLintSection() {
-  const { results, loading, error, lintPage } = usePageLint();
+  const { results, loading, error, hasRun, lintPage } = usePageLint();
   const count = results.length;
 
   return (
-    <section className="pt-4 pb-2 border-b">
+    <section className="pt-4 pb-2 border-b bg-muted/50">
       <div className="flex items-center justify-between px-1.5">
         <h2 className="text-sm font-semibold text-muted-foreground mb-2">
           Current Page
@@ -36,7 +36,14 @@ export function PageLintSection() {
           </div>
         )}
 
-        {!error && !loading && count === 0 && (
+        {!error && !loading && !hasRun && (
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">
+            <AlertCircle className="h-3 w-3" />
+            Click the button to lint this page
+          </div>
+        )}
+
+        {!error && !loading && hasRun && count === 0 && (
           <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
             <CheckCircle2 className="h-3 w-3" />
             No issues found
