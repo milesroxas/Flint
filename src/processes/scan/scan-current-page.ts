@@ -17,4 +17,24 @@ export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   return pageService.lintCurrentPage(elements as any);
 }
 
+export async function scanCurrentPageWithMeta(elements: any[]): Promise<{ results: RuleResult[]; classNames: string[] }>{
+  ensureLinterInitialized();
+  const styleService = createStyleService();
+  const analyzer = createUtilityClassAnalyzer();
+  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer);
+  const pageService = createPageLintService(styleService, ruleRunner);
+  const allStyles = await styleService.getAllStylesWithProperties();
+  analyzer.buildPropertyMaps(allStyles);
+  // Collect class names across elements
+  const unique = new Set<string>();
+  for (const el of elements) {
+    try {
+      const styles = await styleService.getAppliedStyles(el);
+      styles.forEach(s => { if (s.name) unique.add(s.name); });
+    } catch {}
+  }
+  const results = await pageService.lintCurrentPage(elements as any);
+  return { results, classNames: Array.from(unique) };
+}
+
 

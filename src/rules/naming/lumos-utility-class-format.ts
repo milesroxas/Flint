@@ -3,8 +3,7 @@ import type { NamingRule } from "@/features/linter/model/rule.types";
 export const lumosUtilityClassFormatRule: NamingRule = {
   id: "lumos-utility-class-format",
   name: "Lumos Utility Class Format",
-  description:
-    "Utility classes must start with u-, use dashes only, and always be stacked on a custom class.",
+  description: "Utility classes must start with u- and use dash-delimited tokens.",
   example: "u-property-value",
   type: "naming",
   severity: "error",

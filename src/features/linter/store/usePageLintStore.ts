@@ -2,13 +2,15 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/model/rule.types';
-import { scanCurrentPage } from '@/processes/scan/scan-current-page';
+import { scanCurrentPageWithMeta } from '@/processes/scan/scan-current-page';
+import { ensureLinterInitialized } from '@/features/linter/model/linter.factory';
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Process orchestrator handles service setup per scan
 
 interface PageLintState {
   results: RuleResult[];
+  passedClassNames: string[];
   loading: boolean;
   error: string | null;
   hasRun: boolean;
@@ -23,6 +25,7 @@ type PageLintStore = PageLintState & PageLintActions;
 
 const initialState: PageLintState = {
   results: [],
+  passedClassNames: [],
   loading: false,
   error: null,
   hasRun: false,
@@ -40,9 +43,10 @@ export const usePageLintStore = create<PageLintStore>()(
         set({ hasRun: true, loading: true, error: null });
 
         try {
+          ensureLinterInitialized("balanced");
           const elements = await webflow.getAllElements();
-          const results = await scanCurrentPage(elements);
-          set({ results, loading: false });
+          const { results, classNames } = await scanCurrentPageWithMeta(elements);
+          set({ results, passedClassNames: classNames, loading: false });
         } catch (error) {
           console.error('[PageLintStore] Error during linting:', error);
           set({

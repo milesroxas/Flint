@@ -5,7 +5,9 @@ import { ViolationsList } from "@/features/linter/components/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function PageLintSection() {
-  const { results, loading, error, hasRun, lintPage } = usePageLint();
+  const { results, passedClassNames, loading, error, hasRun, lintPage } =
+    usePageLint();
+  const mode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
 
   return (
@@ -52,7 +54,13 @@ export function PageLintSection() {
 
         {!error && count > 0 && (
           <div className="p-2">
-            <ViolationsList violations={results} />
+            <ViolationsList
+              violations={results}
+              passedClassNames={passedClassNames}
+            />
+            <div className="mt-2 text-[10px] text-muted-foreground">
+              Mode: {mode}
+            </div>
           </div>
         )}
       </div>

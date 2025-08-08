@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import type { RuleResult } from "@/features/linter/model/rule.types"
 import { scanSelectedElement } from "@/processes/scan/scan-selected-element"
+import { ensureLinterInitialized } from "@/features/linter/model/linter.factory"
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void
@@ -18,6 +19,7 @@ export function useElementLint() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
+    ensureLinterInitialized("balanced")
     const unsubscribe = webflow.subscribe("selectedelement", async (el) => {
       if (!el) {
         setViolations([])

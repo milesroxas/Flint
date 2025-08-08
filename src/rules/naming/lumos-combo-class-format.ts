@@ -3,11 +3,10 @@ import type { NamingRule } from "@/features/linter/model/rule.types";
 export const lumosComboClassFormatRule: NamingRule = {
   id: "lumos-combo-class-format",
   name: "Lumos Combo Class Format",
-  description:
-    "Combo classes must start with is-, use dashes only, and modify existing component classes.",
+  description: "Combo classes should start with is-.",
   example: "is-state-variant",
   type: "naming",
-  severity: "error",
+  severity: "warning",
   enabled: true,
   category: "format",
   targetClassTypes: ["combo"],

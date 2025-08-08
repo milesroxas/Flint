@@ -184,6 +184,43 @@ export const createRuleRunner = (
   ): RuleResult[] => {
     const results: RuleResult[] = [];
 
+    // Element-level ordering check: warn if any utility precedes the first custom class
+    const byElement = new Map<string, StyleWithElement[]>();
+    for (const s of stylesWithElement) {
+      const list = byElement.get(s.elementId) ?? [];
+      list.push(s);
+      byElement.set(s.elementId, list);
+    }
+    for (const [elId, list] of byElement.entries()) {
+      // Find earliest custom class order
+      let earliestCustomOrder: number | null = null;
+      for (const s of list) {
+        const kind = getClassType(s.name);
+        if (kind === "custom") {
+          earliestCustomOrder = earliestCustomOrder === null ? s.order : Math.min(earliestCustomOrder, s.order);
+        }
+      }
+      if (earliestCustomOrder !== null) {
+        // Any utility with order smaller than earliest custom?
+        const offending = list
+          .filter(s => getClassType(s.name) === "utility" && s.order < (earliestCustomOrder as number))
+          .sort((a, b) => a.order - b.order)[0];
+        if (offending) {
+          const ctxs = elementContextsMap[elId] || [];
+          results.push({
+            ruleId: "lumos-utilities-after-custom-ordering",
+            name: "Utilities should follow base custom class",
+            message: "Warn when utilities precede the base custom class.",
+            severity: "warning",
+            className: offending.name,
+            isCombo: false,
+            example: "base_custom is-* u-*",
+            context: ctxs.length > 0 ? ctxs[0] : undefined,
+          });
+        }
+      }
+    }
+
     console.log('Running lint rules on applied styles with context…');
     
     for (const { id, name, properties, elementId } of stylesWithElement) {

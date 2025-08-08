@@ -4,7 +4,7 @@ import type { NamingRule } from "@/features/linter/model/rule.types";
 export const componentRootRequiredStructure: NamingRule = createComponentRootRule({
   id: "component-root-required-structure", 
   name: "Component Root Required Structure",
-  description: "Component root elements must follow structural conventions",
+  description: "Add a wrapper or structure group to component root.",
   example: "component_wrap with proper container structure",
   category: "semantics",
   severity: "suggestion",
