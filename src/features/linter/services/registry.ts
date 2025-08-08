@@ -1,7 +1,6 @@
 // features/linter/lib/registry.ts
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
-import { defaultRules } from "@/features/linter/rules/default-rules";
-import { contextAwareRules } from "@/features/linter/rules/context-aware-rules";
+import { lumosPreset } from "@/presets/lumos.preset";
 import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import type { Rule } from "@/features/linter/model/rule.types";
 
@@ -15,11 +14,8 @@ export const ruleConfigService = new RuleConfigurationService(ruleRegistry);
 export function initializeRuleRegistry(): void {
   console.log("Initializing rule registry…");
 
-  // 1) register built-in rules (seeds defaults too)
-  ruleRegistry.registerRules(defaultRules);
-  
-  // 2) register context-aware rules
-  ruleRegistry.registerRules(contextAwareRules);
+  // 1) register preset rules (seeds defaults too)
+  ruleRegistry.registerRules(lumosPreset.rules);
 
   // 3) load any persisted user settings and apply
   const userConfigs = ruleConfigService.loadConfiguration();
@@ -31,7 +27,7 @@ export function initializeRuleRegistry(): void {
     })
   );
 
-  console.log(`Registry initialized with ${defaultRules.length + contextAwareRules.length} rules`);
+  console.log(`Registry initialized with preset '${lumosPreset.id}' containing ${lumosPreset.rules.length} rules`);
 }
 
 // Helper for dynamic rules
