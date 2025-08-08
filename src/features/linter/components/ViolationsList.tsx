@@ -15,16 +15,29 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   violations,
   passedClassNames = [],
 }) => {
-  // If there's exactly one violation, auto-open that item
+  const suggestions = useMemo(
+    () => violations.filter((v) => v.severity === "suggestion"),
+    [violations]
+  );
+  const nonSuggestions = useMemo(
+    () => violations.filter((v) => v.severity !== "suggestion"),
+    [violations]
+  );
+
+  // If there's exactly one non-suggestion violation, auto-open that item
   const singleOpenId =
-    violations.length === 1
-      ? `${violations[0].ruleId}-${violations[0].className || "unknown"}-0`
+    nonSuggestions.length === 1
+      ? `${nonSuggestions[0].ruleId}-${
+          nonSuggestions[0].className || "unknown"
+        }-0`
       : undefined;
   const defaultOpenIds = singleOpenId ? [singleOpenId] : [];
 
   // Optional Passed view
-  const [tab, setTab] = useState<"issues" | "passed">("issues");
+  const [tab, setTab] = useState<"issues" | "suggestions" | "passed">("issues");
   const showPassedTab = passedClassNames.length > 0;
+  const showSuggestionsTab = suggestions.length > 0;
+
   const failedSet = useMemo(
     () =>
       new Set(violations.map((v) => v.className).filter(Boolean) as string[]),
@@ -40,7 +53,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
 
   return (
     <div className="w-full">
-      {showPassedTab && (
+      {(showSuggestionsTab || showPassedTab) && (
         <div className="mb-2 flex items-center gap-1">
           <button
             className={`text-xs px-2 py-0.5 rounded ${
@@ -48,27 +61,57 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             }`}
             onClick={() => setTab("issues")}
           >
-            Issues ({violations.length})
+            Issues ({nonSuggestions.length})
           </button>
-          <button
-            className={`text-xs px-2 py-0.5 rounded ${
-              tab === "passed" ? "bg-slate-200" : "bg-transparent"
-            }`}
-            onClick={() => setTab("passed")}
-          >
-            Passed ({passedOnly.length})
-          </button>
+          {showSuggestionsTab && (
+            <button
+              className={`text-xs px-2 py-0.5 rounded ${
+                tab === "suggestions" ? "bg-slate-200" : "bg-transparent"
+              }`}
+              onClick={() => setTab("suggestions")}
+            >
+              Suggestions ({suggestions.length})
+            </button>
+          )}
+          {showPassedTab && (
+            <button
+              className={`text-xs px-2 py-0.5 rounded ${
+                tab === "passed" ? "bg-slate-200" : "bg-transparent"
+              }`}
+              onClick={() => setTab("passed")}
+            >
+              Passed ({passedOnly.length})
+            </button>
+          )}
         </div>
       )}
 
       {tab === "issues" && (
         <Accordion
-          key={violations.length}
+          key={`issues-${nonSuggestions.length}`}
           type="multiple"
           defaultValue={defaultOpenIds}
           className="w-full"
         >
-          {violations.map((violation, index) => (
+          {nonSuggestions.map((violation, index) => (
+            <ViolationItem
+              key={`${violation.ruleId}-${
+                violation.className || "unknown"
+              }-${index}`}
+              violation={violation}
+              index={index}
+            />
+          ))}
+        </Accordion>
+      )}
+
+      {tab === "suggestions" && (
+        <Accordion
+          key={`suggestions-${suggestions.length}`}
+          type="multiple"
+          className="w-full"
+        >
+          {suggestions.map((violation, index) => (
             <ViolationItem
               key={`${violation.ruleId}-${
                 violation.className || "unknown"
