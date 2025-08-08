@@ -1,5 +1,5 @@
 // src/features/linter/components/PageLintSection.tsx
-import { usePageLint } from "@/features/linter/store/usePageLintStore";
+import { usePageLint } from "@/features/linter/store/pageLint.store";
 import { LintPageButton } from "@/features/linter/components/LintPageButton";
 import { ViolationsList } from "@/features/linter/components/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
