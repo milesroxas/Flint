@@ -22,52 +22,62 @@ export interface StyleWithElement extends StyleInfo {
   elementId: string;
 }
 
+// Module-level cache for site-wide styles (memoized for the session)
+let cachedAllStylesPromise: Promise<StyleInfo[]> | null = null;
+const DEBUG = false;
+
 export const createStyleService = () => {
   const getAllStylesWithProperties = async (): Promise<StyleInfo[]> => {
-    console.log('Fetching ALL styles from the entire Webflow site...');
-    const allStyles = await webflow.getAllStyles();
-    console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`);
-    
-    console.log('Extracting names and properties from all styles...');
-    const allStylesWithProperties = await Promise.all(
-      allStyles.map(async (style, index) => {
-        try {
-          const name = await style.getName();
-          let properties = {};
-          
-          if (name && name.startsWith('u-')) {
+    if (!cachedAllStylesPromise) {
+      if (DEBUG) console.log('Fetching ALL styles from the entire Webflow site...');
+      cachedAllStylesPromise = (async () => {
+        const allStyles = await webflow.getAllStyles();
+        if (DEBUG) console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`);
+
+        if (DEBUG) console.log('Extracting names and properties from all styles...');
+        const allStylesWithProperties = await Promise.all(
+          allStyles.map(async (style, index) => {
             try {
-              properties = await style.getProperties({ breakpoint: 'main' });
+              const name = await style.getName();
+              let properties = {};
+
+              if (name && name.startsWith('u-')) {
+                try {
+                  properties = await style.getProperties({ breakpoint: 'main' });
+                } catch (err) {
+                  if (DEBUG) console.error(`Error getting properties for style ${name}:`, err);
+                }
+              }
+
+              return {
+                id: style.id,
+                name: name?.trim() || "",
+                properties,
+                index
+              };
             } catch (err) {
-              console.error(`Error getting properties for style ${name}:`, err);
+              if (DEBUG) console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err);
+              return { id: style.id, name: "", properties: {}, index };
             }
-          }
-          
-          return { 
-            id: style.id, 
-            name: name?.trim() || "",
-            properties,
-            index
-          };
-        } catch (err) {
-          console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err);
-          return { id: style.id, name: "", properties: {}, index };
-        }
-      })
-    );
-    
-    const validStyles = allStylesWithProperties.filter(style => style.name);
-    console.log(`Found ${validStyles.length} valid styles with names out of ${allStyles.length} total styles`);
-    
-    return validStyles.map((style, index) => ({
-      ...style,
-      order: index
-    }));
+          })
+        );
+
+        const validStyles = allStylesWithProperties.filter(style => style.name);
+        if (DEBUG) console.log(`Found ${validStyles.length} valid styles with names out of ${allStyles.length} total styles`);
+
+        return validStyles.map((style, index) => ({
+          ...style,
+          order: index
+        }));
+      })();
+    }
+
+    return cachedAllStylesPromise;
   };
 
   const getAppliedStyles = async (element: any): Promise<StyleInfo[]> => {
-    console.log('Getting styles applied to the selected element...');
-    
+    if (DEBUG) console.log('Getting styles applied to the selected element...');
+
     if (!element || typeof element.getStyles !== 'function') {
       console.error('Element does not have getStyles method', element);
       return [];
@@ -76,7 +86,7 @@ export const createStyleService = () => {
     let appliedStyles: Style[] = [];
     try {
       appliedStyles = await element.getStyles();
-      console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`);
+      if (DEBUG) console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`);
     } catch (err) {
       console.error('Error calling element.getStyles():', err);
       return [];
@@ -89,7 +99,7 @@ export const createStyleService = () => {
     const seenIds = new Set<string>();
     const uniqueStyles: StyleInfo[] = [];
 
-    console.log('Processing applied styles...');
+    if (DEBUG) console.log('Processing applied styles...');
     for (let i = 0; i < appliedStyles.length; i++) {
       try {
         const style = appliedStyles[i];
@@ -110,7 +120,7 @@ export const createStyleService = () => {
           }
           
           uniqueStyles.push({ id, name: trimmedName, properties, order: i });
-          console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
+          if (DEBUG) console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
         }
       } catch (err) {
         console.error(`Error processing applied style at index ${i}:`, err);
@@ -118,6 +128,41 @@ export const createStyleService = () => {
     }
 
     return uniqueStyles;
+  };
+
+  // Lightweight helper: only fetch class names for an element (no properties)
+  const getAppliedClassNames = async (element: any): Promise<string[]> => {
+    if (!element || typeof element.getStyles !== 'function') {
+      return [];
+    }
+    let styles: Style[] = [];
+    try {
+      styles = await element.getStyles();
+    } catch {
+      return [];
+    }
+    if (!styles?.length) return [];
+
+    const seen = new Set<string>();
+    const names = await Promise.all(
+      styles.map(async (s) => {
+        try {
+          const n = await s.getName();
+          const t = n?.trim() || "";
+          return t;
+        } catch {
+          return "";
+        }
+      })
+    );
+    const deduped: string[] = [];
+    for (const n of names) {
+      if (n && !seen.has(n)) {
+        seen.add(n);
+        deduped.push(n);
+      }
+    }
+    return deduped;
   };
 
   const getAppliedStylesWithElementId = async (
@@ -143,10 +188,16 @@ export const createStyleService = () => {
     getAllStylesWithProperties,
     getAppliedStyles,
     getAppliedStylesWithElementId,
-    sortStylesByType
+    sortStylesByType,
+    getAppliedClassNames
   } as const;
 };
 
 export type StyleService = ReturnType<typeof createStyleService>;
+
+// Optional: allow manual cache reset if the site styles materially change
+export function resetStyleServiceCache() {
+  cachedAllStylesPromise = null;
+}
 
 

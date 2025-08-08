@@ -48,7 +48,7 @@ export const createRuleRunner = (
     
     // Fallback to test logic
     if (!rule.test(className)) {
-      console.log(`  Failed ${rule.category} rule: ${className}`);
+      // Debug log removed to reduce noise
       return [{
         ruleId: rule.id,
         name: rule.name,
@@ -61,7 +61,7 @@ export const createRuleRunner = (
       }];
     }
     
-    console.log(`  Passed ${rule.category} rule: ${className}`);
+    // Debug log removed to reduce noise
     return [];
   };
 
@@ -74,7 +74,7 @@ export const createRuleRunner = (
   ): RuleResult[] => {
     const duplicateInfo: UtilityClassDuplicateInfo | null = utilityAnalyzer.analyzeDuplicates(className, properties);
     if (!duplicateInfo) {
-      console.log(`  Passed utility class rules: ${className}`);
+      // Debug log removed to reduce noise
       return [];
     }
 
@@ -102,7 +102,7 @@ export const createRuleRunner = (
         : `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`
     }
 
-    console.log(`  ${duplicateInfo.isExactMatch ? 'Failed' : 'Suggestion for'} utility class: ${className}`);
+    // Debug log removed to reduce noise
     
     return [{
       ruleId: rule.id,
@@ -221,10 +221,10 @@ export const createRuleRunner = (
       }
     }
 
-    console.log('Running lint rules on applied styles with context…');
+    // Debug log removed to reduce noise
     
-    for (const { id, name, properties, elementId } of stylesWithElement) {
-      console.log(`Processing style - ID: ${id}, Name: ${name}, Element: ${elementId}`);
+    for (const { name, properties, elementId } of stylesWithElement) {
+      // Debug log removed to reduce noise
 
       // Get the contexts for this element
       const elementContexts = elementContextsMap[elementId] || [];
@@ -239,7 +239,7 @@ export const createRuleRunner = (
           return isEnabled && isApplicableForContext;
         });
 
-      console.log(`Found ${applicableRules.length} applicable rules for ${name} with contexts: [${elementContexts.join(', ')}]`);
+      // Debug log removed to reduce noise
 
       for (const rule of applicableRules) {
         const ruleResults = executeRule(rule, name, properties, elementContexts, allStyles);

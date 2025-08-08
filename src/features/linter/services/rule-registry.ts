@@ -37,6 +37,12 @@ export const createRuleRegistry = () => {
     rulesToRegister.forEach(rule => registerRule(rule));
   };
 
+  /** Clear all rules and configurations (used when switching presets) */
+  const clear = (): void => {
+    rules.clear();
+    configurations.clear();
+  };
+
   /** Retrieve a rule by ID */
   const getRule = (ruleId: string): Rule | undefined => {
     return rules.get(ruleId);
@@ -124,6 +130,7 @@ export const createRuleRegistry = () => {
   return {
     registerRule,
     registerRules,
+    clear,
     getRule,
     getAllRules,
     getRulesByClassType,

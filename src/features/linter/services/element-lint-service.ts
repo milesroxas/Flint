@@ -16,12 +16,16 @@ declare const webflow: {
  * Factory for creating an ElementLintService.
  * Handles per-element linting: initializes registry, gathers styles, and runs rules.
  */
-export function createElementLintService() {
+const DEBUG = false;
+
+function createServiceInstance() {
   // Instantiate dependencies once
   const styleService = createStyleService();
   const utilityAnalyzer = createUtilityClassAnalyzer();
   const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer);
   const elementCtx = createElementContextClassifier();
+  let cachedContextsMap: Record<string, any> | null = null;
+  let cachedElementsSignature: string | null = null;
 
   /**
    * Lints a single Webflow element by:
@@ -39,7 +43,7 @@ export function createElementLintService() {
 
       ensureLinterInitialized();
 
-      console.log("[ElementLintService] Starting element lint...");
+      if (DEBUG) console.log("[ElementLintService] Starting element lint...");
 
       // 1. Fetch all styles and build analysis maps once
       const allStyles = await styleService.getAllStylesWithProperties();
@@ -48,7 +52,7 @@ export function createElementLintService() {
       // 2. Get styles applied to the element
       const appliedStyles = await styleService.getAppliedStyles(element);
       if (appliedStyles.length === 0) {
-        console.log("[ElementLintService] No styles on element, returning default issue.");
+        if (DEBUG) console.log("[ElementLintService] No styles on element, returning default issue.");
         return [
           {
             ruleId: "no-styles-or-classes",
@@ -64,39 +68,47 @@ export function createElementLintService() {
 
       // 3. Sort styles and convert to StyleWithElement format
       const sorted = styleService.sortStylesByType(appliedStyles);
-      const elementId = element?.id || element?.nodeId || '';
-      
+      // Use the same key format as classifier (element.id.element)
+      const elementKey =
+        (element?.id && (element.id as any).element) ??
+        element?.id ??
+        element?.nodeId ??
+        '';
+
       const stylesWithElement: StyleWithElement[] = sorted.map(style => ({
         ...style,
-        elementId
+        elementId: elementKey
       }));
 
       // 4. Classify element context
       // Get all elements to build parent map (needed for context classification)
+      // Build/reuse page contexts once per page snapshot
       const allElements = await webflow.getAllElements();
-      
-      // Filter out elements that don't have getStyles method
-      const validElements = allElements.filter(el => 
-        el && typeof el.getStyles === 'function'
-      );
-      
-      console.log(`[ElementLintService] Found ${allElements.length} total elements, ${validElements.length} valid elements`);
-      
-      const allElementsWithClassNames: ElementWithClassNames[] = await Promise.all(
-        validElements.map(async (el) => {
-          const styles = await styleService.getAppliedStyles(el);
-          return {
-            element: el as WebflowElement,
-            classNames: styles.map(style => style.name).filter(name => name.trim() !== '')
-          };
-        })
-      );
-      
-      const elementContextsMap = await elementCtx.classifyPageElements(allElementsWithClassNames);
+      const validElements = allElements.filter(el => el && typeof el.getStyles === 'function');
+      const signature = `${validElements.length}`;
 
-      console.log("[ElementLintService] Element contexts map:", elementContextsMap);
-      console.log("[ElementLintService] Current element ID:", elementId);
-      console.log("[ElementLintService] Current element contexts:", elementContextsMap[elementId]);
+      let elementContextsMap: Record<string, any>;
+      if (cachedContextsMap && cachedElementsSignature === signature) {
+        elementContextsMap = cachedContextsMap;
+      } else {
+        const allElementsWithClassNames: ElementWithClassNames[] = await Promise.all(
+          validElements.map(async (el) => {
+            const classNames = await styleService.getAppliedClassNames(el);
+            return {
+              element: el as WebflowElement,
+              classNames: classNames.filter(name => name.trim() !== '')
+            };
+          })
+        );
+        elementContextsMap = await elementCtx.classifyPageElements(allElementsWithClassNames);
+        cachedContextsMap = elementContextsMap;
+        cachedElementsSignature = signature;
+      }
+
+      if (DEBUG) {
+        console.log("[ElementLintService] Current element key:", elementKey);
+        console.log("[ElementLintService] Current element contexts:", elementContextsMap[elementKey]);
+      }
 
       // 5. Run rules with proper element context
       const results = ruleRunner.runRulesOnStylesWithContext(
@@ -116,5 +128,25 @@ export function createElementLintService() {
     }
   }
 
-  return { lintElement };
+  async function lintElementWithMeta(element: any): Promise<{ results: RuleResult[]; appliedClassNames: string[]; elementContextsMap: Record<string, any> }>{
+    const [results, applied] = await Promise.all([
+      lintElement(element),
+      styleService.getAppliedClassNames(element)
+    ]);
+
+    // Reuse cached contexts map
+    const elementContextsMap = cachedContextsMap || {};
+    return { results, appliedClassNames: applied, elementContextsMap };
+  }
+
+  return { lintElement, lintElementWithMeta };
+}
+
+let singletonInstance: ReturnType<typeof createServiceInstance> | null = null;
+
+export function createElementLintService() {
+  if (!singletonInstance) {
+    singletonInstance = createServiceInstance();
+  }
+  return singletonInstance;
 }

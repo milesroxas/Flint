@@ -15,6 +15,8 @@ export interface UtilityClassDuplicateInfo {
 export const createUtilityClassAnalyzer = () => {
   const utilityClassPropertiesMap = new Map<string, {name: string, properties: any}[]>();
   const propertyToClassesMap = new Map<string, Set<string>>();
+  let lastAllStylesCount = -1;
+  const DEBUG = false;
   
   // Add these getters
   const getUtilityClassPropertiesMap = () => {
@@ -35,9 +37,17 @@ export const createUtilityClassAnalyzer = () => {
   };
 
   const buildPropertyMaps = (allStyles: StyleInfo[]): void => {
-    console.log('Building utility class properties map...');
+    // Only rebuild if input appears to have changed
+    if (lastAllStylesCount === allStyles.length && utilityClassPropertiesMap.size > 0) {
+      return;
+    }
+    lastAllStylesCount = allStyles.length;
+
+    if (DEBUG) console.log('Building utility class properties map...');
     
     // Build the utility class properties map
+    utilityClassPropertiesMap.clear();
+    propertyToClassesMap.clear();
     for (const style of allStyles) {
       if (style.name.startsWith('u-')) {
         const existingClasses = utilityClassPropertiesMap.get(style.name) || [];
@@ -48,7 +58,7 @@ export const createUtilityClassAnalyzer = () => {
       }
     }
     
-    console.log('Utility class properties map:', utilityClassPropertiesMap);
+    if (DEBUG) console.log('Utility class properties map:', utilityClassPropertiesMap);
     
     // Create property-to-classes mapping
     utilityClassPropertiesMap.forEach((styleEntries, className) => {
@@ -65,7 +75,7 @@ export const createUtilityClassAnalyzer = () => {
       }
     });
 
-    logDuplicateProperties();
+    if (DEBUG) logDuplicateProperties();
   };
 
   const analyzeDuplicates = (className: string, properties: any): UtilityClassDuplicateInfo | null => {

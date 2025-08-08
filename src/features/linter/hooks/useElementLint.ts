@@ -1,8 +1,9 @@
 // src/hooks/use-element-lint.ts
 import { useEffect, useState } from "react"
 import type { RuleResult } from "@/features/linter/model/rule.types"
-import { scanSelectedElement } from "@/processes/scan/scan-selected-element"
+import { scanSelectedElementWithMeta } from "@/processes/scan/scan-selected-element"
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory"
+import type { ElementContext } from "@/entities/element/model/element-context.types"
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void
@@ -16,6 +17,8 @@ declare const webflow: {
  */
 export function useElementLint() {
   const [violations, setViolations] = useState<RuleResult[]>([])
+  const [contexts, setContexts] = useState<ElementContext[]>([])
+  const [classNames, setClassNames] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
@@ -23,16 +26,22 @@ export function useElementLint() {
     const unsubscribe = webflow.subscribe("selectedelement", async (el) => {
       if (!el) {
         setViolations([])
+        setContexts([])
+        setClassNames([])
         return
       }
 
       setIsLoading(true)
       try {
-        const results = await scanSelectedElement(el)
+        const { results, classNames, contexts } = await scanSelectedElementWithMeta(el)
         setViolations(results)
+        setClassNames(classNames || [])
+        setContexts(contexts || [])
       } catch (err: unknown) {
         console.error("Error linting element:", err)
         setViolations([])
+        setContexts([])
+        setClassNames([])
       } finally {
         setIsLoading(false)
       }
@@ -41,5 +50,5 @@ export function useElementLint() {
     return () => unsubscribe()
   }, [])
 
-  return { violations, isLoading }
+  return { violations, contexts, classNames, isLoading }
 }

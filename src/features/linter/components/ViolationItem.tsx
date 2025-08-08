@@ -31,8 +31,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
 }) => {
-  console.log("ViolationItem severity:", violation.severity, violation);
-  console.log("ViolationItem context:", violation.context);
+  // Debug logs removed to improve performance
   const sev = violation.severity as Severity;
   const id = `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
   const parsedMessage = parseDuplicateMessage(violation.message);

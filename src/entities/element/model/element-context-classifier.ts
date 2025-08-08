@@ -31,7 +31,15 @@ export function createElementContextClassifier(
       typeof p === 'string' ? cls === p : p.test(cls)
     )
 
+  // Simple in-memory cache keyed by element count to avoid recomputation per selection
+  let cachedParentMap: ElementParentMap | null = null;
+  let cachedElementsSignature: string | null = null;
+
   async function buildParentMap(elements: WebflowElement[]): Promise<ElementParentMap> {
+    const signature = `${elements.length}`;
+    if (cachedParentMap && cachedElementsSignature === signature) {
+      return cachedParentMap;
+    }
     const parentMap: ElementParentMap = {};
     const processedIds = new Set<string>();
 
@@ -63,7 +71,9 @@ export function createElementContextClassifier(
       }
     }
 
-    return parentMap;
+    cachedParentMap = parentMap;
+    cachedElementsSignature = signature;
+    return cachedParentMap;
   }
 
   function classifyElement(
