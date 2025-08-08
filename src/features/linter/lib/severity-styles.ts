@@ -11,3 +11,5 @@ export const severityText: Record<Severity, string> = {
   warning: "text-amber-800 dark:text-amber-200",
   suggestion: "text-slate-700 dark:text-slate-200",
 }
+
+

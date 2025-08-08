@@ -16,11 +16,11 @@ import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import {
   severityDot,
   severityText,
-} from "@/features/linter/services/severity-styles";
+} from "@/features/linter/lib/severity-styles";
 import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
-} from "@/features/linter/services/message-parser";
+} from "@/features/linter/lib/message-parser";
 
 interface ViolationItemProps {
   violation: RuleResult;
