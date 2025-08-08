@@ -4,20 +4,16 @@ import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/model/rule.types';
 import { createPageLintService } from '@/features/linter/services/page-lint-service';
 import { createStyleService } from '@/features/linter/services/style-service';
-import { createRuleRunner } from '@/features/linter/services/rule-runner'; 
-import { createRuleRegistry } from '@/features/linter/services/rule-registry';
+import { createRuleRunner } from '@/features/linter/services/rule-runner';
+import { ensureLinterInitialized, getRuleRegistry } from '@/features/linter/model/linter.factory';
 import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
-import { defaultRules } from '@/features/linter/rules/default-rules';
+// import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Initialize services once using factory functions
 const styleService = createStyleService();
 const utilityAnalyzer = createUtilityClassAnalyzer();
-const ruleRegistry = createRuleRegistry();
-
-// Register rules and build initial property maps
-ruleRegistry.registerRules(defaultRules);
-
-const ruleRunner = createRuleRunner(ruleRegistry, utilityAnalyzer);
+ensureLinterInitialized();
+const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer);
 const pageLintService = createPageLintService(styleService, ruleRunner);
 
 interface PageLintState {

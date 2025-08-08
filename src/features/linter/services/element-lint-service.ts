@@ -1,7 +1,7 @@
 import { createStyleService } from "@/features/linter/services/style-service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
-import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/services/registry";
+import { ensureLinterInitialized, getRuleRegistry } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { StyleWithElement } from "@/features/linter/services/style-service";
 import { createElementContextClassifier } from "./element-context-classifier";
@@ -17,12 +17,10 @@ declare const webflow: {
  * Handles per-element linting: initializes registry, gathers styles, and runs rules.
  */
 export function createElementLintService() {
-  let registryInitialized = false;
-
   // Instantiate dependencies once
   const styleService = createStyleService();
   const utilityAnalyzer = createUtilityClassAnalyzer();
-  const ruleRunner = createRuleRunner(ruleRegistry, utilityAnalyzer);
+  const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer);
   const elementCtx = createElementContextClassifier();
 
   /**
@@ -39,10 +37,7 @@ export function createElementLintService() {
         return [];
       }
 
-      if (!registryInitialized) {
-        initializeRuleRegistry();
-        registryInitialized = true;
-      }
+      ensureLinterInitialized();
 
       console.log("[ElementLintService] Starting element lint...");
 
