@@ -32,11 +32,9 @@ The system assigns element contexts to support context-aware rules.
 
 ### Services (in `features/linter/services/`)
 
-- `style-service.ts`
+- `element-lint-service.ts`
 
-  - Retrieves all site styles and element-applied styles via Webflow APIs
-  - Returns `StyleInfo` and `StyleWithElement` structures
-  - Sorts styles so combo classes follow base classes
+  - Orchestrates selected-element scans; reuses cached site styles and page contexts
 
 - `utility-class-analyzer.ts`
 
@@ -59,7 +57,7 @@ The system assigns element contexts to support context-aware rules.
 - `registry.ts`
 
   - Global `ruleRegistry` and `ruleConfigService`
-  - `initializeRuleRegistry()` registers default rules and context-aware rules, then applies persisted configs
+  - `initializeRuleRegistry()` registers preset rules (e.g., Lumos, Client‑first) and applies persisted configs
   - `addCustomRule()` registers a rule dynamically
 
 - `rule-runner.ts`
@@ -67,7 +65,7 @@ The system assigns element contexts to support context-aware rules.
   - Filters rules by class type and context
   - Executes naming rules (`test`/`evaluate`) and property rules (`analyze`)
   - Integrates utility duplicate handling and includes formatted metadata in results
-  - Preferred entry: `runRulesOnStylesWithContext(stylesWithElement, contextsMap, allStyles)`
+  - Entry point: `runRulesOnStylesWithContext(stylesWithElement, contextsMap, allStyles)`
 
 - `element-context-classifier.ts`
 
@@ -77,23 +75,14 @@ The system assigns element contexts to support context-aware rules.
 - `message-parser.ts`, `severity-styles.ts`
   - Parse duplicate-properties messages and map severities to CSS classes for UI
 
-### Rules (in `features/linter/rules/`)
+### Rules
 
-- `default-rules.ts`
+- Rules are defined under `src/rules/` and registered via presets in `src/presets/`.
+  - Naming: `rules/naming/*`
+  - Property: `rules/property/*`
+  - Context‑aware: `rules/context-aware/*`
 
-  - `lumos-custom-class-format` (naming, custom)
-  - `lumos-utility-class-format` (naming, utility)
-  - `lumos-combo-class-format` (naming, combo)
-  - `lumos-utility-class-exact-duplicate` (property, utility)
-  - `lumos-utility-class-duplicate-properties` (property, utility)
-  - `lumos-custom-class-format` includes a `projectDefinedElements` schema for per-project element terms
-
-- `context-aware-rules.ts`
-  - `component-root-semantic-naming` (naming; `componentRoot` context)
-  - `component-root-no-display-utilities` (property; `componentRoot` context)
-  - `component-root-required-structure` (naming; `componentRoot` context)
-
-### Types (in `features/linter/types/`)
+### Types
 
 - `rule-types.ts`
   - `RuleResult` includes `context` and optional `metadata`
@@ -106,16 +95,16 @@ The system assigns element contexts to support context-aware rules.
 
 - Hooks
 
-  - `hooks/useElementLint.ts`: subscribes to Webflow `selectedelement`, runs element lint, returns `violations` and `isLoading`
-  - `hooks/usePageLint.ts`: thin wrapper around the store
+- `hooks/useElementLint.ts`: subscribes to Webflow `selectedelement`, runs element lint, returns `violations`, `contexts`, `classNames`, and `isLoading`
+- `hooks/usePageLint.ts`: thin wrapper around the store
 
-- Store
+-- Store
 
-  - `store/usePageLintStore.ts`: Zustand store exposing `lintPage`, results, and status
-  - Creates its own registry and registers default rules (context-aware rules are not registered here)
+- `store/usePageLintStore.ts`: Zustand store exposing `lintPage`, results, and status
+- Uses shared registry initialization so page and element flows are aligned
 
 - UI
-  - `components/LintPanel.tsx`: renders current selected element violations
+  - `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles
   - `components/PageLintSection.tsx`: full-page lint trigger and results
   - `components/LintPageButton.tsx`: action button with loading/issue count state
   - `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available
@@ -124,16 +113,16 @@ The system assigns element contexts to support context-aware rules.
 
 - Selected element lint
 
-  - `createElementLintService()` ensures `initializeRuleRegistry()` runs (default + context-aware rules, persisted configs)
-  - Builds utility property maps from all styles
+  - `createElementLintService()` ensures `initializeRuleRegistry()` runs (preset + persisted configs)
+  - Builds utility property maps from cached site styles
   - Retrieves applied styles for the selected element
-  - Builds a page-wide element-class map and classifies contexts
+  - Builds or reuses page contexts (cached parent map + class names)
   - Runs `runRulesOnStylesWithContext` with element-context mapping and all styles
 
 - Full page lint
   - `usePageLintStore.lintPage()` fetches all elements, builds utility maps, then calls `createPageLintService().lintCurrentPage(elements)`
-  - `createPageLintService()` gathers applied styles per element, extracts class names for context classification, produces the contexts map, and runs `runRulesOnStylesWithContext`
-  - The store’s registry currently registers default rules only
+  - Extracts class names for context classification, produces the contexts map, and runs `runRulesOnStylesWithContext`
+  - Uses the same registry initialization as element lint
 
 ## Configuration
 
@@ -158,11 +147,10 @@ The system assigns element contexts to support context-aware rules.
 
 ## File map (key files)
 
-- `services/style-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`
+- `services/element-lint-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`
 - `services/rule-registry.ts`, `services/rule-configuration-service.ts`, `services/registry.ts`
-- `services/element-context-classifier.ts`
-- `rules/default-rules.ts`, `rules/context-aware-rules.ts`
-- `types/rule-types.ts`, `types/element-context.ts`
+- `entities/style/model/style.service.ts`, `entities/element/model/element-context-classifier.ts`
+- `rules/*` (naming, property, context-aware)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
 - `store/usePageLintStore.ts`
 - `components/LintPanel.tsx`, `components/PageLintSection.tsx`, `components/LintPageButton.tsx`, `components/ViolationsList.tsx`, `components/ViolationItem.tsx`

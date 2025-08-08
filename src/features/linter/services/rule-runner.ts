@@ -250,25 +250,8 @@ export const createRuleRunner = (
     return results;
   };
 
-  // Keep the old method for backward compatibility but mark as deprecated
-  const runRulesOnStyles = (
-    styles: StyleInfo[],
-    contextsMap: Record<string, ElementContext[]>
-  ): RuleResult[] => {
-    console.warn('[RuleRunner] runRulesOnStyles is deprecated. Use runRulesOnStylesWithContext instead.');
-    
-    // Convert to new format - this is a fallback
-    const stylesWithElement: StyleWithElement[] = styles.map(style => ({
-      ...style,
-      elementId: '' // No element ID available in old format
-    }));
-    
-    return runRulesOnStylesWithContext(stylesWithElement, contextsMap, []);
-  };
-
   return {
-    runRulesOnStyles, // Keep for backward compatibility
-    runRulesOnStylesWithContext // New preferred method
+    runRulesOnStylesWithContext
   } as const;
 };
 

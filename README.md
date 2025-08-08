@@ -1,145 +1,87 @@
-# Designer Extension: Audit Tool
+## Audit Tool — Webflow Designer Extension
 
-A comprehensive linting system for Webflow Designer that helps maintain consistent class naming conventions and identifies potential issues with your CSS classes. This extension analyzes your Webflow elements in real-time and provides actionable feedback to improve your design system.
+Lint Webflow classes in real time. The extension validates naming, detects duplicate utilities, and applies context‑aware rules so teams can keep sites clean as they work.
 
-## Features
+### Quick start
 
-- **Element Linting** - Automatically lints selected elements as you work
-- **Page Linting** - Analyze all elements on the current page with a single click
-- **Class Type Detection** - Intelligently categorizes classes as custom, utility, or combo classes
-- **Duplicate Detection** - Identifies utility classes with overlapping or identical properties
-- **Configurable Rules** - Enable/disable rules and adjust severity levels
-- **Extensible Architecture** - Easy to add custom rules for your specific needs
+- **Install**: `npm i`
+- **Dev server**:
+  ```bash
+  npm run dev
+  ```
+  Use the printed URL as your Webflow “Development URL”.
+- **Build (development bundle.zip)**:
+  ```bash
+  npm run build:dev
+  ```
+- **Build (production bundle.zip)**:
+  ```bash
+  npm run build:prod
+  ```
+- **Lint code**:
+  ```bash
+  npm run lint
+  ```
 
-## Local Development
+### Architecture (FSD overview)
 
-```bash
-npm run dev
-```
+- `src/entities`
+  - `style/model/style.service.ts`: reads site styles and element styles. Caches site‑wide styles for the session and offers a lightweight `getAppliedClassNames` for classification.
+  - `element/model/element-context-classifier.ts`: builds a parent map and classifies elements (e.g., `componentRoot`). Caches per page snapshot.
+- `src/features/linter`
+  - `model/`: `linter.factory.ts` bootstraps the rule registry (presets + opinion mode), exposes the global registry.
+  - `services/`:
+    - `element-lint-service.ts` (singleton): orchestrates element scans, reuses cached styles and contexts.
+    - `rule-runner.ts`: executes rules per class with context via `runRulesOnStylesWithContext`.
+    - `rule-registry.ts`, `rule-configuration-service.ts`.
+    - `utility-class-analyzer.ts`: builds maps for utility property duplicates (memoized).
+  - `hooks/`: `useElementLint.ts`, `usePageLint.ts`.
+  - `store/`: `usePageLintStore.ts` (Zustand) for page scans.
+  - `components/`: compact UI for results (`LintPanel`, `ViolationsList`, `ViolationItem`, etc.).
+- `src/processes/scan`: orchestrators for element and page scanning.
+- `src/presets`: `lumos.preset.ts`, `client-first.preset.ts` define rule packs (single source of truth).
+- `src/rules`: naming, property, and context‑aware rule implementations.
 
-This command installs dependencies, starts the Vite development server, and serves your extension files. Use the displayed URL as the "Development URL" in Webflow Designer's Apps panel to launch your extension.
+### How element linting works
 
-## Build for Distribution
+1. Selection event triggers `useElementLint`.
+2. `ensureLinterInitialized()` builds/loads the registry from a preset and persisted config.
+3. `element-lint-service` fetches cached site styles, builds utility maps, gets the element’s applied styles, and classifies page contexts.
+4. `rule-runner` filters applicable rules (by class type and context) and returns results.
+5. UI renders issues, suggestions, and duplicates with structured details.
 
-```bash
-npm run build
-```
+### Presets and configuration
 
-This command builds your React application with Vite, copies the build files to the public directory, and prepares a bundle.zip file for distribution. Upload this bundle.zip file for distributing the App inside of your workspace or via the Marketplace.
+- Presets: `lumos` (default) and `client-first` define the rule set.
+- Opinion mode: `balanced` by default; initialization path supports other modes.
+- Config persistence: `rule-configuration-service` stores per‑rule settings and merges with schema defaults on load.
 
-## Linter Architecture
+### Performance
 
-### Core Components
+- Site styles are cached for the session and invalidated on preset/mode changes.
+- Page parent map and element class lists are cached per snapshot.
+- Utility property maps rebuild only when the style list changes.
+- Logging in hot loops is minimized for responsiveness.
 
-#### Linting Services
+### Testing
 
-- **ElementLintService** - Lints individual elements when selected in the Designer
-- **PageLintService** - Lints all elements on the current page at once
-- **StyleService** - Handles interaction with Webflow's style API
-- **RuleRunner** - Executes rules against styles
-- **UtilityClassAnalyzer** - Specialized analysis for utility classes
+- Run tests with:
+  ```bash
+  npx vitest
+  ```
+- Integration and snapshot tests live under `src/features/linter/services/__tests__/`.
 
-#### React Hooks
+### Key files
 
-- **useElementLint** - Subscribes to element selection events and provides real-time linting
-- **usePageLint** - Provides functionality to lint the entire page on demand
+- `src/features/linter/model/linter.factory.ts`
+- `src/features/linter/services/element-lint-service.ts`
+- `src/features/linter/services/rule-runner.ts`
+- `src/entities/style/model/style.service.ts`
+- `src/entities/element/model/element-context-classifier.ts`
+- `src/presets/lumos.preset.ts`, `src/presets/client-first.preset.ts`
+- `src/processes/scan/scan-selected-element.ts`, `src/processes/scan/scan-current-page.ts`
 
-#### UI Components
+### Further reading
 
-- **LintPanel** - Displays linting results for selected elements
-- **LintPageButton** - Button component to trigger page-wide linting
-- **ViolationsList** - Displays rule violations in a structured format
-
-### Supported Class Types
-
-#### Custom Classes
-
-**Format:** `type[_variation][_element]`
-
-- Use underscores only
-- Lowercase alphanumeric characters
-- Maximum 3 underscores
-- Examples: `hero_primary`, `hero_primary_button`
-
-#### Utility Classes
-
-**Format:** `u-[property-description]`
-
-- Must start with `u-`
-- Use dashes only (no underscores)
-- Examples: `u-margin-top-lg`, `u-text-center`
-
-#### Combo Classes
-
-**Format:** `is-[state-description]`
-
-- Must start with `is-`
-- Use dashes only (no underscores)
-- Examples: `is-active`, `is-hidden`
-
-## Default Rules
-
-### Format Rules
-
-| Rule ID                      | Name                 | Severity | Description                               |
-| ---------------------------- | -------------------- | -------- | ----------------------------------------- |
-| `lumos-custom-class-format`  | Custom Class Format  | Error    | Validates custom class naming convention  |
-| `lumos-utility-class-format` | Utility Class Format | Error    | Validates utility class naming convention |
-| `lumos-combo-class-format`   | Combo Class Format   | Error    | Validates combo class naming convention   |
-
-### Semantic Rules
-
-| Rule ID                                    | Name                               | Severity   | Description                       |
-| ------------------------------------------ | ---------------------------------- | ---------- | --------------------------------- |
-| `lumos-utility-class-exact-duplicate`      | Exact Duplicate Utility Class      | Error      | Flags identical utility classes   |
-| `lumos-utility-class-duplicate-properties` | Duplicate Utility Class Properties | Suggestion | Identifies overlapping properties |
-
-## How It Works
-
-### Element Linting
-
-The element linting feature automatically analyzes elements as they're selected in the Webflow Designer:
-
-1. When an element is selected, the `useElementLint` hook triggers the linting process
-2. The `ElementLintService` fetches all styles from the site for context
-3. It then retrieves the styles applied to the selected element
-4. The `RuleRunner` validates these styles against all enabled rules
-5. Results are displayed in the `LintPanel` component
-
-### Page Linting
-
-The page linting feature allows you to analyze all elements on the current page at once:
-
-1. When the "Lint Current Page" button is clicked, the `usePageLint` hook is triggered
-2. The `PageLintService` fetches all elements on the current page using `window.webflow.getAllElements()`
-3. It then retrieves all styles from the site for context using `window.webflow.getAllStyles()`
-4. For each element, it fetches the applied styles using `element.getStyles()`
-5. The `RuleRunner` validates all styles against enabled rules
-6. Results are displayed in the `LintPageButton` component
-
-## Error Handling
-
-The linter includes robust error handling:
-
-- Gracefully handles missing or invalid Webflow API methods
-- Provides fallbacks when elements don't have styles
-- Captures and logs errors without crashing the extension
-- Shows user-friendly error messages
-
-## Technology Stack
-
-- Vite
-- React
-- TypeScript
-- Tailwind CSS
-- Radix UI Components
-
-## Extending the Linter
-
-### Adding Custom Rules
-
-See the detailed documentation in `src/features/linter/README.md` for information on creating custom rules and extending the linter's functionality.
-
-## Contributing
-
-Explore the [Webflow Designer API documentation](https://developers.webflow.com/designer/reference/introduction) for detailed information on Designer Extension features and API.
+- Guides: `docs/guides/unified-plan.md`, `docs/guides/architecture.md`.
+- ADRs: see `docs/adrs/` (notably ADR‑012 for legacy cleanup).
