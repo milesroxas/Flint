@@ -2,7 +2,7 @@
 
 import type { RuleResult, Severity, Rule, ClassType } from "@/features/linter/model/rule.types";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
-import { StyleInfo, StyleWithElement } from "./style-service";
+import { StyleInfo, StyleWithElement } from "@/entities/style/model/style.service";
 import { UtilityClassAnalyzer, UtilityClassDuplicateInfo } from "./utility-class-analyzer";
 import { RuleRegistry } from "./rule-registry";
 

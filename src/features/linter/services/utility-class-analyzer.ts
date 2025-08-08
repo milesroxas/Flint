@@ -1,4 +1,4 @@
-import { StyleInfo } from "./style-service";
+import { StyleInfo } from "@/entities/style/model/style.service";
 
 export interface UtilityClassDuplicateInfo {
   className: string;

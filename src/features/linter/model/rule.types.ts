@@ -1,4 +1,4 @@
-import { StyleInfo } from "../services/style-service";
+import { StyleInfo } from "@/entities/style/model/style.service";
 import { ElementContext } from "@/entities/element/model/element-context.types";
 
 // -------------------------

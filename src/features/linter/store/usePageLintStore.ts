@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/model/rule.types';
 import { createPageLintService } from '@/features/linter/services/page-lint-service';
-import { createStyleService } from '@/features/linter/services/style-service';
+import { createStyleService } from '@/entities/style/model/style.service';
 import { createRuleRunner } from '@/features/linter/services/rule-runner';
 import { ensureLinterInitialized, getRuleRegistry } from '@/features/linter/model/linter.factory';
 import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
