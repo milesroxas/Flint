@@ -1,5 +1,5 @@
 import { StyleInfo } from "../services/style-service";
-import { ElementContext } from "./element-context";
+import { ElementContext } from "@/entities/element/model/element-context.types";
 
 // -------------------------
 // Severity & Result Types
@@ -91,3 +91,5 @@ export interface RuleConfiguration {
   severity: Severity;
   customSettings: Record<string, unknown>;
 }
+
+

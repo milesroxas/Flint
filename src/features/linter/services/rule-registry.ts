@@ -1,8 +1,8 @@
 import {
   Rule,
   RuleConfiguration
-} from "@/features/linter/types/rule-types";
-import type { ClassType } from "@/features/linter/types/rule-types";
+} from "@/features/linter/model/rule.types";
+import type { ClassType } from "@/features/linter/model/rule.types";
 
 export const createRuleRegistry = () => {
   const rules = new Map<string, Rule>();

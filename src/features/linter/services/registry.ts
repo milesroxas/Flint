@@ -3,7 +3,7 @@ import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 import { defaultRules } from "@/features/linter/rules/default-rules";
 import { contextAwareRules } from "@/features/linter/rules/context-aware-rules";
 import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
-import type { Rule } from "@/features/linter/types/rule-types";
+import type { Rule } from "@/features/linter/model/rule.types";
 
 // Global registry instance
 export const ruleRegistry = createRuleRegistry();

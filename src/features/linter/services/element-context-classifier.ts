@@ -6,7 +6,7 @@ import type {
     WebflowElement,
     ElementParentMap,
     ElementWithClassNames
-  } from '@/features/linter/types/element-context'
+  } from '@/entities/element/model/element-context.types'
   
   export function createElementContextClassifier(
     configOverride?: Partial<ElementContextConfig>

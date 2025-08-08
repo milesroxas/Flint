@@ -4,7 +4,7 @@ import {
     createContextAwarePropertyRule,
     validateComponentRootNaming 
   } from '@/features/linter/utils/context-rule-helpers';
-  import type { Rule, RuleResult } from '@/features/linter/types/rule-types';
+  import type { Rule, RuleResult } from '@/features/linter/model/rule.types';
   
   /**
    * Rule: Component roots must follow semantic naming pattern

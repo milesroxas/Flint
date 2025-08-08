@@ -2,7 +2,7 @@ import { RuleRegistry } from "@/features/linter/services/rule-registry";
 import {
   RuleConfiguration,
   RuleConfigSchema,
-} from "@/features/linter/types/rule-types";
+} from "@/features/linter/model/rule.types";
 
 interface SerializedConfigFile {
   enabledRules?: string[];

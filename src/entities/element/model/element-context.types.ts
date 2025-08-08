@@ -1,6 +1,3 @@
-// src/features/linter/types/element-context.ts
-
-// Use the triple-slash reference directive to include Webflow types
 /// <reference types="@webflow/designer-extension-typings" />
 
 // Use the official Webflow API types
@@ -39,3 +36,5 @@ export interface ElementContextClassifier {
     elementsWithClassNames: ElementWithClassNames[]
   ): Promise<Record<string, ElementContext[]>>
 }
+
+

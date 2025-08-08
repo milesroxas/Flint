@@ -4,7 +4,7 @@ import type {
   NamingRule,
   RuleConfigSchema,
   RuleResult
-} from "../types/rule-types";
+} from "@/features/linter/model/rule.types";
 
 // -------------------------
 // Config schema for custom-class rule

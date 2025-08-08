@@ -7,8 +7,8 @@ import type {
     RuleCategory, 
     Severity,
     RuleConfigSchema
-  } from '@/features/linter/types/rule-types';
-  import type { ElementContext } from '@/features/linter/types/element-context';
+  } from '@/features/linter/model/rule.types';
+  import type { ElementContext } from '@/entities/element/model/element-context.types';
   
   interface BaseRuleOptions {
     id: string;
@@ -28,15 +28,15 @@ import type {
     evaluate?: (
       className: string,
       context?: { config?: Record<string, unknown> }
-    ) => import('@/features/linter/types/rule-types').RuleResult | null | undefined;
+    ) => import('@/features/linter/model/rule.types').RuleResult | null | undefined;
   }
   
   interface PropertyRuleOptions extends BaseRuleOptions {
     analyze: (
       className: string,
       properties: any,
-      context: import('@/features/linter/types/rule-types').RuleContext & { config?: Record<string, unknown> }
-    ) => import('@/features/linter/types/rule-types').RuleResult[];
+      context: import('@/features/linter/model/rule.types').RuleContext & { config?: Record<string, unknown> }
+    ) => import('@/features/linter/model/rule.types').RuleResult[];
   }
   
   /**

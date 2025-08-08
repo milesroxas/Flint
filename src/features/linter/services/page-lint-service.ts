@@ -1,9 +1,9 @@
 // src/features/linter/services/page-lint-service.ts
 import { StyleService, StyleWithElement } from "./style-service";
 import { RuleRunner } from "./rule-runner";
-import type { RuleResult } from "../types/rule-types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { createElementContextClassifier } from "./element-context-classifier";
-import type { WebflowElement, ElementWithClassNames } from "../types/element-context";
+import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
 
 export function createPageLintService(
   styleService: StyleService,

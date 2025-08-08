@@ -2,10 +2,10 @@ import { createStyleService } from "@/features/linter/services/style-service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
 import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/services/registry";
-import type { RuleResult } from "@/features/linter/types/rule-types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { StyleWithElement } from "@/features/linter/services/style-service";
 import { createElementContextClassifier } from "./element-context-classifier";
-import type { WebflowElement, ElementWithClassNames } from "../types/element-context";
+import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
 
 // Declare webflow global
 declare const webflow: {

@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Accordion } from "@/components/ui/accordion";
-import { RuleResult } from "@/features/linter/types/rule-types";
+import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationItem } from "./ViolationItem";
 
 interface ViolationsListProps {

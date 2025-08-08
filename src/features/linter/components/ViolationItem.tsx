@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RuleResult, Severity } from "@/features/linter/types/rule-types";
+import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import {
   severityDot,
   severityText,

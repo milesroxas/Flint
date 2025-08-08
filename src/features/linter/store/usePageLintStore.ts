@@ -1,7 +1,7 @@
 // src/features/linter/store/usePageLintStore.ts
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { RuleResult } from '@/features/linter/types/rule-types';
+import type { RuleResult } from '@/features/linter/model/rule.types';
 import { createPageLintService } from '@/features/linter/services/page-lint-service';
 import { createStyleService } from '@/features/linter/services/style-service';
 import { createRuleRunner } from '@/features/linter/services/rule-runner'; 
