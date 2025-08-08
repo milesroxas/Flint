@@ -2,19 +2,10 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { RuleResult } from '@/features/linter/model/rule.types';
-import { createPageLintService } from '@/features/linter/services/page-lint-service';
-import { createStyleService } from '@/entities/style/model/style.service';
-import { createRuleRunner } from '@/features/linter/services/rule-runner';
-import { ensureLinterInitialized, getRuleRegistry } from '@/features/linter/model/linter.factory';
-import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
+import { scanCurrentPage } from '@/processes/scan/scan-current-page';
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
-// Initialize services once using factory functions
-const styleService = createStyleService();
-const utilityAnalyzer = createUtilityClassAnalyzer();
-ensureLinterInitialized();
-const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer);
-const pageLintService = createPageLintService(styleService, ruleRunner);
+// Process orchestrator handles service setup per scan
 
 interface PageLintState {
   results: RuleResult[];
@@ -49,15 +40,8 @@ export const usePageLintStore = create<PageLintStore>()(
         set({ hasRun: true, loading: true, error: null });
 
         try {
-          // Get all elements from Webflow
           const elements = await webflow.getAllElements();
-          
-          // Build property maps for utility class analysis
-          const allStyles = await styleService.getAllStylesWithProperties();
-          utilityAnalyzer.buildPropertyMaps(allStyles);
-          
-          // Run the page lint with context awareness
-          const results = await pageLintService.lintCurrentPage(elements);
+          const results = await scanCurrentPage(elements);
           set({ results, loading: false });
         } catch (error) {
           console.error('[PageLintStore] Error during linting:', error);

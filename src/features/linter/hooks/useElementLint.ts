@@ -1,14 +1,13 @@
 // src/hooks/use-element-lint.ts
 import { useEffect, useState } from "react"
 import type { RuleResult } from "@/features/linter/model/rule.types"
-import { createElementLintService } from "@/features/linter/services/element-lint-service"
+import { scanSelectedElement } from "@/processes/scan/scan-selected-element"
 
 declare const webflow: {
   subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void
 }
 
-// instantiate once
-const { lintElement } = createElementLintService()
+// process orchestrator wraps service creation
 
 /**
  * Subscribes to Webflow’s selected-element event and lints that element.
@@ -27,7 +26,7 @@ export function useElementLint() {
 
       setIsLoading(true)
       try {
-        const results = await lintElement(el)
+        const results = await scanSelectedElement(el)
         setViolations(results)
       } catch (err: unknown) {
         console.error("Error linting element:", err)

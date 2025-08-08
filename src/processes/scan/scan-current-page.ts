@@ -11,6 +11,9 @@ export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   const analyzer = createUtilityClassAnalyzer();
   const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer);
   const pageService = createPageLintService(styleService, ruleRunner);
+  // Build property maps once per scan to support duplicate-property rules
+  const allStyles = await styleService.getAllStylesWithProperties();
+  analyzer.buildPropertyMaps(allStyles);
   return pageService.lintCurrentPage(elements as any);
 }
 
