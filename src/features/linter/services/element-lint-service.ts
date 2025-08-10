@@ -57,7 +57,7 @@ function createServiceInstance() {
           {
             ruleId: "no-styles-or-classes",
             name: "Element must have styles or classes",
-            message: "This element has no styles or classes applied.",
+            message: "This element has no classes assigned.",
             severity: "error",
             className: "",
             isCombo: false,

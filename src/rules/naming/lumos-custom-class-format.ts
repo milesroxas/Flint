@@ -35,13 +35,28 @@ export const lumosCustomClassFormatRule: NamingRule = {
     context?: { config?: Record<string, unknown> }
   ): RuleResult | null => {
     if (!lumosCustomClassFormatRule.test(className)) {
+      // Provide a minimal suggested correction that fits Lumos format
+      const suggested = className
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/-/g, "_")
+        .replace(/[^a-z0-9_]/g, "")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+
       return {
         ruleId: lumosCustomClassFormatRule.id,
         name: lumosCustomClassFormatRule.name,
         message: `"${className}" is not a valid custom class format. Must be lowercase, underscore-separated, with 2 or 3 segments (type_element or type_variant_element).`,
         severity: "error",
         className,
-        isCombo: false
+        isCombo: false,
+        example: "footer_wrap or footer_link_wrap",
+        metadata:
+          suggested && lumosCustomClassFormatRule.test(suggested)
+            ? { suggestedName: suggested }
+            : undefined,
       };
     }
 

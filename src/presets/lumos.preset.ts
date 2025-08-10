@@ -4,6 +4,7 @@ import type { Rule } from "@/features/linter/model/rule.types";
 import { lumosCustomClassFormatRule } from "@/rules/naming/lumos-custom-class-format";
 import { lumosUtilityClassFormatRule } from "@/rules/naming/lumos-utility-class-format";
 import { lumosComboClassFormatRule } from "@/rules/naming/lumos-combo-class-format";
+import { lumosUtilitiesAfterCustomOrderingRule, lumosCombosAfterCustomOrderingRule, lumosComboLimitRule } from "@/rules/naming/lumos-class-ordering";
 
 // Property rules
 import { lumosUtilityClassExactDuplicateRule } from "@/rules/property/lumos-utility-class-exact-duplicate";
@@ -21,6 +22,10 @@ export const lumosPreset: { id: string; rules: Rule[] } = {
     lumosCustomClassFormatRule,
     lumosUtilityClassFormatRule,
     lumosComboClassFormatRule,
+    // element-level ordering/limits (evaluated in runner)
+    lumosUtilitiesAfterCustomOrderingRule,
+    lumosCombosAfterCustomOrderingRule,
+    lumosComboLimitRule,
     // property
     lumosUtilityClassExactDuplicateRule,
     lumosUtilityClassDuplicatePropertiesRule,

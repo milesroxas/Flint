@@ -184,7 +184,7 @@ export const createRuleRunner = (
   ): RuleResult[] => {
     const results: RuleResult[] = [];
 
-    // Element-level ordering check: warn if any utility precedes the first custom class
+    // Element-level ordering checks (configurable via registry)
     const byElement = new Map<string, StyleWithElement[]>();
     for (const s of stylesWithElement) {
       const list = byElement.get(s.elementId) ?? [];
@@ -200,24 +200,66 @@ export const createRuleRunner = (
           earliestCustomOrder = earliestCustomOrder === null ? s.order : Math.min(earliestCustomOrder, s.order);
         }
       }
+      const contexts = elementContextsMap[elId] || [];
       if (earliestCustomOrder !== null) {
-        // Any utility with order smaller than earliest custom?
-        const offending = list
+        // utilities before custom?
+        const offendingUtil = list
           .filter(s => getClassType(s.name) === "utility" && s.order < (earliestCustomOrder as number))
           .sort((a, b) => a.order - b.order)[0];
-        if (offending) {
-          const ctxs = elementContextsMap[elId] || [];
+        const utilCfg = ruleRegistry.getRuleConfiguration("lumos-utilities-after-custom-ordering");
+        if (offendingUtil && (utilCfg?.enabled ?? true)) {
           results.push({
             ruleId: "lumos-utilities-after-custom-ordering",
             name: "Utilities should follow base custom class",
             message: "Warn when utilities precede the base custom class.",
-            severity: "warning",
-            className: offending.name,
+            severity: utilCfg?.severity ?? "warning",
+            className: offendingUtil.name,
             isCombo: false,
             example: "base_custom is-* u-*",
-            context: ctxs.length > 0 ? ctxs[0] : undefined,
+            context: contexts[0],
+            metadata: { elementId: elId },
           });
         }
+
+        // combos before custom?
+        const offendingCombo = list
+          .filter(s => getClassType(s.name) === "combo" && s.order < (earliestCustomOrder as number))
+          .sort((a, b) => a.order - b.order)[0];
+        const comboOrderCfg = ruleRegistry.getRuleConfiguration("lumos-combos-after-custom-ordering");
+        if (offendingCombo && (comboOrderCfg?.enabled ?? true)) {
+          results.push({
+            ruleId: "lumos-combos-after-custom-ordering",
+            name: "Combos should follow base custom class",
+            message: "Warn when combo classes precede the base custom class.",
+            severity: comboOrderCfg?.severity ?? "warning",
+            className: offendingCombo.name,
+            isCombo: true,
+            example: "base_custom is-*",
+            context: contexts[0],
+            metadata: { elementId: elId },
+          });
+        }
+      }
+
+      // combo limit
+      const combos = list
+        .filter(s => getClassType(s.name) === "combo")
+        .sort((a, b) => a.order - b.order)
+        .map(s => s.name);
+      const comboLimitCfg = ruleRegistry.getRuleConfiguration("lumos-combo-class-limit");
+      const maxCombos = Number(comboLimitCfg?.customSettings?.["maxCombos"] ?? 2);
+      if ((comboLimitCfg?.enabled ?? true) && combos.length > maxCombos) {
+        results.push({
+          ruleId: "lumos-combo-class-limit",
+          name: "Too many combo classes",
+          message: `This element has ${combos.length} combo classes; limit is ${maxCombos}. Consider merging or simplifying.`,
+          severity: comboLimitCfg?.severity ?? "warning",
+          className: combos[0] || "",
+          isCombo: true,
+          example: "base_custom is-large is-active",
+          context: contexts[0],
+          metadata: { elementId: elId, combos, maxCombos },
+        });
       }
     }
 
@@ -243,6 +285,10 @@ export const createRuleRunner = (
 
       for (const rule of applicableRules) {
         const ruleResults = executeRule(rule, name, properties, elementContexts, allStyles);
+        // attach elementId metadata for highlight; merge if existing
+        ruleResults.forEach(r => {
+          r.metadata = { ...(r.metadata ?? {}), elementId };
+        });
         results.push(...ruleResults);
       }
     }

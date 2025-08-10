@@ -42,6 +42,14 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 - `src/presets`: `lumos.preset.ts`, `client-first.preset.ts` define rule packs (single source of truth).
 - `src/rules`: naming, property, and context‑aware rule implementations.
 
+### What’s new (User stories alignment)
+
+- Suggested corrected names for Lumos custom class format violations (shown in results)
+- Configurable element-level checks (Lumos):
+  - Utilities and combos must follow the base custom class
+  - Combo class count limit (default 2; configurable)
+- “Highlight element” action from a violation when supported by Webflow
+
 ### How element linting works
 
 1. Selection event triggers `useElementLint`.
@@ -55,6 +63,7 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 - Presets: `lumos` (default) and `client-first` define the rule set.
 - Opinion mode: `balanced` by default; initialization path supports other modes.
 - Config persistence: `rule-configuration-service` stores per‑rule settings and merges with schema defaults on load.
+  - New option: `lumos-combo-class-limit.maxCombos` (number; default 2)
 
 ### Performance
 

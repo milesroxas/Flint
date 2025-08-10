@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RuleResult, Severity } from "@/features/linter/model/rule.types";
+import { Button } from "@/components/ui/button";
 import {
   severityDot,
   severityText,
@@ -81,6 +82,58 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               message={violation.message}
               example={violation.example}
             />
+          )}
+          {violation.metadata?.suggestedName && (
+            <div className="mt-1 text-[11px]">
+              Suggested:{" "}
+              <code className="font-mono bg-muted/30 px-1 py-0.5 rounded">
+                {violation.metadata.suggestedName}
+              </code>
+            </div>
+          )}
+          {Array.isArray(violation.metadata?.combos) && (
+            <div className="mt-1 text-[11px]">
+              Combos (in order):{" "}
+              {violation.metadata.combos.map((c: string, i: number) => (
+                <Badge key={`${c}-${i}`} className="ml-1">
+                  {c}
+                </Badge>
+              ))}
+              {typeof violation.metadata?.maxCombos === "number" && (
+                <span className="ml-2 text-muted-foreground">
+                  Limit: {violation.metadata.maxCombos}
+                </span>
+              )}
+            </div>
+          )}
+          {violation.metadata?.elementId && (
+            <div className="mt-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[11px]"
+                onClick={() => {
+                  try {
+                    const id = violation.metadata?.elementId;
+                    if (!id) return;
+                    const wf: any = (window as any).webflow;
+                    if (wf?.selectElementById) {
+                      wf.selectElementById(id);
+                    } else {
+                      document.dispatchEvent(
+                        new CustomEvent("flowlint:highlight", {
+                          detail: { elementId: id },
+                        })
+                      );
+                    }
+                  } catch (e) {
+                    console.error("Highlight failed", e);
+                  }
+                }}
+              >
+                Highlight element
+              </Button>
+            </div>
           )}
           {violation.ruleId !== "no-styles-or-classes" && (
             <ClassBadge violation={violation} />
