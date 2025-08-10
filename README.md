@@ -49,12 +49,13 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
   - Utilities and combos must follow the base custom class
   - Combo class count limit (default 2; configurable)
 - “Highlight element” action from a violation when supported by Webflow
+  - When a Designer element cannot be selected or lacks `getStyles`, a fallback `flowlint:highlight` event is dispatched with `{ elementId }`.
 
 ### How element linting works
 
 1. Selection event triggers `useElementLint`.
 2. `ensureLinterInitialized()` builds/loads the registry from a preset and persisted config.
-3. `element-lint-service` fetches cached site styles, builds utility maps, gets the element’s applied styles, and classifies page contexts.
+3. `element-lint-service` fetches cached site styles, builds utility maps, gets the element’s applied styles (Designer elements only; requires `getStyles()`), and classifies page contexts.
 4. `rule-runner` filters applicable rules (by class type and context) and returns results.
 5. UI renders issues, suggestions, and duplicates with structured details.
 
@@ -64,6 +65,7 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 - Opinion mode: `balanced` by default; initialization path supports other modes.
 - Config persistence: `rule-configuration-service` stores per‑rule settings and merges with schema defaults on load.
   - New option: `lumos-combo-class-limit.maxCombos` (number; default 2)
+  - Ordering/limit checks are registered for Lumos and evaluated in the runner; enablement and severity configurable via the registry.
 
 ### Performance
 

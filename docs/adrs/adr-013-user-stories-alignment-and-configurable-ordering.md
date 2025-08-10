@@ -18,6 +18,7 @@ The current implementation had partial coverage (unknown element warnings, dupli
 ## Decision
 
 - Add minimal, non‑breaking enhancements:
+
   - Lumos custom class rule now includes `metadata.suggestedName` when a safe correction is derivable.
   - New Lumos naming rules (config seeds) registered via preset, evaluated in runner:
     - `lumos-utilities-after-custom-ordering`
@@ -26,6 +27,7 @@ The current implementation had partial coverage (unknown element warnings, dupli
   - Runner emits these as violations based on element class order; violations include `metadata.elementId`.
   - UI renders suggested names, ordered combo list with limit, and a "Highlight element" button.
   - Empty class wording aligned with user story.
+  - Page lint path hardened: only Designer elements with `getStyles()` are scanned; IDs normalized for highlight.
 
 - Preserve core configurability:
   - New rules are registered only in `lumos` preset; switching to `client-first` remains unaffected.
@@ -46,5 +48,4 @@ The current implementation had partial coverage (unknown element warnings, dupli
 - Manual checks across both presets:
   - Lumos: format error shows suggestion; ordering/limit rules fire and can be muted via config.
   - Client‑first: behavior unchanged.
-
-
+  - Page lint no longer logs "Element does not have getStyles method"; highlight works when Designer API is available and falls back to a custom `flowlint:highlight` event.

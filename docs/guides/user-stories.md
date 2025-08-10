@@ -14,7 +14,8 @@
 - **As a user**, I can see when an element has too many combo classes.
   - I can see the combo classes listed in the same order as applied.
   - I can see the allowed limit.
-  - I can view a suggestion to merge or simplify classes.
+  - I can view a suggestion based on the element's styles
+    - Example: An element has the class list card_primary is-rounded u-shadow-md u-p-4. The first class card_primary is a valid custom class. The next class is-rounded is a custom combo class. Suggest merging the remaining utility classes (u-shadow-md, u-p-4) into is-rounded, renaming it to something like is-card_primary_rounded to consolidate style definitions and reduce combo/utility sprawl
 - **As a user**, I can see when combo classes are in the wrong order or structure.
   - I can see the current order.
   - I can view the proper structure reference.
