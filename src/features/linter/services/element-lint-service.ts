@@ -1,11 +1,16 @@
 import { createStyleService } from "@/entities/style/model/style.service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
-import { ensureLinterInitialized, getRuleRegistry } from "@/features/linter/model/linter.factory";
+import { ensureLinterInitialized, getRuleRegistry, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { StyleWithElement } from "@/entities/style/model/style.service";
 import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
 import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
+import type { ElementRole, GrammarAdapter, RoleResolver } from "@/features/linter/model/linter.types";
+import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
+import { lumosRoles } from "@/features/linter/roles/lumos.roles";
+import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
+import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
 
 // Declare webflow global
 declare const webflow: {
@@ -26,6 +31,35 @@ function createServiceInstance() {
   const elementCtx = createElementContextClassifier();
   let cachedContextsMap: Record<string, any> | null = null;
   let cachedElementsSignature: string | null = null;
+
+  function selectGrammarAndRoles(): { grammar: GrammarAdapter; roles: RoleResolver } {
+    const preset = getCurrentPreset();
+    if (preset === "client-first") {
+      return { grammar: clientFirstGrammar, roles: clientFirstRoles };
+    }
+    return { grammar: lumosGrammar, roles: lumosRoles };
+  }
+
+  function getClassTypeQuick(name: string): "custom" | "utility" | "combo" | "unknown" {
+    if (name.startsWith("is-")) return "combo";
+    if (name.startsWith("u-")) return "utility";
+    if (name.startsWith("c-")) return "unknown"; // ignore components for role parsing
+    return "custom";
+  }
+
+  function computeElementRoles(classNames: string[], contexts: string[]): ElementRole[] {
+    if (!Array.isArray(classNames) || classNames.length === 0) return [];
+    const { grammar, roles } = selectGrammarAndRoles();
+    const firstCustom = classNames.find((n) => getClassTypeQuick(n) === "custom");
+    if (!firstCustom) return [];
+    const parsed = grammar.parse(firstCustom);
+    let role = roles.mapToRole(parsed);
+    // If "wrap" mapped to componentRoot but classifier did not flag root, treat as childGroup
+    if (role === "componentRoot" && !contexts.includes("componentRoot")) {
+      role = "childGroup";
+    }
+    return role === "unknown" ? [] : [role];
+  }
 
   /**
    * Lints a single Webflow element by:
@@ -111,11 +145,27 @@ function createServiceInstance() {
       }
 
       // 5. Run rules with proper element context
-      const results = ruleRunner.runRulesOnStylesWithContext(
+      let results = ruleRunner.runRulesOnStylesWithContext(
         stylesWithElement, 
         elementContextsMap, 
         allStyles
       );
+
+      // 6. Attach role metadata for the selected element (if resolvable)
+      try {
+        const contextsForElement: string[] = elementContextsMap[elementKey] || [];
+        const elementClassNames = stylesWithElement.map(s => s.name).filter(n => n.trim() !== "");
+        const roles = computeElementRoles(elementClassNames, contextsForElement);
+        if (roles.length > 0) {
+          const primaryRole = roles[0];
+          results = results.map(r => ({
+            ...r,
+            metadata: { ...(r.metadata ?? {}), role: primaryRole },
+          }));
+        }
+      } catch (e) {
+        // ignore role attachment errors to avoid impacting lint results
+      }
 
       console.log(
         `[ElementLintService] Lint completed with ${results.length} issue${results.length === 1 ? "" : "s"}.`
@@ -128,15 +178,20 @@ function createServiceInstance() {
     }
   }
 
-  async function lintElementWithMeta(element: any): Promise<{ results: RuleResult[]; appliedClassNames: string[]; elementContextsMap: Record<string, any> }>{
+  async function lintElementWithMeta(element: any): Promise<{ results: RuleResult[]; appliedClassNames: string[]; elementContextsMap: Record<string, any>; roles: ElementRole[] }>{
     const [results, applied] = await Promise.all([
       lintElement(element),
       styleService.getAppliedClassNames(element)
     ]);
 
+    const elementKey =
+      (element?.id && (element.id as any).element) ?? element?.id ?? element?.nodeId ?? "";
+
     // Reuse cached contexts map
     const elementContextsMap = cachedContextsMap || {};
-    return { results, appliedClassNames: applied, elementContextsMap };
+    const contextsForElement: string[] = elementContextsMap[elementKey] || [];
+    const roles = computeElementRoles(applied.filter((n: string) => n.trim() !== ""), contextsForElement);
+    return { results, appliedClassNames: applied, elementContextsMap, roles };
   }
 
   return { lintElement, lintElementWithMeta };

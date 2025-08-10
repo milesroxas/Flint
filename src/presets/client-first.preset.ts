@@ -1,4 +1,7 @@
 import type { Rule } from "@/features/linter/model/rule.types";
+import type { Preset } from "@/features/linter/model/linter.types";
+import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
+import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
 
 import { cfCustomKebabCaseRule } from "@/rules/naming/cf-custom-kebab-case";
 import { cfVariantIsPrefixRule } from "@/rules/naming/cf-variant-is-prefix";
@@ -8,8 +11,10 @@ import { cfNoUtilitiesOnRootRule } from "@/rules/context-aware/cf-no-utilities-o
 import { cfInnerWrapperRecommendedRule } from "@/rules/context-aware/cf-inner-wrapper-recommended";
 import { cfContainersCleanRule } from "@/rules/context-aware/cf-containers-clean";
 
-export const clientFirstPreset: { id: string; rules: Rule[] } = {
+export const clientFirstPreset: Preset & { rules: Rule[] } = {
   id: "client-first",
+  grammar: clientFirstGrammar,
+  roles: clientFirstRoles,
   rules: [
     // naming
     cfCustomKebabCaseRule,

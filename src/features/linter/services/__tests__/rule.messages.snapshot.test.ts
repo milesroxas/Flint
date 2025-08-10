@@ -3,7 +3,7 @@ import { lumosPreset } from '@/presets/lumos.preset';
 
 describe('Rule messages snapshot (shape only)', () => {
   it('rules have stable ids and names', () => {
-    const snapshot = lumosPreset.rules.map(r => ({ id: r.id, name: r.name }));
+    const snapshot = lumosPreset.rules.map((r: any) => ({ id: r.id, name: r.name }));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {

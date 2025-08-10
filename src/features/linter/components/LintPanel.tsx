@@ -5,7 +5,8 @@ import { ViolationsList } from "./ViolationsList";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 
 export const LintPanel: React.FC = () => {
-  const { violations, isLoading, contexts, classNames } = useElementLint();
+  const { violations, isLoading, contexts, classNames, roles } =
+    useElementLint();
   // Element-level "passed" list is not available here without extra API calls; we keep the compact view.
   const mode: "strict" | "balanced" | "lenient" = "balanced";
 
@@ -37,13 +38,16 @@ export const LintPanel: React.FC = () => {
     return null;
   };
 
-  const roles = Array.from(
-    new Set(
-      (classNames || [])
-        .map(inferRole)
-        .filter((r): r is ElementRole => Boolean(r))
-    )
-  );
+  const derivedRoles =
+    roles && roles.length > 0
+      ? roles
+      : Array.from(
+          new Set(
+            (classNames || [])
+              .map(inferRole)
+              .filter((r): r is ElementRole => Boolean(r))
+          )
+        );
 
   const errorCount = violations.filter((v) => v.severity === "error").length;
   const warningCount = violations.filter(
@@ -65,7 +69,7 @@ export const LintPanel: React.FC = () => {
         suggestionCount={suggestionCount}
         mode={mode}
         contexts={contexts}
-        roles={roles}
+        roles={derivedRoles}
       />
       <ViolationsList violations={violations} />
     </div>

@@ -8,6 +8,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 - **Naming validation**: format rules for each class type
 - **Duplicate detection**: utility class duplicate and overlap checks
 - **Context-aware rules**: rules scoped to element contexts (e.g., component roots)
+- **Role identification**: parses the first custom class using a preset GrammarAdapter and maps it to an ElementRole via a RoleResolver (e.g., title, text, actions, container). Services attach `metadata.role` on violations for UI badges.
 - **Config persistence**: per-rule settings merged from schemas and stored in localStorage
 
 ## Class types and conventions
@@ -18,7 +19,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 
 The rule runner derives `ClassType` from the class name prefix and uses it to select applicable rules.
 
-## Element contexts
+## Element contexts and roles
 
 The system assigns element contexts to support context-aware rules.
 
@@ -27,6 +28,16 @@ The system assigns element contexts to support context-aware rules.
   - `wrapSuffix`: `_wrap`
   - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`
 - Behavior: an element with a class ending in `_wrap` that has an ancestor matching any parent pattern is classified as `componentRoot`.
+
+### Roles
+
+- Roles are computed in `services/element-lint-service.ts` with the active preset’s grammar and role resolver
+- We parse the first custom class only (skip `u-`, `is-`, `c-`)
+- Typical tokens → roles:
+  - `wrap` → `componentRoot` (or `childGroup` when not at the root)
+  - `contain`, `container` → `container`
+  - `layout` (and Client‑first structural wrappers) → `layout`
+  - `content`, `title`, `text`, `actions`, `button`, `link`, `icon`, `list`, `item`
 
 ## Architecture overview
 
@@ -72,6 +83,11 @@ The system assigns element contexts to support context-aware rules.
   - Builds a parent map via `getChildren()` traversal
   - Classifies elements with their class names into contexts (batched processing)
 
+- Grammar and role mapping (per preset)
+
+  - `grammar/lumos.grammar.ts`, `roles/lumos.roles.ts`
+  - `grammar/client-first.grammar.ts`, `roles/client-first.roles.ts`
+
 - `message-parser.ts`, `severity-styles.ts`
   - Parse duplicate-properties messages and map severities to CSS classes for UI
 
@@ -95,7 +111,7 @@ The system assigns element contexts to support context-aware rules.
 
 - Hooks
 
-- `hooks/useElementLint.ts`: subscribes to Webflow `selectedelement`, runs element lint, returns `violations`, `contexts`, `classNames`, and `isLoading`
+- `hooks/useElementLint.ts`: subscribes to Webflow `selectedelement`, runs element lint, returns `violations`, `contexts`, `classNames`, `roles`, and `isLoading`
 - `hooks/usePageLint.ts`: thin wrapper around the store
 
 -- Store
@@ -104,7 +120,8 @@ The system assigns element contexts to support context-aware rules.
 - Uses shared registry initialization so page and element flows are aligned
 
 - UI
-  - `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles
+  - `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles (header + per‑violation badge)
+  - `components/PageLintSection.tsx`: full-page lint trigger and results; per‑violation role badges supported
   - `components/PageLintSection.tsx`: full-page lint trigger and results
   - `components/LintPageButton.tsx`: action button with loading/issue count state
   - `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available

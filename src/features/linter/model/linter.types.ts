@@ -64,7 +64,7 @@ export interface Preset {
   id: string;
   grammar?: GrammarAdapter;
   roles?: RoleResolver;
-  rules: unknown[]; // keep broad to allow current rules without refactor
+  rules: import("./rule.types").Rule[];
   ruleConfig?: Record<
     string,
     {

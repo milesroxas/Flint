@@ -3,6 +3,7 @@ import { ensureLinterInitialized } from "@/features/linter/model/linter.factory"
 import { createElementLintService } from "@/features/linter/services/element-lint-service";
 // removed heavy imports; lint pass returns needed metadata
 import type { ElementContext } from "@/entities/element/model/element-context.types";
+import type { ElementRole } from "@/features/linter/model/linter.types";
 
 declare const webflow: {
   getAllElements: () => Promise<WebflowElement[]>;
@@ -14,14 +15,21 @@ export async function scanSelectedElement(element: any): Promise<RuleResult[]> {
   return lintElement(element);
 }
 
+export type SelectedElementMeta = {
+  results: RuleResult[];
+  classNames: string[];
+  contexts: ElementContext[];
+  roles: ElementRole[];
+};
+
 export async function scanSelectedElementWithMeta(
   element: any
-): Promise<{ results: RuleResult[]; classNames: string[]; contexts: ElementContext[] }> {
+): Promise<SelectedElementMeta> {
   ensureLinterInitialized();
 
   // Reuse lint pass metadata to avoid recomputation
   const { lintElementWithMeta } = createElementLintService();
-  const { results, appliedClassNames, elementContextsMap } = await lintElementWithMeta(element);
+  const { results, appliedClassNames, elementContextsMap, roles } = await lintElementWithMeta(element);
 
   const elKey =
     (element?.id && (element.id as any).element) ??
@@ -30,7 +38,7 @@ export async function scanSelectedElementWithMeta(
     "";
   const contexts = elementContextsMap[elKey] || [];
 
-  return { results, classNames: appliedClassNames, contexts };
+  return { results, classNames: appliedClassNames, contexts, roles };
 }
 
 

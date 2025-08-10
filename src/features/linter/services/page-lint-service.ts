@@ -3,6 +3,12 @@ import { StyleService, StyleWithElement } from "@/entities/style/model/style.ser
 import { RuleRunner } from "./rule-runner";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import type { ElementRole, GrammarAdapter, RoleResolver } from "@/features/linter/model/linter.types";
+import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
+import { lumosRoles } from "@/features/linter/roles/lumos.roles";
+import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
+import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
 import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
 
 export function createPageLintService(
@@ -17,6 +23,34 @@ export function createPageLintService(
       // add any other container selectors here
     ],
   });
+
+  function selectGrammarAndRoles(): { grammar: GrammarAdapter; roles: RoleResolver } {
+    const preset = getCurrentPreset();
+    if (preset === "client-first") {
+      return { grammar: clientFirstGrammar, roles: clientFirstRoles };
+    }
+    return { grammar: lumosGrammar, roles: lumosRoles };
+  }
+
+  function getClassTypeQuick(name: string): "custom" | "utility" | "combo" | "unknown" {
+    if (name.startsWith("is-")) return "combo";
+    if (name.startsWith("u-")) return "utility";
+    if (name.startsWith("c-")) return "unknown";
+    return "custom";
+  }
+
+  function computeElementRoleForList(classNames: string[], contexts: string[]): ElementRole | null {
+    if (!Array.isArray(classNames) || classNames.length === 0) return null;
+    const { grammar, roles } = selectGrammarAndRoles();
+    const firstCustom = classNames.find((n) => getClassTypeQuick(n) === "custom");
+    if (!firstCustom) return null;
+    const parsed = grammar.parse(firstCustom);
+    let role = roles.mapToRole(parsed);
+    if (role === "componentRoot" && !contexts.includes("componentRoot")) {
+      role = "childGroup";
+    }
+    return role === "unknown" ? null : role;
+  }
 
   async function lintCurrentPage(
     elements: WebflowElement[]
@@ -75,11 +109,34 @@ export function createPageLintService(
     const elementContexts = await elementCtx.classifyPageElements(elementsWithClassNames);
 
     // 5. Run rules with proper element-to-context mapping
-    const results = ruleRunner.runRulesOnStylesWithContext(
+    let results = ruleRunner.runRulesOnStylesWithContext(
       allAppliedStyles,
       elementContexts,
       allStyles
     );
+
+    // 6. Attach role metadata when resolvable, per elementId, to aid UI grouping/badges
+    try {
+      const byElement = new Map<string, string[]>();
+      for (const s of allAppliedStyles) {
+        const list = byElement.get(s.elementId) ?? [];
+        list.push(s.name);
+        byElement.set(s.elementId, list);
+      }
+      const elementIdToRole = new Map<string, ElementRole>();
+      for (const [elId, names] of byElement.entries()) {
+        const contexts = elementContexts[elId] || [];
+        const role = computeElementRoleForList(names.filter(n => n.trim() !== ''), contexts);
+        if (role) elementIdToRole.set(elId, role);
+      }
+      if (elementIdToRole.size > 0) {
+        results = results.map(r => {
+          const elId = r.metadata?.elementId;
+          const role = elId ? elementIdToRole.get(String(elId)) : undefined;
+          return role ? { ...r, metadata: { ...(r.metadata ?? {}), role } } : r;
+        });
+      }
+    } catch {}
 
     console.log(
       `[PageLintService] Lint complete. Found ${results.length} issue${

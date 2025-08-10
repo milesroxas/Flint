@@ -70,6 +70,17 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               Component Root
             </Badge>
           )}
+          {violation.metadata?.role && (
+            <Badge
+              variant="outline"
+              className="ml-1 text-violet-700 border-violet-300 bg-violet-50 text-[10px]"
+            >
+              {String(violation.metadata.role).replace(
+                /(^|[_-])(\w)/g,
+                (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
+              )}
+            </Badge>
+          )}
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
