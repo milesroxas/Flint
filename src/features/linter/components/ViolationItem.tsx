@@ -22,6 +22,7 @@ import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
 } from "@/features/linter/lib/message-parser";
+import { selectElementById } from "@/features/window/select-element";
 
 interface ViolationItemProps {
   violation: RuleResult;
@@ -112,23 +113,15 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
                 variant="outline"
                 size="sm"
                 className="text-[11px]"
-                onClick={() => {
-                  try {
-                    const id = violation.metadata?.elementId;
-                    if (!id) return;
-                    const wf: any = (window as any).webflow;
-                    if (wf?.selectElementById) {
-                      wf.selectElementById(id);
-                    } else {
-                      document.dispatchEvent(
-                        new CustomEvent("flowlint:highlight", {
-                          detail: { elementId: id },
-                        })
-                      );
-                    }
-                  } catch (e) {
-                    console.error("Highlight failed", e);
-                  }
+                onClick={async () => {
+                  const id = violation.metadata?.elementId;
+                  if (!id) return;
+                  console.debug("[flowlint] click highlight", {
+                    ruleId: violation.ruleId,
+                    className: violation.className,
+                    elementId: id,
+                  });
+                  await selectElementById(id);
                 }}
               >
                 Highlight element
@@ -265,11 +258,7 @@ interface ClassBadgeProps {
 const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
   <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground w-full min-w-0">
     <span className="opacity-80 flex-shrink-0">Class:</span>
-    <Badge
-      isCombo={violation.isCombo}
-      comboIndex={violation.comboIndex}
-      className="truncate max-w-full"
-    >
+    <Badge isCombo={violation.isCombo} className="truncate max-w-full">
       <span className="text-left flex items-center">
         <code className="font-mono text-[10px]">
           {violation.className || "—"}

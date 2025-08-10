@@ -58,7 +58,6 @@ function Badge({
     asChild?: boolean;
     severity?: Severity;
     isCombo?: boolean;
-    comboIndex?: number;
     copyable?: boolean;
   }) {
   const Comp = asChild ? Slot : "span";

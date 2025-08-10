@@ -14,7 +14,9 @@ export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   // Build property maps once per scan to support duplicate-property rules
   const allStyles = await styleService.getAllStylesWithProperties();
   analyzer.buildPropertyMaps(allStyles);
-  return pageService.lintCurrentPage(elements as any);
+  // Filter to Designer elements that support getStyles()
+  const valid = (elements || []).filter((el: any) => el && typeof el.getStyles === 'function');
+  return pageService.lintCurrentPage(valid as any);
 }
 
 export async function scanCurrentPageWithMeta(elements: any[]): Promise<{ results: RuleResult[]; classNames: string[] }>{
@@ -27,13 +29,15 @@ export async function scanCurrentPageWithMeta(elements: any[]): Promise<{ result
   analyzer.buildPropertyMaps(allStyles);
   // Collect class names across elements
   const unique = new Set<string>();
-  for (const el of elements) {
+  for (const el of (elements || [])) {
     try {
+      if (!el || typeof el.getStyles !== 'function') continue;
       const styles = await styleService.getAppliedStyles(el);
       styles.forEach(s => { if (s.name) unique.add(s.name); });
     } catch {}
   }
-  const results = await pageService.lintCurrentPage(elements as any);
+  const valid = (elements || []).filter((el: any) => el && typeof el.getStyles === 'function');
+  const results = await pageService.lintCurrentPage(valid as any);
   return { results, classNames: Array.from(unique) };
 }
 

@@ -24,7 +24,8 @@ export function useElementLint() {
   useEffect(() => {
     ensureLinterInitialized("balanced")
     const unsubscribe = webflow.subscribe("selectedelement", async (el) => {
-      if (!el) {
+      if (!el || typeof (el as any).getStyles !== "function") {
+        // Ignore non-designer elements; wait for a valid element payload
         setViolations([])
         setContexts([])
         setClassNames([])

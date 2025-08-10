@@ -23,6 +23,11 @@ export function createPageLintService(
   ): Promise<RuleResult[]> {
     console.log("[PageLintService] Starting lint for current page…");
 
+    // Filter to Designer elements that support getStyles()
+    const validElements: WebflowElement[] = (elements || []).filter(
+      (el: any) => el && typeof el.getStyles === "function"
+    );
+
     // 1. Load every style definition (for rule context)
     const allStyles = await styleService.getAllStylesWithProperties();
     console.log(
@@ -31,14 +36,19 @@ export function createPageLintService(
 
     // 2. Get styles for each element, maintaining element association
     const elementStylePairs = await Promise.all(
-      elements.map(async (element) => {
+      validElements.map(async (element) => {
         const styles = await styleService.getAppliedStyles(element);
+        const elementKey =
+          ((element as any)?.id && ((element as any).id as any).element) ??
+          (element as any)?.id ??
+          (element as any)?.nodeId ??
+          "";
         return {
-          elementId: String(element.id),
+          elementId: String(elementKey),
           element,
           styles: styles.map(style => ({
             ...style,
-            elementId: String(element.id)
+            elementId: String(elementKey)
           })) as StyleWithElement[]
         };
       })
