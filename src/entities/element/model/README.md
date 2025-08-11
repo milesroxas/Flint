@@ -2,8 +2,18 @@
 
 `element-context-classifier.ts` builds a parent map and classifies elements into contexts.
 
-- Contexts: currently `componentRoot`
-- Defaults: `wrapSuffix: "_wrap"`, `parentClassPatterns: ["section_contain", /^u-section/, /^c-/]`
-- Behavior: element with a `_wrap` class that has an ancestor matching any parent pattern is considered a `componentRoot`
+- Contexts: `componentRoot`, `childGroup`, `childGroupInvalid`
+- Configuration (via preset `contextConfig`):
+  - `wrapSuffix` (string)
+  - `parentClassPatterns` (string | RegExp [])
+  - `requireDirectParentContainerForRoot` (boolean)
+  - `childGroupRequiresSharedTypePrefix` (boolean)
+  - `typePrefixSeparator` (string), `typePrefixSegmentIndex` (number)
+  - `groupNamePattern` (RegExp), `childGroupPrefixJoiner` (string)
+- Behavior:
+  - `componentRoot`: element has a class ending in `wrapSuffix` and its immediate parent (or ancestor when configured) matches any `parentClassPatterns`.
+  - `childGroup`: element has a `wrapSuffix` class nested under a root wrap and, when required, shares the configured type prefix with the nearest root wrap; group name must match `groupNamePattern` with `childGroupPrefixJoiner`.
+  - `childGroupInvalid`: nested under a root wrap but fails prefix/group name validation.
 - Batch API: `classifyPageElements(elementsWithClassNames)` returns a map of elementId → contexts[]
 - Caching: in‑memory parent map keyed by element count (page snapshot)
+- Ownership of defaults: Presets supply `contextConfig`; the services instantiate the classifier with the active preset’s configuration.

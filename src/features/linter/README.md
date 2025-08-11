@@ -34,7 +34,7 @@ The system assigns element contexts to support context-aware rules.
 ### Roles
 
 - Roles are computed in `services/element-lint-service.ts` with the active preset’s grammar and role resolver
-- We parse the first custom class only (skip `u-`, `is-`, `c-`)
+- We parse the first custom class using the active preset's grammar (skip `utility` and `combo` kinds)
 - Typical tokens → roles:
   - `wrap` → `componentRoot` (or `childGroup` when not at the root)
   - `contain`, `container` → `container`
@@ -152,7 +152,7 @@ The system assigns element contexts to support context-aware rules.
 
 ## Rule execution details
 
-- Class type detection: `u-` → utility; combo determined by `isCombo` when available from Webflow (`style.isComboClass()`), else `is-` prefix; otherwise custom
+- Class type detection: resolved by the active grammar via a resolver passed into the rule runner (`utility`, `combo`, else `custom`); when the resolver is unavailable the runner falls back to the previous `u-`/`is-` heuristic
 - Context filtering: rules with a `context` apply only when the element’s contexts include that value
 - Naming rule execution order: `evaluate` (if present) else `test`
 - Utility duplicate handling: single-property exact matches include formatted metadata consumed by the UI

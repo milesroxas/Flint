@@ -1,3 +1,5 @@
+import type { ElementContextConfig } from "@/entities/element/model/element-context.types";
+
 // Core contracts per docs/guides/unified-plan.md §5
 
 export type ClassKind = "custom" | "utility" | "combo" | "unknown";
@@ -65,6 +67,8 @@ export interface Preset {
   grammar?: GrammarAdapter;
   roles?: RoleResolver;
   rules: import("./rule.types").Rule[];
+  /** Optional element-context classifier configuration for this preset */
+  contextConfig?: Partial<ElementContextConfig>;
   ruleConfig?: Record<
     string,
     {

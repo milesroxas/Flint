@@ -18,6 +18,10 @@ export interface ElementContextConfig {
   typePrefixSeparator?: string
   /** Index of the segment used as the type prefix (default 0) */
   typePrefixSegmentIndex?: number
+  /** Pattern used to validate the child group suffix after the parent prefix */
+  groupNamePattern?: RegExp
+  /** Character(s) used to join parent prefix to group name. Default '_' */
+  childGroupPrefixJoiner?: string
 }
 
 export interface ElementParentMap {

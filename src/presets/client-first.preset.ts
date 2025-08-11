@@ -15,6 +15,20 @@ export const clientFirstPreset: Preset & { rules: Rule[] } = {
   id: "client-first",
   grammar: clientFirstGrammar,
   roles: clientFirstRoles,
+  contextConfig: {
+    wrapSuffix: "_wrap",
+    parentClassPatterns: [
+      "section_contain",
+      /^u-section/,
+      /^c-/,
+    ],
+    requireDirectParentContainerForRoot: true,
+    childGroupRequiresSharedTypePrefix: true,
+    typePrefixSeparator: "_",
+    typePrefixSegmentIndex: 0,
+    groupNamePattern: /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
+    childGroupPrefixJoiner: "_",
+  },
   rules: [
     // naming
     cfCustomKebabCaseRule,

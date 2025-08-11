@@ -8,9 +8,22 @@ import { RuleRegistry } from "./rule-registry";
 
 export const createRuleRunner = (
   ruleRegistry: RuleRegistry,
-  utilityAnalyzer: UtilityClassAnalyzer
+  utilityAnalyzer: UtilityClassAnalyzer,
+  classKindResolver?: (className: string, isComboFlag?: boolean) => ClassType
 ) => {
   const getClassType = (className: string, isComboFlag?: boolean): ClassType => {
+    if (typeof classKindResolver === "function") {
+      try { return classKindResolver(className, isComboFlag); } catch (err) {
+        // fall through to default heuristics
+        return isComboFlag === true
+          ? "combo"
+          : className.startsWith("u-")
+            ? "utility"
+            : className.startsWith("is-")
+              ? "combo"
+              : "custom";
+      }
+    }
     if (isComboFlag === true) return "combo";
     if (className.startsWith("u-")) return "utility";
     if (className.startsWith("is-")) return "combo";

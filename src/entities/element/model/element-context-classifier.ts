@@ -22,8 +22,10 @@ export function createElementContextClassifier(
     childGroupRequiresSharedTypePrefix: true,
     typePrefixSeparator: '_',
     typePrefixSegmentIndex: 0,
+    groupNamePattern: /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
+    childGroupPrefixJoiner: '_',
   }
-  const { wrapSuffix, parentClassPatterns, requireDirectParentContainerForRoot, childGroupRequiresSharedTypePrefix } = {
+  const { wrapSuffix, parentClassPatterns, requireDirectParentContainerForRoot, childGroupRequiresSharedTypePrefix, typePrefixSeparator, typePrefixSegmentIndex, groupNamePattern, childGroupPrefixJoiner } = {
     ...defaultConfig,
     ...configOverride,
   }
@@ -137,19 +139,25 @@ export function createElementContextClassifier(
 
             if (nearestIsRoot) {
               const thisWrapName = (classNames.find((n) => n.endsWith(wrapSuffix)) || "");
-              // Full parent prefix (type[_variant])
-              const parentPrefix = nearestWrapClassName.slice(0, -wrapSuffix.length);
+              // Full parent prefix derived via configured separator and index if possible
+              const parentCore = nearestWrapClassName.slice(0, -wrapSuffix.length);
+              const parentSegments = parentCore.split(typePrefixSeparator as string).filter(Boolean);
+              const selectedIndex = Math.max(0, Math.min(parentSegments.length - 1, typePrefixSegmentIndex as number));
+              const typePrefix = parentSegments[selectedIndex] ?? parentCore;
+              const parentPrefix = typePrefix;
 
               if (!childGroupRequiresSharedTypePrefix) {
                 ctxs.push('childGroup');
               } else {
-                // Must begin with full parent prefix + '_' and include a non-empty groupName segment before trailing _wrap
+                // Must begin with parentPrefix + joiner and include a non-empty groupName segment before trailing wrap
                 const endsWithWrap = thisWrapName.endsWith(wrapSuffix);
                 const childCore = thisWrapName.slice(0, -wrapSuffix.length);
-                const expectedPrefix = `${parentPrefix}_`;
+                const joiner = childGroupPrefixJoiner as string;
+                const expectedPrefix = `${parentPrefix}${joiner}`;
                 const hasPrefix = childCore.startsWith(expectedPrefix);
                 const groupSegment = hasPrefix ? childCore.slice(expectedPrefix.length) : "";
-                const validGroup = groupSegment.length > 0 && /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(groupSegment);
+                const namePattern = groupNamePattern as RegExp;
+                const validGroup = groupSegment.length > 0 && namePattern.test(groupSegment);
 
                 if (endsWithWrap && hasPrefix && validGroup) {
                   ctxs.push('childGroup');

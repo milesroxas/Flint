@@ -9,20 +9,17 @@ import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
 import { lumosRoles } from "@/features/linter/roles/lumos.roles";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
+import { lumosPreset } from "@/presets/lumos.preset";
+import { clientFirstPreset } from "@/presets/client-first.preset";
 import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
 
 export function createPageLintService(
   styleService: StyleService,
   ruleRunner: RuleRunner
 ) {
-  const elementCtx = createElementContextClassifier({
-    parentClassPatterns: [
-      "section_contain",
-      /^u-section/,
-      /^c-/,
-      // add any other container selectors here
-    ],
-  });
+  const presetId = getCurrentPreset();
+  const activePreset = presetId === "client-first" ? clientFirstPreset : lumosPreset;
+  const elementCtx = createElementContextClassifier(activePreset.contextConfig);
 
   function selectGrammarAndRoles(): { grammar: GrammarAdapter; roles: RoleResolver } {
     const preset = getCurrentPreset();
@@ -32,17 +29,15 @@ export function createPageLintService(
     return { grammar: lumosGrammar, roles: lumosRoles };
   }
 
-  function getClassTypeQuick(name: string): "custom" | "utility" | "combo" | "unknown" {
-    if (name.startsWith("is-")) return "combo";
-    if (name.startsWith("u-")) return "utility";
-    if (name.startsWith("c-")) return "unknown";
-    return "custom";
+  function isCustomKind(name: string, grammar: GrammarAdapter): boolean {
+    const kind = grammar.parse(name).kind as any;
+    return kind === "custom" || kind === "component" || kind === "unknown";
   }
 
   function computeElementRoleForList(classNames: string[], contexts: string[]): ElementRole | null {
     if (!Array.isArray(classNames) || classNames.length === 0) return null;
     const { grammar, roles } = selectGrammarAndRoles();
-    const firstCustom = classNames.find((n) => getClassTypeQuick(n) === "custom");
+    const firstCustom = classNames.find((n) => isCustomKind(n, grammar));
     if (!firstCustom) return null;
     const parsed = grammar.parse(firstCustom);
     let role = roles.mapToRole(parsed);
@@ -136,7 +131,9 @@ export function createPageLintService(
           return role ? { ...r, metadata: { ...(r.metadata ?? {}), role } } : r;
         });
       }
-    } catch {}
+    } catch (err) {
+      // ignore role attachment errors to avoid impacting lint results
+    }
 
     console.log(
       `[PageLintService] Lint complete. Found ${results.length} issue${

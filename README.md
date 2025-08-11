@@ -66,6 +66,7 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 ### Presets and configuration
 
 - Presets: `lumos` (default) and `client-first` define the rule set, grammar (`GrammarAdapter`), and role resolver (`RoleResolver`).
+- Each preset can also provide `contextConfig` for the element-context classifier (e.g., `wrapSuffix`, `parentClassPatterns`, tokenization and child-group validation settings). The services instantiate the classifier with the active preset’s `contextConfig`.
 - Opinion mode: `balanced` by default; initialization path supports other modes.
 - Config persistence: `rule-configuration-service` stores per‑rule settings and merges with schema defaults on load.
   - New option: `lumos-combo-class-limit.maxCombos` (number; default 2)

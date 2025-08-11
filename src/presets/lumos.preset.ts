@@ -26,6 +26,21 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
   grammar: lumosGrammar,
   roles: lumosRoles,
+  contextConfig: {
+    wrapSuffix: "_wrap",
+    parentClassPatterns: [
+      "section_contain",
+      /^u-section/,
+      /^c-/,
+      /^page_main/,
+    ],
+    requireDirectParentContainerForRoot: true,
+    childGroupRequiresSharedTypePrefix: true,
+    typePrefixSeparator: "_",
+    typePrefixSegmentIndex: 0,
+    groupNamePattern: /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
+    childGroupPrefixJoiner: "_",
+  },
   rules: [
     // naming
     lumosCustomClassFormatRule,

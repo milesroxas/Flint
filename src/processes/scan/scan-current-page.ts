@@ -3,13 +3,23 @@ import { ensureLinterInitialized, getRuleRegistry } from "@/features/linter/mode
 import { createStyleService } from "@/entities/style/model/style.service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import { lumosPreset } from "@/presets/lumos.preset";
+import { clientFirstPreset } from "@/presets/client-first.preset";
 import { createPageLintService } from "@/features/linter/services/page-lint-service";
 
 export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   ensureLinterInitialized();
   const styleService = createStyleService();
   const analyzer = createUtilityClassAnalyzer();
-  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer);
+  const presetId = getCurrentPreset();
+  const activePreset = presetId === "client-first" ? clientFirstPreset : lumosPreset;
+  const activeGrammar = activePreset.grammar || { parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any;
+  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer, (name: string, isCombo?: boolean) => {
+    if (isCombo === true) return "combo";
+    const kind = activeGrammar.parse(name).kind as any;
+    return kind === "utility" || kind === "combo" ? kind : "custom";
+  });
   const pageService = createPageLintService(styleService, ruleRunner);
   // Build property maps once per scan to support duplicate-property rules
   const allStyles = await styleService.getAllStylesWithProperties();
@@ -23,7 +33,14 @@ export async function scanCurrentPageWithMeta(elements: any[]): Promise<{ result
   ensureLinterInitialized();
   const styleService = createStyleService();
   const analyzer = createUtilityClassAnalyzer();
-  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer);
+  const presetId = getCurrentPreset();
+  const activePreset = presetId === "client-first" ? clientFirstPreset : lumosPreset;
+  const activeGrammar = activePreset.grammar || { parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any;
+  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer, (name: string, isCombo?: boolean) => {
+    if (isCombo === true) return "combo";
+    const kind = activeGrammar.parse(name).kind as any;
+    return kind === "utility" || kind === "combo" ? kind : "custom";
+  });
   const pageService = createPageLintService(styleService, ruleRunner);
   const allStyles = await styleService.getAllStylesWithProperties();
   analyzer.buildPropertyMaps(allStyles);
@@ -34,7 +51,9 @@ export async function scanCurrentPageWithMeta(elements: any[]): Promise<{ result
       if (!el || typeof el.getStyles !== 'function') continue;
       const styles = await styleService.getAppliedStyles(el);
       styles.forEach(s => { if (s.name) unique.add(s.name); });
-    } catch {}
+    } catch (err) {
+      // ignore collection errors per element
+    }
   }
   const valid = (elements || []).filter((el: any) => el && typeof el.getStyles === 'function');
   const results = await pageService.lintCurrentPage(valid as any);

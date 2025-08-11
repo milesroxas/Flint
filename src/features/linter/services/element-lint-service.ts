@@ -11,6 +11,8 @@ import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
 import { lumosRoles } from "@/features/linter/roles/lumos.roles";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
+import { lumosPreset } from "@/presets/lumos.preset";
+import { clientFirstPreset } from "@/presets/client-first.preset";
 
 // Declare webflow global
 declare const webflow: {
@@ -27,8 +29,15 @@ function createServiceInstance() {
   // Instantiate dependencies once
   const styleService = createStyleService();
   const utilityAnalyzer = createUtilityClassAnalyzer();
-  const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer);
-  const elementCtx = createElementContextClassifier();
+  const presetId = getCurrentPreset();
+  const activePreset = presetId === "client-first" ? clientFirstPreset : lumosPreset;
+  const activeGrammar = activePreset.grammar || lumosGrammar;
+  const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer, (name: string, isCombo?: boolean) => {
+    if (isCombo === true) return "combo";
+    const kind = activeGrammar.parse(name).kind as any;
+    return kind === "utility" || kind === "combo" ? kind : "custom";
+  });
+  const elementCtx = createElementContextClassifier(activePreset.contextConfig);
   let cachedContextsMap: Record<string, any> | null = null;
   let cachedElementsSignature: string | null = null;
 
@@ -40,17 +49,15 @@ function createServiceInstance() {
     return { grammar: lumosGrammar, roles: lumosRoles };
   }
 
-  function getClassTypeQuick(name: string): "custom" | "utility" | "combo" | "unknown" {
-    if (name.startsWith("is-")) return "combo";
-    if (name.startsWith("u-")) return "utility";
-    if (name.startsWith("c-")) return "unknown"; // ignore components for role parsing
-    return "custom";
+  function isCustomKind(name: string): boolean {
+    const kind = activeGrammar.parse(name).kind as any;
+    return kind === "custom" || kind === "component" || kind === "unknown";
   }
 
   function computeElementRoles(classNames: string[], contexts: string[]): ElementRole[] {
     if (!Array.isArray(classNames) || classNames.length === 0) return [];
     const { grammar, roles } = selectGrammarAndRoles();
-    const firstCustom = classNames.find((n) => getClassTypeQuick(n) === "custom");
+    const firstCustom = classNames.find((n) => isCustomKind(n));
     if (!firstCustom) return [];
     const parsed = grammar.parse(firstCustom);
     let role = roles.mapToRole(parsed);
