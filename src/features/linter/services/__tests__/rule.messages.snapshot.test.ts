@@ -19,6 +19,30 @@ describe('Rule messages snapshot (shape only)', () => {
           "name": "Lumos Combo Class Format",
         },
         {
+          "id": "lumos-component-class-format",
+          "name": "Lumos Component Class Format",
+        },
+        {
+          "id": "lumos-utilities-after-custom-ordering",
+          "name": "Utilities should follow base custom class",
+        },
+        {
+          "id": "lumos-combos-after-custom-ordering",
+          "name": "Combos should follow base custom class",
+        },
+        {
+          "id": "lumos-combo-class-limit",
+          "name": "Too many combo classes",
+        },
+        {
+          "id": "lumos-variant-requires-base",
+          "name": "Variant should modify a base class",
+        },
+        {
+          "id": "lumos-variant-on-component",
+          "name": "Lumos Variant on Component",
+        },
+        {
           "id": "lumos-utility-class-exact-duplicate",
           "name": "Exact Duplicate Utility Class",
         },
@@ -37,6 +61,10 @@ describe('Rule messages snapshot (shape only)', () => {
         {
           "id": "component-root-required-structure",
           "name": "Component Root Required Structure",
+        },
+        {
+          "id": "lumos-child-group-references-parent",
+          "name": "Child group must reference parent root",
         },
       ]
     `);

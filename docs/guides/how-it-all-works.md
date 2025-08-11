@@ -184,6 +184,9 @@ Result object highlights (`RuleResult`):
   - combos section: list and `maxCombos`
   - “Suggested” name when supplied by metadata
   - element highlight button using `selectElementById`
+- `ModeToggle.tsx`: uses shared `Button` component for consistent styling and a11y
+- `PresetSwitcher.tsx`: performs dynamic `import()` to reset style caches on preset changes
+- Labels for contexts and roles are centralized in `src/features/linter/lib/labels.ts`
 
 ## Development and build
 

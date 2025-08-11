@@ -7,7 +7,10 @@
 
 const DEBUG_SELECT_ELEMENT = true;
 const dbg = (...args: unknown[]) => {
-  if (DEBUG_SELECT_ELEMENT) console.debug("[flowlint] select-element:", ...args);
+  if (DEBUG_SELECT_ELEMENT && import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug("[flowlint] select-element:", ...args);
+  }
 };
 
 /** Attempt to normalize an element id from various possible shapes */
@@ -105,13 +108,16 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     }
 
     // Mark to ignore the immediate 'selectedelement' event fired by Designer
-    ;(window as any).__flowlint_ignoreNextSelectedEvent = true;
+    (window as any).__flowlint_ignoreNextSelectedEvent = true;
     await wf.setSelectedElement(target);
     dbg("selection success");
     return true;
   } catch (error) {
     // Swallow to avoid breaking UI; selection is best-effort
-    console.error("[flowlint] select-element failed", error);
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error("[flowlint] select-element failed", error);
+    }
     return false;
   }
 }

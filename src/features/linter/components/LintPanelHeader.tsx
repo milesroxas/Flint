@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
+import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";
 // preset switching handled elsewhere
 // removed preset switch from element header
 
@@ -15,18 +16,7 @@ interface LintPanelHeaderProps {
   roles?: ElementRole[];
 }
 
-const toTitle = (s: string) =>
-  s.replace(/(^|[_-])(\w)/g, (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase());
-
-const contextLabel = (ctx: ElementContext) => {
-  if (ctx === "componentRoot") return "Component Root";
-  return toTitle(ctx);
-};
-
-const roleLabel = (role: ElementRole) => {
-  if (role === "componentRoot") return "Component Root";
-  return toTitle(role);
-};
+// labels centralized in lib/labels
 
 export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
   violationCount,
@@ -38,14 +28,11 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
   roles = [],
 }) => {
   // De-duplicate contexts and roles to reduce visual noise
-  const uniqueContexts = Array.from(new Set(contexts));
-  const uniqueRoles = Array.from(new Set(roles));
+  const uniqueContexts: ElementContext[] = Array.from(new Set(contexts));
+  const uniqueRoles: ElementRole[] = Array.from(new Set(roles));
   // If a role equals a shown context (e.g., "childGroup"), hide the duplicate role chip
-  const contextSet = new Set<string>(uniqueContexts as unknown as string[]);
-  const filteredRoles = uniqueRoles.filter((r) => {
-    const label = String(r);
-    return !contextSet.has(label);
-  });
+  const contextSet = new Set<ElementContext>(uniqueContexts);
+  const filteredRoles = uniqueRoles.filter((r) => !contextSet.has(r as ElementContext));
 
   return (
     <div className="relative mb-2 rounded-md border bg-card px-2 py-2">
@@ -84,7 +71,7 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
                 variant="outline"
                 className="text-blue-600 border-blue-300 bg-blue-50 text-[10px]"
               >
-                {contextLabel(c)}
+                {contextToLabel(c)}
               </Badge>
             ))}
             {filteredRoles.map((r) => (
@@ -93,7 +80,7 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
                 variant="outline"
                 className="text-violet-700 border-violet-300 bg-violet-50 text-[10px]"
               >
-                {roleLabel(r)}
+                {roleToLabel(r)}
               </Badge>
             ))}
           </div>

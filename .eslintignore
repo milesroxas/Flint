@@ -1,0 +1,4 @@
+# Ignore built artifacts and non-TS sources for typed linting
+/dist
+/bundle
+scripts/post-build.js

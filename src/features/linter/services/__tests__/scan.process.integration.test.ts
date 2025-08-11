@@ -11,17 +11,15 @@ type MockStyle = {
 function createMockStyle(id: string, name: string, props?: any): MockStyle {
   return {
     id,
-    getName: async () => name,
-    getProperties: async () => props ?? {},
+  getName: async () => await Promise.resolve(name),
+  getProperties: async () => await Promise.resolve(props ?? {}),
   };
 }
 
 function createMockElement(id: string, styles: MockStyle[]) {
   return {
     id: { element: id },
-    async getStyles() {
-      return styles;
-    },
+    getStyles: async () => await Promise.resolve(styles),
   } as any;
 }
 
@@ -29,16 +27,16 @@ describe('Scan processes integration', () => {
   beforeEach(() => {
     (globalThis as any).webflow = {
       // Used by style.service
-      getAllStyles: async () => [],
+      getAllStyles: async () => await Promise.resolve([]),
       // Used by element-lint-service
-      getAllElements: async () => [],
+      getAllElements: async () => await Promise.resolve([]),
     };
   });
 
   it('scanSelectedElement returns naming violations for invalid custom class', async () => {
     const badCustom = createMockStyle('s1', 'foo'); // invalid: only 1 segment
     const el = createMockElement('el1', [badCustom]);
-    (globalThis as any).webflow.getAllElements = async () => [el];
+  (globalThis as any).webflow.getAllElements = async () => await Promise.resolve([el]);
 
     const results = await scanSelectedElement(el);
     expect(results.some(r => r.ruleId === 'lumos-custom-class-format')).toBe(true);

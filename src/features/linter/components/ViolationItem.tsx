@@ -23,6 +23,7 @@ import {
   ParsedDuplicateMessage,
 } from "@/features/linter/lib/message-parser";
 import { selectElementById } from "@/features/window/select-element";
+import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";
 
 interface ViolationItemProps {
   violation: RuleResult;
@@ -69,34 +70,16 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               variant="outline"
               className="ml-2 text-blue-600 border-blue-300 bg-blue-50 text-[10px]"
             >
-              {violation.context === "componentRoot"
-                ? "Component Root"
-                : String(violation.context).replace(
-                    /(^|[_-])(\w)/g,
-                    (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
-                  )}
+              {contextToLabel(violation.context)}
             </Badge>
           )}
           {(() => {
-            const role = violation.metadata?.role as unknown as
-              | string
-              | undefined;
+            const role = violation.metadata?.role as string | undefined;
             if (!role) return null;
-            const context = violation.context as unknown as string | undefined;
-            const normalizedRole = role;
-            const normalizedContext = context;
-            const isDuplicate =
-              normalizedRole &&
-              normalizedContext &&
-              normalizedRole === normalizedContext;
+            const context = violation.context as string | undefined;
+            const isDuplicate = role && context && role === context;
             if (isDuplicate) return null;
-            const roleLabel =
-              normalizedRole === "componentRoot"
-                ? "Component Root"
-                : String(normalizedRole).replace(
-                    /(^|[_-])(\w)/g,
-                    (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
-                  );
+            const roleLabel = roleToLabel(role as any);
             return (
               <Badge
                 variant="outline"
@@ -173,11 +156,14 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
                 onClick={async () => {
                   const id = violation.metadata?.elementId;
                   if (!id) return;
-                  console.debug("[flowlint] click highlight", {
-                    ruleId: violation.ruleId,
-                    className: violation.className,
-                    elementId: id,
-                  });
+                  if (import.meta.env.DEV) {
+                    // eslint-disable-next-line no-console
+                    console.debug("[flowlint] click highlight", {
+                      ruleId: violation.ruleId,
+                      className: violation.className,
+                      elementId: id,
+                    });
+                  }
                   await selectElementById(id);
                 }}
               >

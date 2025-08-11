@@ -54,6 +54,8 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
   - Utilities and combos must follow the base custom class
   - Combo class count limit (default 2; configurable)
 - Duplicate utility detection with formatted property metadata
+- UI refinements: labels for contexts/roles centralized in `src/features/linter/lib/labels.ts`; logs gated to development; `ModeToggle` uses shared `Button` variants for consistent a11y.
+- Preset switching immediately re-lints the current view (page or element) and updates results.
 
 ### How element linting works
 
@@ -77,7 +79,7 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 - Site styles are cached for the session and invalidated on preset/mode changes.
 - Page parent map and element class lists are cached per snapshot.
 - Utility property maps rebuild only when the style list changes.
-- Logging in hot loops is minimized for responsiveness.
+- Logging in hot loops is minimized for responsiveness and disabled in production UI code.
 
 ### Testing
 

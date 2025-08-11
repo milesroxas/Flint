@@ -10,7 +10,7 @@ export const cfNoUtilitiesOnRootRule: PropertyRule = createContextAwarePropertyR
   category: "performance",
   severity: "warning",
   targetClassTypes: ["utility"],
-  analyze: (className, _properties) => {
+  analyze: (className) => {
     const results: RuleResult[] = [];
     if (className.includes("-")) {
       results.push({

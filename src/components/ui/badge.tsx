@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Severity } from "@/features/linter/model/rule.types";
+import type { Severity } from "@/features/linter/model/rule.types";
 
 const badgeVariants = cva(
   "inline-flex items-center justify-center leading-none rounded-sm border-none px-1.5 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:self-center [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
@@ -44,6 +44,8 @@ const badgeVariants = cva(
   }
 );
 
+type BadgeSeverity = Extract<Severity, "error" | "warning" | "suggestion">;
+
 function Badge({
   className,
   variant,
@@ -56,7 +58,7 @@ function Badge({
 }: React.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants> & {
     asChild?: boolean;
-    severity?: Severity;
+    severity?: BadgeSeverity;
     isCombo?: boolean;
     copyable?: boolean;
   }) {
@@ -74,14 +76,12 @@ function Badge({
     try {
       document.execCommand("copy");
       setCopied(true);
+      setError(false);
     } catch {
       setError(true);
+      setCopied(false);
     }
     document.body.removeChild(ta);
-    setTimeout(() => {
-      setCopied(false);
-      setError(false);
-    }, 1000);
   };
 
   const handleCopy = () => {
@@ -89,7 +89,7 @@ function Badge({
     const text = ref.current.textContent?.trim() ?? "";
     if (!text) {
       setError(true);
-      setTimeout(() => setError(false), 1000);
+      setCopied(false);
       return;
     }
 
@@ -102,7 +102,7 @@ function Badge({
       .writeText(text)
       .then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
+        setError(false);
       })
       .catch(() => {
         fallbackCopy(text);
@@ -116,7 +116,7 @@ function Badge({
       className={cn(
         badgeVariants({
           variant,
-          severity: severity as "error" | "warning" | "suggestion",
+          severity,
           isCombo,
           copyable,
         }),

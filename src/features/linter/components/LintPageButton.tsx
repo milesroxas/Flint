@@ -1,5 +1,6 @@
 // src/components/LintPageButton.tsx
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 interface LintPageButtonProps {
@@ -24,7 +25,7 @@ export function LintPageButton({
       onClick={onClick}
       disabled={loading}
       size="sm"
-      className={`${fullWidth ? "w-full" : ""} ${className}`}
+      className={cn(fullWidth && "w-full", className)}
       variant={issueCount ? "destructive" : "default"}
     >
       {loading ? (

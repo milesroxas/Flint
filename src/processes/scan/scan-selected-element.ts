@@ -5,14 +5,13 @@ import { createElementLintService } from "@/features/linter/services/element-lin
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 
-declare const webflow: {
-  getAllElements: () => Promise<WebflowElement[]>;
-};
+// Webflow types are referenced by services; no direct use here.
 
 export async function scanSelectedElement(element: any): Promise<RuleResult[]> {
   ensureLinterInitialized();
   const { lintElement } = createElementLintService();
-  return lintElement(element);
+  // Forward returned promise directly; function is async for interface parity
+  return await lintElement(element);
 }
 
 export type SelectedElementMeta = {

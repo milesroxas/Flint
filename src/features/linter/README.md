@@ -123,11 +123,12 @@ The system assigns element contexts to support context-aware rules.
 - Uses shared registry initialization so page and element flows are aligned
 
 - UI
-  - `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles (header + per‑violation badge)
-  - `components/PageLintSection.tsx`: full-page lint trigger and results; per‑violation role badges supported
-  - `components/PageLintSection.tsx`: full-page lint trigger and results
-  - `components/LintPageButton.tsx`: action button with loading/issue count state
-  - `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available
+- `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles (header + per‑violation badge)
+- `components/PageLintSection.tsx`: full-page lint trigger and results; supports switching between page and element view
+- `components/LintPageButton.tsx`: action button with loading/issue count state
+- `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available
+- `components/ModeToggle.tsx`: uses shared `Button` variants for consistent a11y and focus
+- `components/PresetSwitcher.tsx`: uses dynamic `import()` for cache reset and clears results
 
 ## Runtime flows
 
@@ -164,6 +165,8 @@ The system assigns element contexts to support context-aware rules.
 - Violations list auto-expands when there is exactly one violation
 - Duplicate utility issues display structured properties with expandable lists of other classes that share those properties
 - Badges highlight unrecognized elements (from metadata) and the presence of an element context
+- Labels for contexts and roles are centralized in `lib/labels.ts`
+- Clipboard copy badges avoid timers and reflect state until the next interaction
 
 ## File map (key files)
 

@@ -1,4 +1,6 @@
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type LintViewMode = "element" | "page";
 
@@ -14,23 +16,21 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <button
-        className={`text-xs px-2 py-1 rounded ${
-          mode === "page" ? "bg-slate-200" : "bg-transparent"
-        }`}
+    <div className={cn("flex items-center gap-2", className)}>
+      <Button
+        variant={mode === "page" ? "secondary" : "ghost"}
+        size="sm"
         onClick={() => onChange("page")}
       >
         Page
-      </button>
-      <button
-        className={`text-xs px-2 py-1 rounded ${
-          mode === "element" ? "bg-slate-200" : "bg-transparent"
-        }`}
+      </Button>
+      <Button
+        variant={mode === "element" ? "secondary" : "ghost"}
+        size="sm"
         onClick={() => onChange("element")}
       >
         Element
-      </button>
+      </Button>
     </div>
   );
 };

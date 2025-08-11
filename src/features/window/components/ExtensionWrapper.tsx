@@ -8,7 +8,10 @@ export default function ExtensionWrapper({
   useEffect(() => {
     // skip if Designer API is not injected
     if (typeof webflow?.setExtensionSize !== "function") {
-      console.warn("Webflow Designer API not available; skipping resize");
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn("Webflow Designer API not available; skipping resize");
+      }
       return;
     }
 
@@ -16,9 +19,15 @@ export default function ExtensionWrapper({
       try {
         // custom size (clamped to min 240×360, max 1200×800)
         await webflow.setExtensionSize({ width: 400, height: 360 });
-        console.log("Extension UI resized to 400×360");
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("Extension UI resized to 400×360");
+        }
       } catch (err) {
-        console.error("Error resizing extension UI", err);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error("Error resizing extension UI", err);
+        }
       }
     }
 

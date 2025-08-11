@@ -63,15 +63,18 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                   } catch (err) {
                     /* intentionally ignore store errors */
                   }
-                  try {
-                    // eslint-disable-next-line @typescript-eslint/no-var-requires
-                    const mod = require("@/entities/style/model/style.service");
-                    if (mod?.resetStyleServiceCache) {
-                      mod.resetStyleServiceCache();
+                  void (async () => {
+                    try {
+                      const mod = await import(
+                        "@/entities/style/model/style.service"
+                      );
+                      if (mod?.resetStyleServiceCache) {
+                        mod.resetStyleServiceCache();
+                      }
+                    } catch (err) {
+                      /* intentionally ignore style cache errors */
                     }
-                  } catch (err) {
-                    /* intentionally ignore style cache errors */
-                  }
+                  })();
                   setOpen(false);
                   onPresetChange?.(id);
                 }}
