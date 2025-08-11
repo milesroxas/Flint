@@ -58,7 +58,7 @@ export const LintPanel: React.FC = () => {
   ).length;
 
   return (
-    <div className="px-1.5 py-4 border-b">
+    <div className="px-2 py-3 border-b">
       <h2 className="text-sm font-semibold text-muted-foreground mb-2">
         Selected Element
       </h2>
@@ -71,7 +71,17 @@ export const LintPanel: React.FC = () => {
         contexts={contexts}
         roles={derivedRoles}
       />
-      <ViolationsList violations={violations} />
+      {classNames && classNames.length > 0 && (
+        <div className="mb-2 text-[11px] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="opacity-80">Classes:</span>
+            <span className="font-mono break-words whitespace-normal">
+              {Array.from(new Set(classNames)).join(" ")}
+            </span>
+          </div>
+        </div>
+      )}
+      <ViolationsList violations={violations} showHighlight={false} />
     </div>
   );
 };

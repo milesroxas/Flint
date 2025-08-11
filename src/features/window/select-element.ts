@@ -104,6 +104,8 @@ export async function selectElementById(elementId: string): Promise<boolean> {
       return false;
     }
 
+    // Mark to ignore the immediate 'selectedelement' event fired by Designer
+    ;(window as any).__flowlint_ignoreNextSelectedEvent = true;
     await wf.setSelectedElement(target);
     dbg("selection success");
     return true;

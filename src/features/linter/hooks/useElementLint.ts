@@ -24,9 +24,40 @@ export function useElementLint() {
   const [roles, setRoles] = useState<ElementRole[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
+  const refresh = async () => {
+    try {
+      ensureLinterInitialized("balanced")
+      const wf: any = (window as any).webflow
+      if (!wf || typeof wf.getSelectedElement !== "function") return
+      const el = await wf.getSelectedElement()
+      if (!el || typeof (el as any).getStyles !== "function") return
+      setIsLoading(true)
+      const meta = (await scanSelectedElementWithMeta(el)) as SelectedElementMeta
+      const { results, classNames, contexts, roles } = meta
+      setViolations(results)
+      setClassNames(classNames || [])
+      setContexts(contexts || [])
+      setRoles(roles || [])
+    } catch (err: unknown) {
+      console.error("Error refreshing element lint:", err)
+      setViolations([])
+      setContexts([])
+      setClassNames([])
+      setRoles([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     ensureLinterInitialized("balanced")
     const unsubscribe = webflow.subscribe("selectedelement", async (el) => {
+      // Optional: ignore synthetic selection triggered by our highlight action to preserve UI expansion state
+      const g: any = window as any
+      if (g.__flowlint_ignoreNextSelectedEvent) {
+        g.__flowlint_ignoreNextSelectedEvent = false
+        return
+      }
       if (!el || typeof (el as any).getStyles !== "function") {
         // Ignore non-designer elements; wait for a valid element payload
         setViolations([])
@@ -57,5 +88,5 @@ export function useElementLint() {
     return () => unsubscribe()
   }, [])
 
-  return { violations, contexts, classNames, roles, isLoading }
+  return { violations, contexts, classNames, roles, isLoading, refresh }
 }

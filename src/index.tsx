@@ -2,7 +2,6 @@ import "./styles/globals.css";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import Header from "@/components/Header";
-import { LintPanel } from "@/features/linter/components/LintPanel";
 import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
 
 import { PageLintSection } from "./features/linter/components/PageLintSection";
@@ -11,7 +10,7 @@ const Root: React.FC = () => (
   <ExtensionWrapper>
     <div>
       <Header />
-      <LintPanel />
+      {/* Element/Page results are unified under PageLintSection with a mode switch */}
       <PageLintSection />
     </div>
   </ExtensionWrapper>

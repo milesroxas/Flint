@@ -1,17 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
-import {
-  ensureLinterInitialized,
-  getCurrentPreset,
-} from "@/features/linter/model/linter.factory";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+// preset switching handled elsewhere
+// removed preset switch from element header
 
 interface LintPanelHeaderProps {
   violationCount: number;
@@ -45,35 +37,48 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
   contexts = [],
   roles = [],
 }) => {
-  const [open, setOpen] = useState(false);
-  const active = getCurrentPreset();
-  const presets: Array<{ id: "lumos" | "client-first"; label: string }> = [
-    { id: "lumos", label: "Lumos" },
-    { id: "client-first", label: "Client‑first" },
-  ];
-
-  const handleSelect = (id: "lumos" | "client-first") => {
-    ensureLinterInitialized("balanced", id);
-    setOpen(false);
-  };
+  // De-duplicate contexts and roles to reduce visual noise
+  const uniqueContexts = Array.from(new Set(contexts));
+  const uniqueRoles = Array.from(new Set(roles));
+  // If a role equals a shown context (e.g., "childGroup"), hide the duplicate role chip
+  const contextSet = new Set<string>(uniqueContexts as unknown as string[]);
+  const filteredRoles = uniqueRoles.filter((r) => {
+    const label = String(r);
+    return !contextSet.has(label);
+  });
 
   return (
-    <div className="relative mb-1 flex items-center justify-between">
-      <span className="text-[12px] font-medium flex items-center gap-2">
-        {violationCount > 0
-          ? `Found ${violationCount} issues`
-          : "No issues found"}
-        {mode && (
-          <span className="text-[11px] text-muted-foreground">
-            ({mode} mode)
-          </span>
-        )}
-        <span className="text-[11px] text-muted-foreground ml-1">
-          {`errors: ${errorCount}, warnings: ${warningCount}, suggestions: ${suggestionCount}`}
-        </span>
-        {contexts.length > 0 && (
-          <span className="ml-1 flex items-center gap-1">
-            {contexts.map((c) => (
+    <div className="relative mb-2 rounded-md border bg-card px-2 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12px] font-semibold text-foreground">
+              {violationCount > 0
+                ? `Found ${violationCount} issues`
+                : "No issues found"}
+            </span>
+            {mode && (
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                {mode}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 flex-wrap">
+              <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-1.5 py-0.5 text-[10px]">
+                {errorCount}
+                <span className="ml-1 opacity-80">errors</span>
+              </span>
+              <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px]">
+                {warningCount}
+                <span className="ml-1 opacity-80">warnings</span>
+              </span>
+              <span className="inline-flex items-center rounded-full bg-muted text-foreground/80 px-1.5 py-0.5 text-[10px]">
+                {suggestionCount}
+                <span className="ml-1 opacity-80">suggestions</span>
+              </span>
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {uniqueContexts.map((c) => (
               <Badge
                 key={`ctx-${c}`}
                 variant="outline"
@@ -82,11 +87,7 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
                 {contextLabel(c)}
               </Badge>
             ))}
-          </span>
-        )}
-        {roles.length > 0 && (
-          <span className="ml-1 flex items-center gap-1">
-            {roles.map((r) => (
+            {filteredRoles.map((r) => (
               <Badge
                 key={`role-${r}`}
                 variant="outline"
@@ -95,41 +96,10 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
                 {roleLabel(r)}
               </Badge>
             ))}
-          </span>
-        )}
-      </span>
-      <span className="flex items-center gap-2">
-        <div className="relative">
-          <Collapsible open={open} onOpenChange={setOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="text-[11px]">
-                {active === "client-first" ? "Client‑first" : "Lumos"}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent asChild>
-              <div className="absolute right-0 top-full mt-1 w-40 rounded-md border bg-popover shadow-md p-1 z-10">
-                {presets.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handleSelect(p.id)}
-                    className={`block w-full text-left rounded-sm px-2 py-1.5 text-[11px] hover:bg-accent ${
-                      active === p.id ? "bg-accent/60" : ""
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          </div>
         </div>
-        <span
-          className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive/10 px-1.5 text-[10px] font-semibold tabular-nums text-destructive"
-          aria-label="Total lint issues"
-        >
-          {violationCount}
-        </span>
-      </span>
+        <span className="flex items-center gap-2 flex-shrink-0" />
+      </div>
     </div>
   );
 };

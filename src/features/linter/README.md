@@ -23,13 +23,14 @@ The rule runner derives `ClassType` from the name/prefix; combo classification p
 
 The system assigns element contexts to support context-aware rules.
 
-- Supported context values: `componentRoot`, `childGroup`
+- Supported context values: `componentRoot`, `childGroup`, `childGroupInvalid`
 - Classification defaults (see `element-context-classifier.ts`):
   - `wrapSuffix`: `_wrap`
-  - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`
+  - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`, `/^page_main/`
 - Behavior:
-  - `componentRoot`: element has a class ending in `_wrap` and its immediate parent matches a configured container pattern (default: `section_contain`, `/^u-section/`, `/^c-/`).
+  - `componentRoot`: element has a class ending in `_wrap` and its immediate parent matches a configured container pattern (default: `section_contain`, `/^u-section/`, `/^c-/`, `/^page_main/`).
   - `childGroup`: element has a class ending in `_wrap` and is nested under a root wrap; by default it must share the same type prefix token with the nearest root wrap (configurable in the classifier).
+  - `childGroupInvalid`: nested under a root wrap but fails prefix/group name validation per classifier config.
 
 ### Roles
 
@@ -141,7 +142,7 @@ The system assigns element contexts to support context-aware rules.
 - Full page lint
   - `usePageLintStore.lintPage()` fetches all elements, builds utility maps, then calls `createPageLintService().lintCurrentPage(elements)`
   - Extracts class names for context classification, produces the contexts map, and runs `runRulesOnStylesWithContext`
-  - Uses the same registry initialization as element lint
+  - Uses the same registry initialization as element lint (parity ensured by `ensureLinterInitialized()`)
 
 ## Configuration
 
@@ -176,5 +177,4 @@ The system assigns element contexts to support context-aware rules.
 
 ## Notes and limitations
 
-- Full-page lint currently registers default rules in the store-level registry; context-aware rules are registered only by the element-lint flow via global initialization.
 - Webflow Designer APIs are expected to provide `getAllElements`, `getAllStyles`, `getStyles`, `getName`, `getProperties`, and `getChildren` where referenced.

@@ -16,7 +16,7 @@ export default function ExtensionWrapper({
       try {
         // custom size (clamped to min 240×360, max 1200×800)
         await webflow.setExtensionSize({ width: 400, height: 360 });
-        console.log("Extension UI resized to 600×500");
+        console.log("Extension UI resized to 400×360");
       } catch (err) {
         console.error("Error resizing extension UI", err);
       }
@@ -25,5 +25,5 @@ export default function ExtensionWrapper({
     void resizeExtension();
   }, []);
 
-  return <div className="overflow-hidden">{children}</div>;
+  return <div className="overflow-y-auto overflow-x-hidden">{children}</div>;
 }

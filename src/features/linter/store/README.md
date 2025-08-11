@@ -39,7 +39,7 @@ It integrates with Webflow Designer API to fetch elements, then delegates to `pa
 ## File Location
 
 ```text
-src/features/linter/stores/usePageLintStore.ts
+src/features/linter/store/usePageLintStore.ts
 ```
 
 ## Installation
@@ -56,7 +56,7 @@ npm install --save-dev @types/zustand
 ### Importing the Store
 
 ```ts
-import { usePageLintStore } from "@/features/linter/stores/pageLintStore";
+import { usePageLintStore } from "@/features/linter/store/usePageLintStore";
 ```
 
 ### Reading State
@@ -90,12 +90,15 @@ useEffect(() => {
 
 ## State Shape
 
-| Key      | Type                  | Description                              |
-| -------- | --------------------- | ---------------------------------------- |
-| results  | `RuleResult[]`        | Array of lint violations and suggestions |
-| loading  | `boolean`             | True while lint is in progress           |
-| error    | `string \| null`      | Error message if lint fails              |
-| lintPage | `() => Promise<void>` | Async action to run the page lint        |
+| Key              | Type                  | Description                                   |
+| ---------------- | --------------------- | --------------------------------------------- |
+| results          | `RuleResult[]`        | Array of lint violations and suggestions      |
+| passedClassNames | `string[]`            | Unique class names encountered during the run |
+| loading          | `boolean`             | True while lint is in progress                |
+| error            | `string \| null`      | Error message if lint fails                   |
+| hasRun           | `boolean`             | Indicates if at least one run has occurred    |
+| lintPage         | `() => Promise<void>` | Async action to run the page lint             |
+| clearResults     | `() => void`          | Clears results and resets flags               |
 
 ## Middleware
 

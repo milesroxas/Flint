@@ -27,11 +27,13 @@ import { selectElementById } from "@/features/window/select-element";
 interface ViolationItemProps {
   violation: RuleResult;
   index: number;
+  showHighlight?: boolean;
 }
 
 export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
+  showHighlight = true,
 }) => {
   // Debug logs removed to improve performance
   const sev = violation.severity as Severity;
@@ -67,20 +69,43 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               variant="outline"
               className="ml-2 text-blue-600 border-blue-300 bg-blue-50 text-[10px]"
             >
-              Component Root
+              {violation.context === "componentRoot"
+                ? "Component Root"
+                : String(violation.context).replace(
+                    /(^|[_-])(\w)/g,
+                    (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
+                  )}
             </Badge>
           )}
-          {violation.metadata?.role && (
-            <Badge
-              variant="outline"
-              className="ml-1 text-violet-700 border-violet-300 bg-violet-50 text-[10px]"
-            >
-              {String(violation.metadata.role).replace(
-                /(^|[_-])(\w)/g,
-                (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
-              )}
-            </Badge>
-          )}
+          {(() => {
+            const role = violation.metadata?.role as unknown as
+              | string
+              | undefined;
+            if (!role) return null;
+            const context = violation.context as unknown as string | undefined;
+            const normalizedRole = role;
+            const normalizedContext = context;
+            const isDuplicate =
+              normalizedRole &&
+              normalizedContext &&
+              normalizedRole === normalizedContext;
+            if (isDuplicate) return null;
+            const roleLabel =
+              normalizedRole === "componentRoot"
+                ? "Component Root"
+                : String(normalizedRole).replace(
+                    /(^|[_-])(\w)/g,
+                    (_, p1, p2) => (p1 ? " " : "") + p2.toUpperCase()
+                  );
+            return (
+              <Badge
+                variant="outline"
+                className="ml-1 text-violet-700 border-violet-300 bg-violet-50 text-[10px]"
+              >
+                {roleLabel}
+              </Badge>
+            );
+          })()}
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
@@ -97,12 +122,33 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
           )}
           {violation.metadata?.suggestedName && (
             <div className="mt-1 text-[11px]">
-              Suggested:{" "}
-              <code className="font-mono bg-muted/30 px-1 py-0.5 rounded">
-                {violation.metadata.suggestedName}
-              </code>
+              <span className="opacity-80 mr-2">Suggested:</span>
+              <Badge
+                isCombo={false}
+                copyable
+                className="truncate max-w-full align-middle"
+              >
+                <span className="text-left flex items-center">
+                  <code className="font-mono text-[10px]">
+                    {violation.metadata.suggestedName}
+                  </code>
+                </span>
+              </Badge>
             </div>
           )}
+          {Array.isArray(violation.metadata?.currentOrder) &&
+            Array.isArray(violation.metadata?.properOrder) && (
+              <div className="mt-1 space-y-1 text-[11px]">
+                <div>
+                  <strong>Current order:</strong>{" "}
+                  {violation.metadata.currentOrder.join(" → ")}
+                </div>
+                <div>
+                  <strong>Proper order:</strong>{" "}
+                  {violation.metadata.properOrder.join(" → ")}
+                </div>
+              </div>
+            )}
           {Array.isArray(violation.metadata?.combos) && (
             <div className="mt-1 text-[11px]">
               Combos (in order):{" "}
@@ -118,7 +164,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               )}
             </div>
           )}
-          {violation.metadata?.elementId && (
+          {showHighlight && violation.metadata?.elementId && (
             <div className="mt-1.5">
               <Button
                 variant="outline"
