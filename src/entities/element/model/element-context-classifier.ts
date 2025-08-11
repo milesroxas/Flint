@@ -16,9 +16,14 @@ export function createElementContextClassifier(
       'section_contain',
       /^u-section/,
       /^c-/,
+      /^page_main/,
     ],
+    requireDirectParentContainerForRoot: true,
+    childGroupRequiresSharedTypePrefix: true,
+    typePrefixSeparator: '_',
+    typePrefixSegmentIndex: 0,
   }
-  const { wrapSuffix, parentClassPatterns } = {
+  const { wrapSuffix, parentClassPatterns, requireDirectParentContainerForRoot, childGroupRequiresSharedTypePrefix, typePrefixSeparator, typePrefixSegmentIndex } = {
     ...defaultConfig,
     ...configOverride,
   }
@@ -88,32 +93,66 @@ export function createElementContextClassifier(
       const isWrap = classNames.some((c) => c.endsWith(wrapSuffix));
 
       if (isWrap) {
-        let currentParent = parentMap[element.id.element];
-        let hasAncestorContainer = false;
-        let hasAncestorWrap = false;
+        // Determine if this wrap is a component root: immediate parent must match container patterns
+        const directParent = parentMap[element.id.element];
+        const directParentClassNames = directParent ? (elementClassNamesMap[directParent.id.element] || []) : [];
+        const isImmediateParentContainer = directParentClassNames.some((c) => matchesPattern(c, parentClassPatterns));
 
-        while (currentParent !== null) {
-          const parentClassNames = elementClassNamesMap[currentParent.id.element] || [];
-          const matchesContainer = parentClassNames.some((c) => matchesPattern(c, parentClassPatterns));
-          const matchesWrap = parentClassNames.some((c) => c.endsWith(wrapSuffix));
-
-          if (matchesContainer) hasAncestorContainer = true;
-          if (matchesWrap) hasAncestorWrap = true;
-
-          // We can stop early if we've already found both conditions
-          if (hasAncestorContainer && hasAncestorWrap) break;
-          currentParent = parentMap[currentParent.id.element];
+        let isRoot = false;
+        if (requireDirectParentContainerForRoot) {
+          isRoot = isImmediateParentContainer;
+        } else {
+          // Any ancestor container qualifies
+          let cursor = directParent;
+          while (cursor !== null && !isRoot) {
+            const names = elementClassNamesMap[cursor.id.element] || [];
+            if (names.some((c) => matchesPattern(c, parentClassPatterns))) isRoot = true;
+            cursor = parentMap[cursor.id.element];
+          }
         }
 
-        // Root group: wrap with an ancestor matching container patterns
-        if (hasAncestorContainer) {
+        if (isRoot) {
           ctxs.push('componentRoot');
+        } else {
+          // Determine childGroup: nearest ancestor that has a *_wrap class and shares the same type prefix
+          let nearestWrapElement: WebflowElement | null = null;
+          let nearestWrapClassName: string | null = null;
+          let cursor = directParent;
+          while (cursor !== null) {
+            const names = elementClassNamesMap[cursor.id.element] || [];
+            const wrapName = names.find((n) => n.endsWith(wrapSuffix));
+            if (wrapName) {
+              nearestWrapElement = cursor;
+              nearestWrapClassName = wrapName;
+              break;
+            }
+            cursor = parentMap[cursor.id.element];
+          }
+
+          if (nearestWrapElement && nearestWrapClassName) {
+            // Ensure the nearest wrap is a root by checking its immediate parent is a container
+            const parentOfNearest = parentMap[nearestWrapElement.id.element];
+            const parentOfNearestNames = parentOfNearest ? (elementClassNamesMap[parentOfNearest.id.element] || []) : [];
+            const nearestIsRoot = parentOfNearestNames.some((c) => matchesPattern(c, parentClassPatterns));
+
+            if (nearestIsRoot) {
+              let sharesType = true;
+              if (childGroupRequiresSharedTypePrefix) {
+                const sep: string = typeof typePrefixSeparator === 'string' ? typePrefixSeparator : '_';
+                const idx: number = typeof typePrefixSegmentIndex === 'number' ? typePrefixSegmentIndex : 0;
+                const thisWrapName = (classNames.find((n) => n.endsWith(wrapSuffix)) || "");
+                const thisSegments = thisWrapName.split(sep);
+                const nearestSegments = nearestWrapClassName.split(sep);
+                const thisType = thisSegments[idx] || "";
+                const nearestType = nearestSegments[idx] || "";
+                sharesType = !!thisType && !!nearestType && thisType === nearestType;
+              }
+              if (sharesType) {
+                ctxs.push('childGroup');
+              }
+            }
+          }
         }
-        // Child group: wrap nested under another wrap (parent group)
-        else if (hasAncestorWrap) {
-          ctxs.push('childGroup');
-        }
-        // Otherwise, leave context empty (neither root nor child group)
       }
     } catch (err) {
       console.error('Error classifying element:', err);

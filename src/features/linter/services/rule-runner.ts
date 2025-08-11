@@ -322,7 +322,8 @@ export const createRuleRunner = (
         const baseOrder = baseCustomOrderByElement.get(String(elementId));
         const isBaseCustom = typeof baseOrder === "number" ? order === baseOrder : true;
         if (!isBaseCustom) {
-          applicableRules = applicableRules.filter(rule => !(rule.type === "naming" && rule.targetClassTypes?.includes("custom")));
+          // Scope this skip to Lumos rules only; client-first keeps its own behavior
+          applicableRules = applicableRules.filter(rule => !(rule.type === "naming" && rule.targetClassTypes?.includes("custom") && rule.id.startsWith("lumos-")));
         }
       }
 

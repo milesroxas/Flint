@@ -4,7 +4,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 
 ### Key capabilities
 
-- **Class type detection**: custom, utility, combo (by prefix/format)
+- **Class type detection**: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to `is-` prefix)
 - **Naming validation**: format rules for each class type
 - **Duplicate detection**: utility class duplicate and overlap checks
 - **Context-aware rules**: rules scoped to element contexts (e.g., component roots)
@@ -15,19 +15,21 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 
 - **custom**: underscore-separated, lowercase alphanumeric, 2–3 segments
 - **utility**: starts with `u-`, dash-delimited
-- **combo**: starts with `is-`, dash-delimited
+- **combo**: starts with `is-`, dash-delimited (or flagged by Webflow API)
 
-The rule runner derives `ClassType` from the class name prefix and uses it to select applicable rules.
+The rule runner derives `ClassType` from the name/prefix; combo classification piggybacks on the `isCombo` flag from the Style Service.
 
 ## Element contexts and roles
 
 The system assigns element contexts to support context-aware rules.
 
-- Supported context values: `componentRoot`
+- Supported context values: `componentRoot`, `childGroup`
 - Classification defaults (see `element-context-classifier.ts`):
   - `wrapSuffix`: `_wrap`
   - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`
-- Behavior: an element with a class ending in `_wrap` that has an ancestor matching any parent pattern is classified as `componentRoot`.
+- Behavior:
+  - `componentRoot`: element has a class ending in `_wrap` and its immediate parent matches a configured container pattern (default: `section_contain`, `/^u-section/`, `/^c-/`).
+  - `childGroup`: element has a class ending in `_wrap` and is nested under a root wrap; by default it must share the same type prefix token with the nearest root wrap (configurable in the classifier).
 
 ### Roles
 
@@ -105,7 +107,7 @@ The system assigns element contexts to support context-aware rules.
   - `BaseRule` optionally declares `context` to target specific element contexts
   - `RuleConfiguration` stores enabled, severity, and `customSettings`
 - `element-context.ts`
-  - Defines `ElementContext` (`'componentRoot'`) and classifier interfaces
+  - Defines `ElementContext` (`'componentRoot' | 'childGroup'`) and classifier interfaces
 
 ### Hooks, store, and UI
 
@@ -150,7 +152,7 @@ The system assigns element contexts to support context-aware rules.
 
 ## Rule execution details
 
-- Class type detection by prefix: `is-` → combo, `u-` → utility, otherwise custom
+- Class type detection: `u-` → utility; combo determined by `isCombo` when available from Webflow (`style.isComboClass()`), else `is-` prefix; otherwise custom
 - Context filtering: rules with a `context` apply only when the element’s contexts include that value
 - Naming rule execution order: `evaluate` (if present) else `test`
 - Utility duplicate handling: single-property exact matches include formatted metadata consumed by the UI

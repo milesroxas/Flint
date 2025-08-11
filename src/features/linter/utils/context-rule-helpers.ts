@@ -84,29 +84,16 @@ import type {
   }
   
   /**
-   * Helper to check if a class name follows component root naming conventions
-   * Example: "header_wrap", "navigation_wrap", "footer_wrap"
+   * Validate component root naming.
+   * Requirements:
+   * - Ends with `_wrap`
+   * - Prefix is lowercase alphanumeric tokens separated by underscores
+   *   e.g., `header_wrap`, `navigation_wrap`, `card_wrap`, `feature_card_wrap`
    */
   export function validateComponentRootNaming(className: string): boolean {
-    // Must end with '_wrap' and have a semantic prefix
-    if (!className.endsWith('_wrap')) return false;
-    
-    const prefix = className.slice(0, -5); // Remove '_wrap'
-    
-    // Must have a meaningful prefix (at least 2 characters)
+    if (!className || !className.endsWith('_wrap')) return false;
+    const prefix = className.slice(0, -5);
     if (prefix.length < 2) return false;
-    
-    // Should not contain numbers or special chars (except hyphens)
-    return /^[a-z]+(-[a-z]+)*$/.test(prefix);
+    return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(prefix);
   }
-  
-  // Example usage - Component root naming rule
-  export const componentRootNamingRule = createComponentRootRule({
-    id: "component-root-naming",
-    name: "Component Root Naming",
-    description: "Component root elements must follow the pattern: {semantic-name}_wrap",
-    example: "header_wrap, navigation_wrap, footer_wrap",
-    test: validateComponentRootNaming,
-    category: "semantics",
-    targetClassTypes: ["custom"]
-  });
+

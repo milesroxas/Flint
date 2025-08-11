@@ -10,6 +10,14 @@ export interface ElementContextConfig {
   wrapSuffix: string
   /** parent class patterns (exact string or RegExp) */
   parentClassPatterns: Array<string | RegExp>
+  /** When true, a root requires its IMMEDIATE parent to match container patterns; when false, any ancestor suffices */
+  requireDirectParentContainerForRoot?: boolean
+  /** When true, child group must share the same type prefix as its nearest root wrap */
+  childGroupRequiresSharedTypePrefix?: boolean
+  /** Tokenize wrap name by this separator to extract type prefix */
+  typePrefixSeparator?: string
+  /** Index of the segment used as the type prefix (default 0) */
+  typePrefixSegmentIndex?: number
 }
 
 export interface ElementParentMap {
