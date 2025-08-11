@@ -168,6 +168,11 @@ The system assigns element contexts to support context-aware rules.
 - Labels for contexts and roles are centralized in `lib/labels.ts`
 - Clipboard copy badges avoid timers and reflect state until the next interaction
 
+### Highlight behavior
+
+- Page mode: when a violation accordion item is opened, the extension automatically highlights the corresponding Designer element using `selectElementById` (falls back to the `flowlint:highlight` custom event when the Designer API is unavailable).
+- The manual "Highlight element" button remains available in each violation item.
+
 ## File map (key files)
 
 - `services/element-lint-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`

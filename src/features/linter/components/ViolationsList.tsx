@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion } from "@/components/ui/accordion";
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationItem } from "./ViolationItem";
+import { selectElementById } from "@/features/window/select-element";
 
 interface ViolationsListProps {
   violations: RuleResult[];
@@ -55,22 +56,55 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const Section: React.FC<{ title: string; items: RuleResult[] }> = ({
     title,
     items,
-  }) =>
-    items.length === 0 ? null : (
+  }) => {
+    const prevOpenSetRef = React.useRef<Set<string>>(new Set<string>());
+    const [openValues, setOpenValues] =
+      React.useState<string[]>(defaultOpenIds);
+
+    const getItemId = (violation: RuleResult, index: number): string =>
+      `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
+
+    return items.length === 0 ? null : (
       <div className="mb-2">
         <div className="text-xs font-semibold text-muted-foreground mb-1">
           {title} ({items.length})
         </div>
         <Accordion
           type="multiple"
-          defaultValue={defaultOpenIds}
+          value={openValues}
           className="w-full"
+          onValueChange={async (values: string[]) => {
+            // Ensure UI opens regardless of highlight side effects
+            setOpenValues(values);
+
+            if (!showHighlight) return;
+            const prevSet = prevOpenSetRef.current;
+            const newlyOpened = values.filter((v) => !prevSet.has(v));
+            prevOpenSetRef.current = new Set(values);
+            if (newlyOpened.length === 0) return;
+            const lastOpenedId = newlyOpened[newlyOpened.length - 1];
+
+            const indexById = new Map<string, number>();
+            items.forEach((violation, index) => {
+              indexById.set(getItemId(violation, index), index);
+            });
+            const idx = indexById.get(lastOpenedId);
+            if (idx === undefined) return;
+            const violation = items[idx];
+            const elementId = violation?.metadata?.elementId as
+              | string
+              | undefined;
+            if (!elementId) return;
+            try {
+              await selectElementById(elementId);
+            } catch {
+              // ignore highlighting errors
+            }
+          }}
         >
           {items.map((violation, index) => (
             <ViolationItem
-              key={`${violation.ruleId}-${
-                violation.className || "unknown"
-              }-${index}`}
+              key={getItemId(violation, index)}
               violation={violation}
               index={index}
               showHighlight={showHighlight}
@@ -79,6 +113,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
         </Accordion>
       </div>
     );
+  };
 
   return (
     <div className="w-full">

@@ -57,6 +57,10 @@ Lint Webflow classes in real time. The extension validates naming, detects dupli
 - UI refinements: labels for contexts/roles centralized in `src/features/linter/lib/labels.ts`; logs gated to development; `ModeToggle` uses shared `Button` variants for consistent a11y.
 - Preset switching immediately re-lints the current view (page or element) and updates results.
 
+### UX details
+
+- In page mode, opening a violation’s accordion entry automatically highlights the corresponding element in Webflow Designer (using the Designer API when available, with a safe fallback event). The manual highlight button remains for explicit control.
+
 ### How element linting works
 
 1. Selection event triggers `useElementLint`.
