@@ -4,6 +4,9 @@ interface Style {
   id: string;
   getName: () => Promise<string>;
   getProperties: (options?: { breakpoint: string }) => Promise<any>;
+  // Webflow Designer API: style.isComboClass(): Promise<boolean>
+  // Optional at type level to allow graceful fallback in non-supporting contexts
+  isComboClass?: () => Promise<boolean>;
 }
 
 export interface StyleInfo {
@@ -11,6 +14,8 @@ export interface StyleInfo {
   name: string;
   properties: any;
   order: number;
+  // True when Webflow marks this style as a combo class; fallback to name prefix when API unavailable
+  isCombo: boolean;
 }
 
 export interface ElementStyleInfo {
@@ -27,7 +32,7 @@ let cachedAllStylesPromise: Promise<StyleInfo[]> | null = null;
 const DEBUG = false;
 
 export const createStyleService = () => {
-  const getAllStylesWithProperties = async (): Promise<StyleInfo[]> => {
+  const getAllStylesWithProperties = (): Promise<StyleInfo[]> => {
     if (!cachedAllStylesPromise) {
       if (DEBUG) console.log('Fetching ALL styles from the entire Webflow site...');
       cachedAllStylesPromise = (async () => {
@@ -40,6 +45,9 @@ export const createStyleService = () => {
             try {
               const name = await style.getName();
               let properties = {};
+              // Combo detection is grammar/preset-specific.
+              // For Lumos and current presets, treat only `is-` prefix as combo.
+              const isCombo = (name?.startsWith('is-') ?? false);
 
               if (name && name.startsWith('u-')) {
                 try {
@@ -53,11 +61,12 @@ export const createStyleService = () => {
                 id: style.id,
                 name: name?.trim() || "",
                 properties,
-                index
+                index,
+                isCombo
               };
             } catch (err) {
               if (DEBUG) console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err);
-              return { id: style.id, name: "", properties: {}, index };
+              return { id: style.id, name: "", properties: {}, index, isCombo: false };
             }
           })
         );
@@ -72,7 +81,7 @@ export const createStyleService = () => {
       })();
     }
 
-    return cachedAllStylesPromise;
+    return cachedAllStylesPromise as Promise<StyleInfo[]>;
   };
 
   const getAppliedStyles = async (element: any): Promise<StyleInfo[]> => {
@@ -106,6 +115,9 @@ export const createStyleService = () => {
         const id = style.id;
         const name = await style.getName();
         const trimmedName = name?.trim() || "";
+        // Combo detection is grammar/preset-specific.
+        // For Lumos and current presets, treat only `is-` prefix as combo.
+        const isCombo = trimmedName.startsWith('is-');
         
         if (id && !seenIds.has(id)) {
           seenIds.add(id);
@@ -118,8 +130,8 @@ export const createStyleService = () => {
               console.error(`Error getting properties for style ${trimmedName}:`, err);
             }
           }
-          
-          uniqueStyles.push({ id, name: trimmedName, properties, order: i });
+
+          uniqueStyles.push({ id, name: trimmedName, properties, order: i, isCombo });
           if (DEBUG) console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
         }
       } catch (err) {
@@ -177,8 +189,8 @@ export const createStyleService = () => {
 
   const sortStylesByType = (styles: StyleInfo[]): StyleInfo[] => {
     return [...styles].sort((a, b) => {
-      const aIsCombo = a.name.startsWith("is-");
-      const bIsCombo = b.name.startsWith("is-");
+      const aIsCombo = a.isCombo === true;
+      const bIsCombo = b.isCombo === true;
       if (aIsCombo !== bIsCombo) return aIsCombo ? 1 : -1;
       return a.order - b.order;
     });

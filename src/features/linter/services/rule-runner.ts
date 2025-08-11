@@ -10,9 +10,10 @@ export const createRuleRunner = (
   ruleRegistry: RuleRegistry,
   utilityAnalyzer: UtilityClassAnalyzer
 ) => {
-  const getClassType = (className: string): ClassType => {
-    if (className.startsWith("is-")) return "combo";
+  const getClassType = (className: string, isComboFlag?: boolean): ClassType => {
+    if (isComboFlag === true) return "combo";
     if (className.startsWith("u-")) return "utility";
+    if (className.startsWith("is-")) return "combo";
     return "custom";
   };
 
@@ -186,6 +187,7 @@ export const createRuleRunner = (
 
     // Element-level ordering checks (configurable via registry)
     const byElement = new Map<string, StyleWithElement[]>();
+    const baseCustomOrderByElement = new Map<string, number | null>();
     for (const s of stylesWithElement) {
       const list = byElement.get(s.elementId) ?? [];
       list.push(s);
@@ -194,17 +196,18 @@ export const createRuleRunner = (
     for (const [elId, list] of byElement.entries()) {
       // Find earliest custom class order
       let earliestCustomOrder: number | null = null;
-      for (const s of list) {
-        const kind = getClassType(s.name);
+    for (const s of list) {
+      const kind = getClassType(s.name, (s as any).isCombo);
         if (kind === "custom") {
           earliestCustomOrder = earliestCustomOrder === null ? s.order : Math.min(earliestCustomOrder, s.order);
         }
       }
+      baseCustomOrderByElement.set(elId, earliestCustomOrder);
       const contexts = elementContextsMap[elId] || [];
       if (earliestCustomOrder !== null) {
         // utilities before custom?
         const offendingUtil = list
-          .filter(s => getClassType(s.name) === "utility" && s.order < (earliestCustomOrder as number))
+          .filter(s => getClassType(s.name, (s as any).isCombo) === "utility" && s.order < (earliestCustomOrder as number))
           .sort((a, b) => a.order - b.order)[0];
         const utilCfg = ruleRegistry.getRuleConfiguration("lumos-utilities-after-custom-ordering");
         if (offendingUtil && (utilCfg?.enabled ?? true)) {
@@ -223,7 +226,7 @@ export const createRuleRunner = (
 
         // combos before custom?
         const offendingCombo = list
-          .filter(s => getClassType(s.name) === "combo" && s.order < (earliestCustomOrder as number))
+          .filter(s => getClassType(s.name, (s as any).isCombo) === "combo" && s.order < (earliestCustomOrder as number))
           .sort((a, b) => a.order - b.order)[0];
         const comboOrderCfg = ruleRegistry.getRuleConfiguration("lumos-combos-after-custom-ordering");
         if (offendingCombo && (comboOrderCfg?.enabled ?? true)) {
@@ -243,7 +246,7 @@ export const createRuleRunner = (
 
       // combo limit
       const combos = list
-        .filter(s => getClassType(s.name) === "combo")
+        .filter(s => getClassType(s.name, (s as any).isCombo) === "combo")
         .sort((a, b) => a.order - b.order)
         .map(s => s.name);
       const comboLimitCfg = ruleRegistry.getRuleConfiguration("lumos-combo-class-limit");
@@ -261,18 +264,51 @@ export const createRuleRunner = (
           metadata: { elementId: elId, combos, maxCombos },
         });
       }
+
+      // Variant requires base custom or component
+      const variantRequiresBaseCfg = ruleRegistry.getRuleConfiguration("lumos-variant-requires-base");
+      if (variantRequiresBaseCfg?.enabled ?? true) {
+        const ordered = [...list].sort((a, b) => a.order - b.order);
+        let baseSeenBeforeVariant = false; // base = any non-utility (custom or c-)
+        let violatingVariantName: string | null = null;
+        for (const s of ordered) {
+          const n = s.name;
+          if (n.startsWith("is-")) {
+            if (!baseSeenBeforeVariant) {
+              violatingVariantName = n;
+            }
+            break; // only need to evaluate the first variant
+          }
+          if (!n.startsWith("u-")) {
+            baseSeenBeforeVariant = true;
+          }
+        }
+        if (violatingVariantName) {
+          results.push({
+            ruleId: "lumos-variant-requires-base",
+            name: "Variant should modify a base class",
+            message: "Variant classes (is-*) should be used on top of a base custom/component class (not only utilities).",
+            severity: variantRequiresBaseCfg?.severity ?? "warning",
+            className: violatingVariantName,
+            isCombo: true,
+            example: "c-card is-active",
+            context: contexts[0],
+            metadata: { elementId: elId, combos },
+          });
+        }
+      }
     }
 
     // Debug log removed to reduce noise
     
-    for (const { name, properties, elementId } of stylesWithElement) {
+    for (const { name, properties, elementId, isCombo, order } of stylesWithElement as any) {
       // Debug log removed to reduce noise
 
       // Get the contexts for this element
       const elementContexts = elementContextsMap[elementId] || [];
       
-      const classType = getClassType(name);
-      const applicableRules = ruleRegistry.getRulesByClassType(classType)
+      const classType = getClassType(name, isCombo);
+      let applicableRules = ruleRegistry.getRulesByClassType(classType)
         .filter(rule => {
           const config = ruleRegistry.getRuleConfiguration(rule.id);
           const isEnabled = config?.enabled ?? rule.enabled;
@@ -280,6 +316,15 @@ export const createRuleRunner = (
           
           return isEnabled && isApplicableForContext;
         });
+
+      // For non-base custom classes on an element, skip custom naming rules (e.g., lumos-custom-class-format)
+      if (classType === "custom") {
+        const baseOrder = baseCustomOrderByElement.get(String(elementId));
+        const isBaseCustom = typeof baseOrder === "number" ? order === baseOrder : true;
+        if (!isBaseCustom) {
+          applicableRules = applicableRules.filter(rule => !(rule.type === "naming" && rule.targetClassTypes?.includes("custom")));
+        }
+      }
 
       // Debug log removed to reduce noise
 

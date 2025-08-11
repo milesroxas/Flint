@@ -7,6 +7,7 @@ import { lumosRoles } from "@/features/linter/roles/lumos.roles";
 import { lumosCustomClassFormatRule } from "@/rules/naming/lumos-custom-class-format";
 import { lumosUtilityClassFormatRule } from "@/rules/naming/lumos-utility-class-format";
 import { lumosComboClassFormatRule } from "@/rules/naming/lumos-combo-class-format";
+import { lumosComponentClassFormatRule } from "@/rules/naming/lumos-component-class-format";
 import { lumosUtilitiesAfterCustomOrderingRule, lumosCombosAfterCustomOrderingRule, lumosComboLimitRule } from "@/rules/naming/lumos-class-ordering";
 
 // Property rules
@@ -17,6 +18,8 @@ import { lumosUtilityClassDuplicatePropertiesRule } from "@/rules/property/lumos
 import { componentRootSemanticNaming } from "@/rules/context-aware/component-root-semantic-naming";
 import { componentRootNoDisplayUtilities } from "@/rules/context-aware/component-root-no-display-utilities";
 import { componentRootRequiredStructure } from "@/rules/context-aware/component-root-required-structure";
+import { lumosVariantRequiresBaseRule } from "@/rules/naming/lumos-class-ordering";
+import { lumosVariantOnComponentRule } from "@/rules/naming/lumos-variant-on-component";
 
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
@@ -27,10 +30,13 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     lumosCustomClassFormatRule,
     lumosUtilityClassFormatRule,
     lumosComboClassFormatRule,
+    lumosComponentClassFormatRule,
     // element-level ordering/limits (evaluated in runner)
     lumosUtilitiesAfterCustomOrderingRule,
     lumosCombosAfterCustomOrderingRule,
     lumosComboLimitRule,
+    lumosVariantRequiresBaseRule,
+    lumosVariantOnComponentRule,
     // property
     lumosUtilityClassExactDuplicateRule,
     lumosUtilityClassDuplicatePropertiesRule,

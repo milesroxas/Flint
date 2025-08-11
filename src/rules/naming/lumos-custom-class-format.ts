@@ -24,6 +24,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
   config: customClassConfig,
 
   test: (className: string): boolean => {
+    // Allow component classes (validated separately by component rule)
+    if (className.startsWith("c-")) return true;
     const pattern = /^[a-z0-9_]+$/;
     if (!pattern.test(className)) return false;
     const segments = className.split("_");
@@ -34,6 +36,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
     className: string,
     context?: { config?: Record<string, unknown> }
   ): RuleResult | null => {
+    // Allow component classes (validated by the component rule)
+    if (className.startsWith("c-")) return null;
     if (!lumosCustomClassFormatRule.test(className)) {
       // Provide a minimal suggested correction that fits Lumos format
       const suggested = className

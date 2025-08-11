@@ -50,4 +50,17 @@ export const lumosComboLimitRule: NamingRule = {
   test: () => true,
 };
 
+export const lumosVariantRequiresBaseRule: NamingRule = {
+  id: "lumos-variant-requires-base",
+  name: "Variant should modify a base class",
+  description: "Variant classes (is-*) should modify an existing base custom/component class (e.g., c-* or custom).",
+  example: "c-card is-active",
+  type: "naming",
+  severity: "warning",
+  enabled: true,
+  category: "format",
+  targetClassTypes: ["combo"],
+  test: () => true,
+};
+
 

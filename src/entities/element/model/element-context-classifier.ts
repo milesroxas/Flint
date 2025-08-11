@@ -89,24 +89,31 @@ export function createElementContextClassifier(
 
       if (isWrap) {
         let currentParent = parentMap[element.id.element];
-        let parentMatches = false;
+        let hasAncestorContainer = false;
+        let hasAncestorWrap = false;
 
         while (currentParent !== null) {
           const parentClassNames = elementClassNamesMap[currentParent.id.element] || [];
-          const hasMatchingParent = parentClassNames.some((c) => 
-            matchesPattern(c, parentClassPatterns)
-          );
-          
-          if (hasMatchingParent) {
-            parentMatches = true;
-            break;
-          }
+          const matchesContainer = parentClassNames.some((c) => matchesPattern(c, parentClassPatterns));
+          const matchesWrap = parentClassNames.some((c) => c.endsWith(wrapSuffix));
+
+          if (matchesContainer) hasAncestorContainer = true;
+          if (matchesWrap) hasAncestorWrap = true;
+
+          // We can stop early if we've already found both conditions
+          if (hasAncestorContainer && hasAncestorWrap) break;
           currentParent = parentMap[currentParent.id.element];
         }
 
-        if (parentMatches) {
+        // Root group: wrap with an ancestor matching container patterns
+        if (hasAncestorContainer) {
           ctxs.push('componentRoot');
         }
+        // Child group: wrap nested under another wrap (parent group)
+        else if (hasAncestorWrap) {
+          ctxs.push('childGroup');
+        }
+        // Otherwise, leave context empty (neither root nor child group)
       }
     } catch (err) {
       console.error('Error classifying element:', err);
