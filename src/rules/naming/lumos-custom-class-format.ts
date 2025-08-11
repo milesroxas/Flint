@@ -14,8 +14,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
   id: "lumos-custom-class-format",
   name: "Lumos Custom Class Format",
   description:
-    "Custom classes must be lowercase, underscore-separated, with 2 or 3 segments: type_element or type_variant_element. The final segment should describe the element (e.g. wrap, text, icon).",
-  example: "footer_wrap or footer_link_wrap",
+    "Custom classes must be lowercase and underscore-separated with at least 2 segments: type_element or type_variant_element. Child group roots may include additional group segments before the final element (e.g., type[_variant]_[group]_wrap). The final segment should describe the element (e.g. wrap, text, icon).",
+  example: "footer_wrap, footer_link_wrap, hero_secondary_content_wrap",
   type: "naming",
   severity: "error",
   enabled: true,
@@ -29,7 +29,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
     const pattern = /^[a-z0-9_]+$/;
     if (!pattern.test(className)) return false;
     const segments = className.split("_");
-    return segments.length >= 2 && segments.length <= 3 && !segments.some(s => !s);
+    // Allow 2+ segments (child group roots may add extra group tokens)
+    return segments.length >= 2 && !segments.some(s => !s);
   },
 
   evaluate: (
@@ -52,7 +53,7 @@ export const lumosCustomClassFormatRule: NamingRule = {
       return {
         ruleId: lumosCustomClassFormatRule.id,
         name: lumosCustomClassFormatRule.name,
-        message: `"${className}" is not a valid custom class format. Must be lowercase, underscore-separated, with 2 or 3 segments (type_element or type_variant_element).`,
+        message: `"${className}" is not a valid custom class format. Must be lowercase, underscore-separated, with at least 2 segments (type_element or type_variant_element). Child group roots may include additional group tokens before the final element (e.g., type[_variant]_[group]_wrap).`,
         severity: "error",
         className,
         isCombo: false,
@@ -68,7 +69,7 @@ export const lumosCustomClassFormatRule: NamingRule = {
     const element = segments[segments.length - 1];
 
     const knownElements = [
-      "wrap", "contain", "container", "text", "title", "icon",
+      "wrap", "contain", "container", "layout", "text", "title", "icon",
       "img", "image", "group", "label", "heading", "button", "link", "field"
     ];
 

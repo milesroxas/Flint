@@ -3,7 +3,7 @@
 // Use the official Webflow API types
 export type WebflowElement = AnyElement;
 
-export type ElementContext = 'componentRoot' | 'childGroup'
+export type ElementContext = 'componentRoot' | 'childGroup' | 'childGroupInvalid'
 
 export interface ElementContextConfig {
   /** suffix to detect wrapper elements */

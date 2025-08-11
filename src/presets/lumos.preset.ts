@@ -20,6 +20,7 @@ import { componentRootNoDisplayUtilities } from "@/rules/context-aware/component
 import { componentRootRequiredStructure } from "@/rules/context-aware/component-root-required-structure";
 import { lumosVariantRequiresBaseRule } from "@/rules/naming/lumos-class-ordering";
 import { lumosVariantOnComponentRule } from "@/rules/naming/lumos-variant-on-component";
+import { lumosChildGroupReferencesParentRule } from "@/rules/context-aware/lumos-child-group-references-parent";
 
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
@@ -44,6 +45,7 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     componentRootSemanticNaming,
     componentRootNoDisplayUtilities,
     componentRootRequiredStructure,
+    lumosChildGroupReferencesParentRule,
   ],
 };
 
