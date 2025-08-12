@@ -54,25 +54,48 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                     if (typeof localStorage !== "undefined") {
                       localStorage.removeItem("webflow-linter-rules-config");
                     }
-                  } catch (err) {
-                    /* intentionally ignore storage errors */
+                  } catch (err: unknown) {
+                    if ((import.meta as any)?.env?.DEV) {
+                      // eslint-disable-next-line no-console
+                      console.debug(
+                        "[PresetSwitcher] localStorage cleanup failed",
+                        err
+                      );
+                    }
                   }
                   try {
                     const store = usePageLint.getState();
-                    store.clearResults();
-                  } catch (err) {
-                    /* intentionally ignore store errors */
+                    if (store && typeof store.clearResults === "function") {
+                      store.clearResults();
+                    }
+                  } catch (err: unknown) {
+                    if ((import.meta as any)?.env?.DEV) {
+                      // eslint-disable-next-line no-console
+                      console.debug(
+                        "[PresetSwitcher] store.clearResults failed",
+                        err
+                      );
+                    }
                   }
                   void (async () => {
                     try {
                       const mod = await import(
                         "@/entities/style/model/style.service"
                       );
-                      if (mod?.resetStyleServiceCache) {
+                      if (
+                        mod &&
+                        typeof mod.resetStyleServiceCache === "function"
+                      ) {
                         mod.resetStyleServiceCache();
                       }
-                    } catch (err) {
-                      /* intentionally ignore style cache errors */
+                    } catch (err: unknown) {
+                      if ((import.meta as any)?.env?.DEV) {
+                        // eslint-disable-next-line no-console
+                        console.debug(
+                          "[PresetSwitcher] resetStyleServiceCache failed",
+                          err
+                        );
+                      }
                     }
                   })();
                   setOpen(false);

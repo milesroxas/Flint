@@ -2,7 +2,6 @@ import React from "react";
 import { useElementLint } from "@/features/linter/hooks/useElementLint";
 import { LintPanelHeader } from "./LintPanelHeader";
 import { ViolationsList } from "./ViolationsList";
-import type { ElementRole } from "@/features/linter/model/linter.types";
 
 export const LintPanel: React.FC = () => {
   const { violations, isLoading, contexts, classNames, roles } =
@@ -18,36 +17,7 @@ export const LintPanel: React.FC = () => {
     );
   }
 
-  const inferRole = (cls: string) => {
-    const c = cls.toLowerCase();
-    if (/\bcontainer\b|contain/.test(c)) return "container" as ElementRole;
-    if (/\blayout\b|\bgrid\b|\bstack\b|\brow\b|\bcol\b/.test(c))
-      return "layout" as ElementRole;
-    if (/\btitle\b|\bheading\b|\bheadline\b/.test(c))
-      return "title" as ElementRole;
-    if (/\btext\b|\bparagraph\b|\bp\b/.test(c)) return "text" as ElementRole;
-    if (/\bcontent\b|\bbody\b|\bcopy\b/.test(c))
-      return "content" as ElementRole;
-    if (/\bactions\b|\bcta\b|\bbuttons\b/.test(c))
-      return "actions" as ElementRole;
-    if (/\bbutton\b|\bbtn\b/.test(c)) return "button" as ElementRole;
-    if (/\blink\b|\banchor\b/.test(c)) return "link" as ElementRole;
-    if (/\bicon\b/.test(c)) return "icon" as ElementRole;
-    if (/\blist\b/.test(c)) return "list" as ElementRole;
-    if (/\bitem\b/.test(c)) return "item" as ElementRole;
-    return null;
-  };
-
-  const derivedRoles =
-    roles && roles.length > 0
-      ? roles
-      : Array.from(
-          new Set(
-            (classNames || [])
-              .map(inferRole)
-              .filter((r): r is ElementRole => Boolean(r))
-          )
-        );
+  const derivedRoles = roles && roles.length > 0 ? roles : [];
 
   const errorCount = violations.filter((v) => v.severity === "error").length;
   const warningCount = violations.filter(
