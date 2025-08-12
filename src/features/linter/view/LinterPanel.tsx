@@ -35,8 +35,8 @@ export function LinterPanel() {
   const isBusy = mode === "page" ? loading : elementLoading;
 
   return (
-    <section className="pb-20 border-b bg-muted/50">
-      <div className="bg-muted/50">
+    <section className="pb-20">
+      <div>
         {error && (
           <div className="flex items-center gap-2 py-2 text-sm text-destructive">
             <AlertCircle className="h-3 w-3" />
@@ -52,7 +52,7 @@ export function LinterPanel() {
         )}
 
         {!error && (
-          <div className="p-2">
+          <div className="p-4">
             <ModeToggle
               mode={mode}
               onChange={(next) => {

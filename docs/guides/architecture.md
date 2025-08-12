@@ -29,7 +29,7 @@ This document describes the current, implemented architecture of the Webflow Des
 - `hooks/`: `useElementLint` (re-exports the Zustand hook), and `usePageLint` (thin store wrapper).
 - `store/`: `usePageLintStore.ts` (Zustand + devtools) and `elementLint.store.ts` unify page/element state and actions.
 - `view/`: `LinterPanel` orchestrates page/element views with a mode toggle.
-- `components/`: presentational pieces: `ViolationsList`, `ViolationItem`, `ModeToggle`, `PresetSwitcher`, etc.
+- `components/`: presentational pieces: `ViolationsList`, `ViolationItem` (composes `ViolationHeader` + `ViolationDetails`), `ViolationHeader`, `ViolationDetails`, `ModeToggle`, `PresetSwitcher`, etc.
 - `src/presets`: `*.preset.ts` files define rule packs, grammar/role resolvers, and optional `contextConfig` for the classifier. A dynamic registry in `src/presets/index.ts` auto‑discovers all presets at build time.
 - `src/rules`: rule implementations grouped by category: `naming`, `property`, and `context-aware`.
 - `src/processes/scan`: process orchestrators for page and element scans used by hooks and store.

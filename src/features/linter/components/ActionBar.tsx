@@ -26,7 +26,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               loading={loading}
               issueCount={issueCount}
               fullWidth
-              className="bg-blue-700 text-slate-100 hover:bg-slate-800/90 h-full rounded-sm text-base"
+              className="bg-accent text-accent-foreground hover:bg-slate-800 h-full rounded-sm text-base"
               label={mode === "page" ? "Lint Page" : "Re‑lint"}
             />
           </div>

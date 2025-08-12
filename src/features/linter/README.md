@@ -118,7 +118,7 @@ The system assigns element contexts to support context-aware rules.
 
 #### UI
 
-- `components/ViolationsList.tsx`, `components/ViolationItem.tsx`: reusable rendering of violations; supports highlight-on-open in page mode.
+- `components/ViolationsList.tsx`, `components/ViolationItem.tsx` (composes `ViolationHeader` + `ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
 - `components/ModeToggle.tsx`: page/element toggle buttons.
 - `components/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
 - `components/ActionBar.tsx` and `components/LintPageButton.tsx`: bottom toolbar and primary actions.

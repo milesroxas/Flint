@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { File, SquareSlash } from "lucide-react";
 
 export type LintViewMode = "element" | "page";
 
@@ -16,21 +16,21 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   className = "",
 }) => {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Button
-        variant={mode === "page" ? "secondary" : "ghost"}
-        size="sm"
-        onClick={() => onChange("page")}
-      >
-        Page
-      </Button>
-      <Button
-        variant={mode === "element" ? "secondary" : "ghost"}
-        size="sm"
-        onClick={() => onChange("element")}
-      >
-        Element
-      </Button>
-    </div>
+    <Tabs
+      value={mode}
+      onValueChange={(value) => onChange(value as LintViewMode)}
+      className={className}
+    >
+      <TabsList>
+        <TabsTrigger value="page" className="group">
+          <File className="hidden group-data-[state=active]:inline-block" />
+          Page
+        </TabsTrigger>
+        <TabsTrigger value="element" className="group">
+          <SquareSlash className="hidden group-data-[state=active]:inline-block" />
+          Element
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };

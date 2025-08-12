@@ -177,7 +177,7 @@ Result object highlights (`RuleResult`):
 - `LinterPanel.tsx`: wrapper section that wires the page/element mode toggle, actions, and renders results
 - `LintPageButton.tsx`: action button (loading state and count)
 - `ViolationsList.tsx`: list of `RuleResult` items
-- `ViolationItem.tsx`:
+- `ViolationItem.tsx` (composes `ViolationHeader` and `ViolationDetails`):
   - badges: severity, context, role, “Unrecognized Element”
   - duplicate utility display: formatted single property payload or parsed list
   - ordering section: `currentOrder` and `properOrder`
