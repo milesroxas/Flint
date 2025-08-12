@@ -1,5 +1,5 @@
 // src/components/LintPageButton.tsx
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";

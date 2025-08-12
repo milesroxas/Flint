@@ -118,11 +118,11 @@ The system assigns element contexts to support context-aware rules.
 
 #### UI
 
-- `components/ViolationsList.tsx`, `components/ViolationItem.tsx` (composes `ViolationHeader` + `ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
-- `components/ModeToggle.tsx`: page/element toggle buttons.
-- `components/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
-- `components/ActionBar.tsx` and `components/LintPageButton.tsx`: bottom toolbar and primary actions.
-- `components/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
+- `ui/ViolationsList.tsx`, `ui/ViolationItem.tsx` (composes `ui/ViolationHeader` + `ui/ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
+- `ui/ModeToggle.tsx`: page/element toggle buttons.
+- `ui/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
+- `ui/ActionBar.tsx` and `ui/LintPageButton.tsx`: bottom toolbar and primary actions.
+- `ui/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
 
 #### Hooks
 

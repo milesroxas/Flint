@@ -128,8 +128,8 @@ src/
     element/model/
     style/model/
   features/
-    linter/
-      model/ services/ grammar/ roles/ store/ components/ view/
+      linter/
+        model/ services/ grammar/ roles/ store/ ui/ view/
     window/
   presets/
   processes/scan/

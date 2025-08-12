@@ -33,7 +33,7 @@ This document describes the current, implemented architecture of the Webflow Des
 - `src/presets`: `*.preset.ts` files define rule packs, grammar/role resolvers, and optional `contextConfig` for the classifier. A dynamic registry in `src/presets/index.ts` auto‑discovers all presets at build time.
 - `src/rules`: rule implementations grouped by category: `naming`, `property`, and `context-aware`.
 - `src/processes/scan`: process orchestrators for page and element scans used by hooks and store.
-- `src/components/ui`: shared UI primitives (Accordion, Button, Card, etc.).
+- `src/shared/ui`: shared UI primitives (Accordion, Button, Card, etc.).
 
 ### Webflow Designer integration
 
@@ -89,7 +89,7 @@ This document describes the current, implemented architecture of the Webflow Des
 - Hooks:
   - `useElementLint`: subscribes to `selectedelement`, calls the selected‑element scan, and exposes `violations`, `contexts`, `classNames`, `roles`, and `isLoading`.
   - `usePageLint`: thin wrapper returning the Zustand store.
-- UI: `features/linter/components/*` renders the panel, list, items, headers, mode/preset toggles, and role/context badges. Opening an accordion row can trigger a highlight selection in the Designer.
+- UI: `features/linter/ui/*` renders the panel, list, items, headers, mode/preset toggles, and role/context badges. Opening an accordion row can trigger a highlight selection in the Designer.
 
 ### Build, packaging, and tooling
 

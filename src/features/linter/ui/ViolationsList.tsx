@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/shared/ui/scroll-area";
+import { Badge } from "@/shared/ui/badge";
 
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsSection } from "./ViolationsSection";

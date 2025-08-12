@@ -1,5 +1,5 @@
 import React from "react";
-import { Accordion } from "@/components/ui/accordion";
+import { Accordion } from "@/shared/ui/accordion";
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationItem } from "./ViolationItem";
 import { selectElementById } from "@/features/window/select-element";

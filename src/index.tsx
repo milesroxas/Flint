@@ -1,7 +1,7 @@
 import "./styles/globals.css";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import Header from "@/components/Header";
+import Header from "@/app/ui/Header";
 import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
 
 import { LinterPanel } from "@/features/linter/view/LinterPanel";

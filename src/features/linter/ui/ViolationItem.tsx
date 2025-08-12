@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/shared/ui/accordion";
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationHeader } from "./ViolationHeader";
 import { ViolationDetails } from "./ViolationDetails";
