@@ -1,5 +1,5 @@
 import React from "react";
-import { LintPageButton } from "@/features/linter/components/LintPageButton";
+import { LintPageButton } from "@/features/linter/ui/LintPageButton";
 import { PresetSwitcher } from "./PresetSwitcher";
 
 interface ActionBarProps {
