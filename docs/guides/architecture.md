@@ -90,12 +90,14 @@ This document describes the current, implemented architecture of the Webflow Des
   - `useElementLint`: subscribes to `selectedelement`, calls the selected‑element scan, and exposes `violations`, `contexts`, `classNames`, `roles`, and `isLoading`.
   - `usePageLint`: thin wrapper returning the Zustand store.
 - UI: `features/linter/ui/*` renders the panel, list, items, headers, mode/preset toggles, and role/context badges. The UI is grouped as:
+
   - `ui/controls/*`: toolbar controls such as `ModeToggle`, `PresetSwitcher`, `LintPageButton`, `ActionBar`
   - `ui/violations/*`: violations list and item composition (`ViolationsList`, `ViolationsSection`, `ViolationItem`, `ViolationHeader`, `ViolationDetails`)
   - `ui/panel/*`: panel-level presentational components (e.g., `LintPanelHeader`)
     Opening an accordion row can trigger a highlight selection in the Designer.
 
   Placement rules:
+
   - Put components in `ui/controls` when they are user controls (toggles, selectors, buttons, toolbars). They should not render `RuleResult` content and should avoid importing from `ui/violations`.
   - Put components in `ui/violations` when they render or compose `RuleResult` data (lists, headers, details). They may use shared primitives and feature libs, and can call `selectElementById` for highlight, but should not mutate stores or run scans.
   - Put components in `ui/panel` when they are panel-level scaffolding or summaries that compose controls and violations (e.g., `LintPanelHeader`). They should remain presentational and not own business logic.
