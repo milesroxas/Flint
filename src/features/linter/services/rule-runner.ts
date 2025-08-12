@@ -6,27 +6,30 @@ import { StyleInfo, StyleWithElement } from "@/entities/style/model/style.servic
 import { UtilityClassAnalyzer, UtilityClassDuplicateInfo } from "./utility-class-analyzer";
 import { RuleRegistry } from "./rule-registry";
 
+// Centralized helper to keep combo-like detection consistent across runner logic
+const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+const isComboLike = (name: string): boolean => COMBO_LIKE_RE.test(name);
+
 export const createRuleRunner = (
   ruleRegistry: RuleRegistry,
   utilityAnalyzer: UtilityClassAnalyzer,
   classKindResolver?: (className: string, isComboFlag?: boolean) => ClassType
 ) => {
   const getClassType = (className: string, isComboFlag?: boolean): ClassType => {
+    // Treat variant-like names as combos even when misformatted (is-foo, is_bar, isActive)
+    const looksLikeCombo = isComboFlag === true || isComboLike(className);
+
     if (typeof classKindResolver === "function") {
-      try { return classKindResolver(className, isComboFlag); } catch (err) {
+      try {
+        // If resolver says combo or we heuristically detect combo, prefer combo
+        const resolved = classKindResolver(className, isComboFlag);
+        return looksLikeCombo ? "combo" : resolved;
+      } catch (err) {
         // fall through to default heuristics
-        return isComboFlag === true
-          ? "combo"
-          : className.startsWith("u-")
-            ? "utility"
-            : className.startsWith("is-")
-              ? "combo"
-              : "custom";
       }
     }
-    if (isComboFlag === true) return "combo";
     if (className.startsWith("u-")) return "utility";
-    if (className.startsWith("is-")) return "combo";
+    if (looksLikeCombo) return "combo";
     return "custom";
   };
 
@@ -69,7 +72,7 @@ export const createRuleRunner = (
         message: rule.description,
         severity,
         className,
-        isCombo: className.startsWith("is-"),
+        isCombo: isComboLike(className),
         example: rule.example,
         context: elementContexts.length > 0 ? elementContexts[0] : undefined
       }];
@@ -286,7 +289,7 @@ export const createRuleRunner = (
         let violatingVariantName: string | null = null;
         for (const s of ordered) {
           const n = s.name;
-          if (n.startsWith("is-")) {
+          if (isComboLike(n)) {
             if (!baseSeenBeforeVariant) {
               violatingVariantName = n;
             }
@@ -336,7 +339,13 @@ export const createRuleRunner = (
         const isBaseCustom = typeof baseOrder === "number" ? order === baseOrder : true;
         if (!isBaseCustom) {
           // Scope this skip to Lumos rules only; client-first keeps its own behavior
-          applicableRules = applicableRules.filter(rule => !(rule.type === "naming" && rule.targetClassTypes?.includes("custom") && rule.id.startsWith("lumos-")));
+          // Always allow the core custom class format rule to run on ALL custom classes
+          applicableRules = applicableRules.filter(rule => !(
+            rule.type === "naming" &&
+            rule.targetClassTypes?.includes("custom") &&
+            rule.id.startsWith("lumos-") &&
+            rule.id !== "lumos-custom-class-format"
+          ));
         }
       }
 

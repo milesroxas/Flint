@@ -71,9 +71,16 @@ export class RuleConfigurationService {
 
     const enabledSet = new Set(file.enabledRules ?? []);
     return this.ruleRegistry.getAllRules().map(rule => {
-      const enabled = file.enabledRules
-        ? enabledSet.has(rule.id)
-        : rule.enabled;
+      let enabled: boolean;
+      if (file.enabledRules) {
+        const listed = enabledSet.has(rule.id);
+        const hasStoredConfig = Object.prototype.hasOwnProperty.call(file.ruleConfigs, rule.id);
+        // If the rule is explicitly listed, respect it. If it's not listed and we have no stored config for it
+        // (i.e., it's new), fall back to the rule's default enabled state instead of disabling.
+        enabled = listed || !hasStoredConfig ? rule.enabled : false;
+      } else {
+        enabled = rule.enabled;
+      }
 
       // clone stored settings or start fresh
       const base = file.ruleConfigs[rule.id] ?? {};
