@@ -273,14 +273,14 @@ File: `src/presets/acme.preset.ts`
 import { Preset } from "@/features/linter/model/linter.types";
 import { acmeGrammar } from "@/features/linter/grammar/acme.grammar";
 import { acmeRoles } from "@/features/linter/roles/acme.roles";
-import { acmeCustomClassFormat } from "@/rules/naming/acme-custom-class-format";
+import { acmeCustomClassFormatRule } from "@/rules/naming/acme-custom-class-format";
 
 export const acmePreset: Preset = {
   id: "acme",
   grammar: acmeGrammar,
   roles: acmeRoles,
   rules: [
-    acmeCustomClassFormat,
+    acmeCustomClassFormatRule,
     // add more rules from src/rules/** as needed
   ],
   // Optional: tweak the DOM context classifier for your naming scheme
@@ -429,7 +429,7 @@ pnpm exec vitest
 
 - My preset loads but rules don’t run
 
-  - Verify your `PresetSwitcher` change and that `ensureLinterInitialized(mode, preset)` receives `"acme"`.
+  - Use the UI to switch to your preset and ensure it appears in `PresetSwitcher`. This calls `ensureLinterInitialized("balanced", "acme")` under the hood.
   - Check `rules` array is non‑empty and rule IDs are unique.
 
 - Roles look wrong for `_wrap`
@@ -461,6 +461,6 @@ pnpm exec vitest
 - [ ] Role resolver created and exported
 - [ ] Rules created and added to preset `rules`
 - [ ] `contextConfig` tuned (optional)
-- [ ] Preset file created and wired into UI switcher
+- [ ] Preset file created and auto‑discovered (visible in `PresetSwitcher`)
 - [ ] Tests added (grammar, roles, and integration)
-- [ ] `pnpm test` passes and preset works in `pnpm dev`
+- [ ] `pnpm exec vitest` passes and preset works in `pnpm dev`
