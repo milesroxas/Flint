@@ -19,7 +19,9 @@ function ScrollArea({
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const lastTopRef = React.useRef(0);
-  const lastDirRef = React.useRef<"up" | "down">("down");
+  const emittedDirRef = React.useRef<"up" | "down" | null>(null);
+  const pendingDirRef = React.useRef<"up" | "down" | null>(null);
+  const pendingAccumRef = React.useRef(0);
 
   React.useEffect(() => {
     const el = viewportRef.current;
@@ -33,17 +35,71 @@ function ScrollArea({
         const prevTop = lastTopRef.current;
         const nextTop = el.scrollTop;
         const delta = nextTop - prevTop;
-        // Only react when movement is noticeable (>= 2px)
-        if (Math.abs(delta) >= 2) {
+        const absDelta = Math.abs(delta);
+        // Update lastTop always at the end
+
+        // Ignore tiny jitter
+        if (absDelta >= 2) {
           const dir: "up" | "down" = delta > 0 ? "down" : "up";
-          if (dir !== lastDirRef.current) {
-            lastDirRef.current = dir;
-            onScrollDirectionChange(dir);
+
+          // Determine if we're at extremes to avoid bounce flicker
+          const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
+          const nearBottom = nextTop >= maxTop - 2;
+          const nearTop = nextTop <= 2;
+
+          // Hysteresis threshold for emitting a change
+          const threshold = 24; // px of sustained movement before emit
+
+          if (emittedDirRef.current === null) {
+            // First-time emit requires threshold
+            if (pendingDirRef.current === dir) {
+              pendingAccumRef.current += absDelta;
+            } else {
+              pendingDirRef.current = dir;
+              pendingAccumRef.current = absDelta;
+            }
+
+            const passedThreshold = pendingAccumRef.current >= threshold;
+            const blockedByBottom =
+              dir === "up" ? false : nearBottom && !passedThreshold;
+            const blockedByTop =
+              dir === "down" ? false : nearTop && !passedThreshold;
+
+            if (passedThreshold && !blockedByBottom && !blockedByTop) {
+              emittedDirRef.current = dir;
+              pendingDirRef.current = null;
+              pendingAccumRef.current = 0;
+              onScrollDirectionChange(dir);
+            }
+          } else if (dir === emittedDirRef.current) {
+            // Same as last emitted: clear pending
+            pendingDirRef.current = null;
+            pendingAccumRef.current = 0;
+          } else {
+            // Different than last emitted: accumulate until threshold
+            if (pendingDirRef.current === dir) {
+              pendingAccumRef.current += absDelta;
+            } else {
+              pendingDirRef.current = dir;
+              pendingAccumRef.current = absDelta;
+            }
+
+            const passedThreshold = pendingAccumRef.current >= threshold;
+            const blockedByBottom =
+              dir === "up" ? false : nearBottom && !passedThreshold;
+            const blockedByTop =
+              dir === "down" ? false : nearTop && !passedThreshold;
+
+            if (passedThreshold && !blockedByBottom && !blockedByTop) {
+              emittedDirRef.current = dir;
+              pendingDirRef.current = null;
+              pendingAccumRef.current = 0;
+              onScrollDirectionChange(dir);
+            }
           }
-          lastTopRef.current = nextTop;
-        } else {
-          lastTopRef.current = nextTop;
         }
+
+        lastTopRef.current = nextTop;
       }
     };
     handleScroll();
@@ -51,7 +107,7 @@ function ScrollArea({
     return () => {
       el.removeEventListener("scroll", handleScroll as any);
     };
-  }, [onIsScrolledChange]);
+  }, [onIsScrolledChange, onScrollDirectionChange]);
 
   return (
     <ScrollAreaPrimitive.Root
