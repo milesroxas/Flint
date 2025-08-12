@@ -1,7 +1,6 @@
 // features/linter/lib/registry.ts
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
-import { lumosPreset } from "@/presets/lumos.preset";
-import { clientFirstPreset } from "@/presets/client-first.preset";
+import { resolvePresetOrFallback } from "@/presets";
 import { applyOpinionMode, OpinionMode } from "@/features/linter/model/opinion.modes";
 import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import type { Rule } from "@/features/linter/model/rule.types";
@@ -13,12 +12,12 @@ export const ruleRegistry = createRuleRegistry();
 export const ruleConfigService = new RuleConfigurationService(ruleRegistry);
 
 // Initialize with default rules and user configurations
-export function initializeRuleRegistry(mode: OpinionMode = "balanced", preset: "lumos" | "client-first" = "lumos"): void {
+export function initializeRuleRegistry(mode: OpinionMode = "balanced", presetId?: string): void {
   console.log("Initializing rule registry…");
 
   // 1) register preset rules (seeds defaults too)
   ruleRegistry.clear();
-  const selected = preset === "client-first" ? clientFirstPreset : lumosPreset;
+  const selected = resolvePresetOrFallback(presetId);
   ruleRegistry.registerRules(selected.rules);
 
   // 3) apply opinion mode adjustments

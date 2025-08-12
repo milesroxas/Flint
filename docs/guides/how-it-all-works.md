@@ -7,7 +7,7 @@ This guide explains the linter end‑to‑end: what happens when you lint a sele
 ## High‑level overview
 
 - The extension runs inside Webflow Designer and exposes a compact UI to lint the selected element or the entire page.
-- A shared rule registry is initialized once per session and seeded by a preset (`lumos` or `client-first`) plus persisted configuration.
+- A shared rule registry is initialized once per session and seeded by the active preset (discovered dynamically) plus persisted configuration.
 - Linting gathers styles via the Webflow Designer API, classifies DOM contexts, computes element roles from class names, runs rules, and renders structured results.
 
 ```mermaid
@@ -53,7 +53,7 @@ flowchart TD
 ## Presets, grammar, and roles
 
 - Presets live under `src/presets/` and define:
-  - `id`: preset identifier (`lumos`, `client-first`)
+  - `id`: preset identifier (e.g., `lumos`, `client-first`, or any custom id)
   - `grammar`: `GrammarAdapter` implementation that parses a class name into a structured `ParsedClass`
   - `roles`: `RoleResolver` that maps a `ParsedClass` to an `ElementRole`
   - `rules`: `Rule[]` (naming, property, context‑aware)

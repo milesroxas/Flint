@@ -1,110 +1,139 @@
 ## Audit Tool — Webflow Designer Extension
 
-Lint Webflow classes in real time. The extension validates naming, detects duplicate utilities, and applies context‑aware rules so teams can keep sites clean as they work.
+Lint Webflow classes in real time. Validates naming, detects duplicate utilities, and applies context‑aware rules so teams keep sites clean while they work.
+
+### Table of Contents
+
+- Overview
+- Features
+- Quick start
+- Development
+- Architecture overview
+- Documentation index (guides, module READMEs, ADRs)
+- Testing
+- Project structure
+
+### Overview
+
+React + Vite extension that integrates with the Webflow Designer API. Preset‑driven linter (Lumos, Client‑first) analyzes class naming, order, and style properties, with element‑context awareness and role identification.
+
+### Features
+
+- Class type detection: custom, utility, combo
+- Naming validation per class type
+- Utility duplicate and overlapping property detection
+- Element‑context classification (componentRoot, childGroup, childGroupInvalid)
+- Role identification from the first custom class per preset
+- Presets and opinion modes with persisted rule configuration
+- Page and selected‑element scanning, highlighting in Designer
 
 ### Quick start
 
-- **Install**: `pnpm i`
-- **Dev server**:
+- Install: `pnpm i`
+- Dev server:
   ```bash
   pnpm dev
   ```
   Use the printed URL as your Webflow “Development URL”.
-- **Build (development bundle.zip)**:
+- Build (development bundle.zip):
   ```bash
   pnpm build:dev
   ```
-- **Build (production bundle.zip)**:
+- Build (production bundle.zip):
   ```bash
   pnpm build:prod
   ```
-- **Lint code**:
+- Lint code:
   ```bash
   pnpm lint
   ```
 
-### Architecture (FSD overview)
+### Development
 
-- `src/entities`
-  - `style/model/style.service.ts`: reads site styles and element styles. Caches site‑wide styles for the session and offers a lightweight `getAppliedClassNames` for classification.
-  - `element/model/element-context-classifier.ts`: builds a parent map and classifies elements (e.g., `componentRoot`). Caches per page snapshot.
-- `src/features/linter`
-  - `model/`: `linter.factory.ts` bootstraps the rule registry (presets + opinion mode), exposes the global registry.
-  - `services/`:
-    - `element-lint-service.ts` (singleton): orchestrates element scans, reuses cached styles and contexts.
-    - `rule-runner.ts`: executes rules per class with context via `runRulesOnStylesWithContext`.
-    - `rule-registry.ts`, `rule-configuration-service.ts`.
-    - `utility-class-analyzer.ts`: builds maps for utility property duplicates (memoized).
-  - `grammar/`: preset-specific `GrammarAdapter` implementations to parse class names.
-  - `roles/`: preset-specific `RoleResolver` implementations to map parsed classes to `ElementRole`.
-  - `hooks/`: `useElementLint.ts`, `usePageLint.ts`.
-  - `store/`: `usePageLintStore.ts` (Zustand) for page scans.
-  - `components/`: compact UI for results (`LintPanel`, `ViolationsList`, `ViolationItem`, etc.).
-- `src/processes/scan`: orchestrators for element and page scanning.
-- `src/presets`: `lumos.preset.ts`, `client-first.preset.ts` define rule packs (single source of truth).
-- `src/rules`: naming, property, and context‑aware rule implementations.
+- Tooling: Vite, TypeScript (strict), ESLint, Vitest
+- Path alias: `@/* → src/*` (see `tsconfig.json`)
+- Webflow integration:
+  - Dev: custom Vite plugin injects Webflow extension scripts and serves `/__webflow` from `webflow.json`
+  - Runtime: defensive access to Designer APIs (`getAllElements`, `getStyles`, `getChildren`, `setSelectedElement`, `setExtensionSize`)
 
-### What’s new
+### Architecture overview
 
-- Role identification (per preset): parses the first custom class via a `GrammarAdapter` and maps to an `ElementRole` using a `RoleResolver`. `wrap` resolves to `componentRoot`; if not at a root, it is treated as `childGroup`.
-- Role badges in UI:
-  - Selected Element: role badges show in the header and on each violation.
-  - Full Page: each violation row shows a role badge (when resolvable).
-- Configurable element-level checks (Lumos):
-  - Utilities and combos must follow the base custom class
-  - Combo class count limit (default 2; configurable)
-- Duplicate utility detection with formatted property metadata
-- UI refinements: labels for contexts/roles centralized in `src/features/linter/lib/labels.ts`; logs gated to development; `ModeToggle` uses shared `Button` variants for consistent a11y.
-- Preset switching immediately re-lints the current view (page or element) and updates results.
+- See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
+- Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`.
 
-### UX details
+### Documentation index
 
-- In page mode, opening a violation’s accordion entry automatically highlights the corresponding element in Webflow Designer (using the Designer API when available, with a safe fallback event). The manual highlight button remains for explicit control.
+- Guides
 
-### How element linting works
+  - `docs/guides/architecture.md`
+  - `docs/guides/how-it-all-works.md`
+  - `docs/guides/element-role-identification-feature.md`
+  - `docs/guides/unified-plan.md`
+  - `docs/guides/product-technical-plan.md`
+  - `docs/guides/user-stories.md`
 
-1. Selection event triggers `useElementLint`.
-2. `ensureLinterInitialized()` builds/loads the registry from a preset and persisted config.
-3. `element-lint-service` fetches cached site styles, builds utility maps, gets the element’s applied styles (Designer elements only; requires `getStyles()`), classifies page contexts, and computes roles from the first custom class using the active preset’s grammar and role resolver. The service stamps `metadata.role` on violations for display.
-4. `rule-runner` filters applicable rules (by class type and context) and returns results.
-5. UI renders issues, suggestions, and duplicates with structured details.
+- Module READMEs
 
-### Presets and configuration
+  - Linter (feature overview): `src/features/linter/README.md`
+  - Linter services: `src/features/linter/services/README.md`
+  - Linter grammar adapters: `src/features/linter/grammar/README.md`
+  - Linter role resolvers: `src/features/linter/roles/README.md`
+  - Linter store: `src/features/linter/store/README.md`
+  - Presets: `src/presets/README.md`
+  - Element context classifier: `src/entities/element/model/README.md`
+  - Style service: `src/entities/style/model/README.md`
 
-- Presets: `lumos` (default) and `client-first` define the rule set, grammar (`GrammarAdapter`), and role resolver (`RoleResolver`).
-- Each preset can also provide `contextConfig` for the element-context classifier (e.g., `wrapSuffix`, `parentClassPatterns`, tokenization and child-group validation settings). The services instantiate the classifier with the active preset’s `contextConfig`.
-- Opinion mode: `balanced` by default; initialization path supports other modes.
-- Config persistence: `rule-configuration-service` stores per‑rule settings and merges with schema defaults on load.
-  - New option: `lumos-combo-class-limit.maxCombos` (number; default 2)
-  - Ordering/limit checks are registered for Lumos and evaluated in the runner; enablement and severity configurable via the registry.
+- ADRs (Architecture Decision Records)
 
-### Performance
+  - Folder: `docs/adrs/`
+  - Template: `docs/adrs/template.md`
+  - Create a new ADR
+    1. Copy the template to a new file in `docs/adrs/` using the next sequential number and a short kebab‑case title, for example: `adr-020-short-title.md`.
+    2. Fill the sections from the template:
+       - Title
+       - Status (e.g., Proposed, Accepted, Superseded)
+       - Context (problem and constraints)
+       - Decision (what and why)
+       - Consequences (tradeoffs, follow‑ups)
+    3. Commit the ADR with the code changes that implement the decision where possible.
+    4. Do not modify existing ADRs; add a new one and link with “Supersedes”/“Superseded by” when changing a decision.
 
-- Site styles are cached for the session and invalidated on preset/mode changes.
-- Page parent map and element class lists are cached per snapshot.
-- Utility property maps rebuild only when the style list changes.
-- Logging in hot loops is minimized for responsiveness and disabled in production UI code.
+- RFCs (Requests for Comments)
+  - Folder: `docs/rfcs/`
+  - Template: `docs/rfcs/template.md`
+  - Create a new RFC
+    1. Copy `docs/rfcs/template.md` into `docs/rfcs/` with a descriptive filename (kebab‑case), e.g., `improve-lint-performance.md`.
+    2. Fill the sections from the template:
+       - Summary
+       - Motivation
+       - Detailed Design
+       - Drawbacks
+       - Alternatives
+       - Adoption Strategy
+    3. Open a PR with the RFC for review before implementation.
 
 ### Testing
 
-- Run tests with:
+- Run tests:
   ```bash
-  npx vitest
+  pnpm exec vitest
   ```
-- Integration and snapshot tests live under `src/features/linter/services/__tests__/`.
+- Integration and snapshot tests: `src/features/linter/services/__tests__/`
 
-### Key files
+### Project structure
 
-- `src/features/linter/model/linter.factory.ts`
-- `src/features/linter/services/element-lint-service.ts`
-- `src/features/linter/services/rule-runner.ts`
-- `src/entities/style/model/style.service.ts`
-- `src/entities/element/model/element-context-classifier.ts`
-- `src/features/linter/grammar/*`, `src/features/linter/roles/*`
-- `src/presets/lumos.preset.ts`, `src/presets/client-first.preset.ts`
-- `src/processes/scan/scan-selected-element.ts`, `src/processes/scan/scan-current-page.ts`
-
-### Further reading
-
-- Guides: `docs/guides/unified-plan.md`, `docs/guides/architecture.md`.
-- ADRs: see `docs/adrs/` (notably ADR‑012 for legacy cleanup).
+```
+src/
+  entities/
+    element/model/
+    style/model/
+  features/
+    linter/
+      model/ services/ grammar/ roles/ store/ components/
+    window/
+  presets/
+  processes/scan/
+  rules/
+styles/
+docs/
+```

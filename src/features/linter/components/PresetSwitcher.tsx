@@ -8,10 +8,11 @@ import {
 import {
   ensureLinterInitialized,
   getCurrentPreset,
+  getAvailablePresetIds,
 } from "@/features/linter/model/linter.factory";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
 
-export type PresetId = "lumos" | "client-first";
+export type PresetId = string;
 
 interface PresetSwitcherProps {
   onPresetChange?: (preset: PresetId) => void;
@@ -21,12 +22,11 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
   onPresetChange,
 }) => {
   const [open, setOpen] = useState(false);
-  const [preset, setPreset] = useState<PresetId>(
-    getCurrentPreset() as PresetId
-  );
+  const [preset, setPreset] = useState<PresetId>(getCurrentPreset());
+  const available = getAvailablePresetIds();
 
-  const presetLabel = preset === "client-first" ? "Client‑first" : "Lumos";
-  const presetInitial = presetLabel.slice(0, 1).toUpperCase();
+  const presetLabel = preset;
+  const presetInitial = (presetLabel || "").slice(0, 1).toUpperCase();
 
   return (
     <div className="rounded-sm border bg-card flex items-stretch h-full">
@@ -44,7 +44,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
         </CollapsibleTrigger>
         <CollapsibleContent asChild>
           <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md border bg-popover shadow-md p-1 z-30">
-            {(["lumos", "client-first"] as const).map((id) => (
+            {available.map((id) => (
               <button
                 key={id}
                 onClick={() => {
@@ -82,7 +82,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                   preset === id ? "bg-accent/60" : ""
                 }`}
               >
-                {id === "client-first" ? "Client‑first" : "Lumos"}
+                {id}
               </button>
             ))}
           </div>

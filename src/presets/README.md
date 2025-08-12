@@ -2,18 +2,17 @@
 
 Presets declare the rule set and connect grammar and role resolvers used for role identification. Presets can also supply element-context classifier configuration.
 
-- `lumos.preset.ts`
-  - `id: "lumos"`
-  - `grammar: lumosGrammar`
-  - `roles: lumosRoles`
+- `*.preset.ts`
+  - `id: string`
+  - `grammar?: GrammarAdapter`
+  - `roles?: RoleResolver`
   - `rules: Rule[]` including naming, property, and context‑aware rules
-- `client-first.preset.ts`
-  - `id: "client-first"`
-  - `grammar: clientFirstGrammar`
-  - `roles: clientFirstRoles`
-  - `rules: Rule[]` focused on Client‑first naming and structure
-  - `contextConfig` (optional): supplies `wrapSuffix`, `parentClassPatterns`, and child-group tokenization/validation settings
+  - `contextConfig?`: `Partial<ElementContextConfig>` for the classifier
+
+Dynamic discovery
+
+- All presets under `src/presets/*.preset.ts` are auto‑discovered at build time via `src/presets/index.ts`. The UI switcher lists available preset IDs dynamically.
 
 Initialization
 
-- The active preset is set via `ensureLinterInitialized(mode, preset)` in `linter.factory.ts` and drives grammar/role selection at runtime. Services instantiate the element-context classifier with the active preset’s `contextConfig`.
+- Call `ensureLinterInitialized(mode, presetId?)` from `linter.factory.ts`. Under the hood, `initializeRuleRegistry(mode, presetId)` resolves the preset from the dynamic registry, registers its rules, applies opinion mode, and merges persisted configuration. Services resolve `grammar`, `roles`, and `contextConfig` from the active preset (falling back to Lumos grammar/roles if omitted).

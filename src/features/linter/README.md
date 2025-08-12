@@ -71,7 +71,7 @@ The system assigns element contexts to support context-aware rules.
 - `registry.ts`
 
   - Global `ruleRegistry` and `ruleConfigService`
-  - `initializeRuleRegistry()` registers preset rules (e.g., Lumos, Client‑first) and applies persisted configs
+  - `initializeRuleRegistry(mode, presetId?)` resolves the active preset from the dynamic registry (`src/presets/index.ts`), registers its rules, and applies persisted configs
   - `addCustomRule()` registers a rule dynamically
 
 - `rule-runner.ts`
@@ -128,7 +128,7 @@ The system assigns element contexts to support context-aware rules.
 - `components/LintPageButton.tsx`: action button with loading/issue count state
 - `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available
 - `components/ModeToggle.tsx`: uses shared `Button` variants for consistent a11y and focus
-- `components/PresetSwitcher.tsx`: uses dynamic `import()` for cache reset and clears results
+- `components/PresetSwitcher.tsx`: lists available preset IDs from the dynamic registry and uses dynamic `import()` to reset caches on preset change
 
 ## Runtime flows
 

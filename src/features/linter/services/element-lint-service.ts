@@ -9,10 +9,8 @@ import type { WebflowElement, ElementWithClassNames } from "@/entities/element/m
 import type { ElementRole, GrammarAdapter, RoleResolver } from "@/features/linter/model/linter.types";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
 import { lumosRoles } from "@/features/linter/roles/lumos.roles";
-import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
-import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
-import { lumosPreset } from "@/presets/lumos.preset";
-import { clientFirstPreset } from "@/presets/client-first.preset";
+// dynamic presets will supply grammar/roles; keep lumos as safe fallback
+import { resolvePresetOrFallback } from "@/presets";
 
 // Declare webflow global
 declare const webflow: {
@@ -30,7 +28,7 @@ function createServiceInstance() {
   const styleService = createStyleService();
   const utilityAnalyzer = createUtilityClassAnalyzer();
   const presetId = getCurrentPreset();
-  const activePreset = presetId === "client-first" ? clientFirstPreset : lumosPreset;
+  const activePreset = resolvePresetOrFallback(presetId);
   const activeGrammar = activePreset.grammar || lumosGrammar;
   const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer, (name: string, isCombo?: boolean) => {
     if (isCombo === true) return "combo";
@@ -42,11 +40,10 @@ function createServiceInstance() {
   let cachedElementsSignature: string | null = null;
 
   function selectGrammarAndRoles(): { grammar: GrammarAdapter; roles: RoleResolver } {
-    const preset = getCurrentPreset();
-    if (preset === "client-first") {
-      return { grammar: clientFirstGrammar, roles: clientFirstRoles };
-    }
-    return { grammar: lumosGrammar, roles: lumosRoles };
+    const preset = resolvePresetOrFallback(getCurrentPreset());
+    const grammar = preset.grammar ?? lumosGrammar;
+    const roles = preset.roles ?? lumosRoles;
+    return { grammar, roles };
   }
 
   function isCustomKind(name: string): boolean {
