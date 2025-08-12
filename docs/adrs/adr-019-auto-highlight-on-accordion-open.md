@@ -24,7 +24,7 @@ Users reviewing page-wide violations frequently click into a violation and immed
 
 ## Affected Files
 
-- `src/features/linter/components/ViolationsList.tsx` (added `onValueChange` to auto-highlight newly opened items in page mode)
+- `src/features/linter/ui/violations/ViolationsList.tsx` (added `onValueChange` to auto-highlight newly opened items in page mode)
 
 ## Alternatives Considered
 

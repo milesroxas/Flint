@@ -89,7 +89,11 @@ This document describes the current, implemented architecture of the Webflow Des
 - Hooks:
   - `useElementLint`: subscribes to `selectedelement`, calls the selected‑element scan, and exposes `violations`, `contexts`, `classNames`, `roles`, and `isLoading`.
   - `usePageLint`: thin wrapper returning the Zustand store.
-- UI: `features/linter/ui/*` renders the panel, list, items, headers, mode/preset toggles, and role/context badges. Opening an accordion row can trigger a highlight selection in the Designer.
+- UI: `features/linter/ui/*` renders the panel, list, items, headers, mode/preset toggles, and role/context badges. The UI is grouped as:
+  - `ui/controls/*`: toolbar controls such as `ModeToggle`, `PresetSwitcher`, `LintPageButton`, `ActionBar`
+  - `ui/violations/*`: violations list and item composition (`ViolationsList`, `ViolationsSection`, `ViolationItem`, `ViolationHeader`, `ViolationDetails`)
+  - `ui/panel/*`: panel-level presentational components (e.g., `LintPanelHeader`)
+    Opening an accordion row can trigger a highlight selection in the Designer.
 
 ### Build, packaging, and tooling
 

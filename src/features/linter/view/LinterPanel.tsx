@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-import { ViolationsList } from "@/features/linter/ui/ViolationsList";
+import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { ModeToggle, type LintViewMode } from "@/features/linter/ui/ModeToggle";
-import { ActionBar } from "@/features/linter/ui/ActionBar";
+import {
+  ModeToggle,
+  type LintViewMode,
+} from "@/features/linter/ui/controls/ModeToggle";
+import { ActionBar } from "@/features/linter/ui/controls/ActionBar";
 import { useElementLint } from "@/features/linter/store/elementLint.store";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
 

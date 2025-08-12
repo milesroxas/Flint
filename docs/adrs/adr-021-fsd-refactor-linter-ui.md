@@ -19,7 +19,10 @@ Constraints:
 Adopt an FSD-aligned structure separating containers (view), presentational UI, and stores:
 
 - `features/linter/view/LinterPanel.tsx`: single container orchestrating view mode (page/element), banners, toolbar, and rendering shared UI.
-- `features/linter/ui/*`: presentational components (`ViolationsList`, `ViolationItem`, `ModeToggle`, `PresetSwitcher`, `ActionBar`, `LintSummary`).
+- `features/linter/ui/*`: presentational components grouped as of ADR‑023:
+  - `ui/controls/*` (`ModeToggle`, `PresetSwitcher`, `ActionBar`, `LintPageButton`)
+  - `ui/violations/*` (`ViolationsList`, `ViolationsSection`, `ViolationItem`, `ViolationHeader`, `ViolationDetails`)
+  - `ui/panel/*` (`LintPanelHeader`)
 - `features/linter/store/elementLint.store.ts`: new Zustand store mirroring `pageLint.store.ts` shape and semantics, replacing the bespoke `useElementLint` logic. A compatibility re-export is provided at `hooks/useElementLint.ts`.
 
 The entry UI uses `LinterPanel` instead of `PageLintSection`.

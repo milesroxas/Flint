@@ -129,7 +129,11 @@ src/
     style/model/
   features/
       linter/
-        model/ services/ grammar/ roles/ store/ ui/ view/
+        model/ services/ grammar/ roles/ store/ view/
+        ui/
+          controls/
+          violations/
+          panel/
     window/
   presets/
   processes/scan/

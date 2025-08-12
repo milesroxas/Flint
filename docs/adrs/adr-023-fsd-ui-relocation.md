@@ -28,7 +28,10 @@ Constraints:
 
 - All references to `@/components/ui/*` are replaced with `@/shared/ui/*`.
 - `Header` now imports from `@/app/ui/Header` in `src/index.tsx`.
-- Documentation and READMEs are updated to reference `src/shared/ui` and `src/features/linter/ui`.
+- Documentation and READMEs are updated to reference `src/shared/ui` and `src/features/linter/ui`, with subfolders:
+  - `ui/controls/*` (controls)
+  - `ui/violations/*` (violations list and items)
+  - `ui/panel/*` (panel-level components)
 - Previous ADRs that mention old paths remain historical; this ADR records the relocation.
 
 ## Affected Code
@@ -46,4 +49,3 @@ Constraints:
 ## Follow‑ups
 
 - None currently. Future shared widgets can live under `src/widgets/*` if needed.
-

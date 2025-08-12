@@ -118,11 +118,11 @@ The system assigns element contexts to support context-aware rules.
 
 #### UI
 
-- `ui/ViolationsList.tsx`, `ui/ViolationItem.tsx` (composes `ui/ViolationHeader` + `ui/ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
-- `ui/ModeToggle.tsx`: page/element toggle buttons.
-- `ui/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
-- `ui/ActionBar.tsx` and `ui/LintPageButton.tsx`: bottom toolbar and primary actions.
-- `ui/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
+- `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx` (composes `ui/violations/ViolationHeader` + `ui/violations/ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
+- `ui/controls/ModeToggle.tsx`: page/element toggle buttons.
+- `ui/controls/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
+- `ui/controls/ActionBar.tsx` and `ui/controls/LintPageButton.tsx`: bottom toolbar and primary actions.
+- `ui/panel/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
 
 #### Hooks
 
@@ -185,7 +185,7 @@ The system assigns element contexts to support context-aware rules.
 - `rules/*` (naming, property, context-aware)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
 - `store/usePageLintStore.ts`, `store/elementLint.store.ts`
-- `view/LinterPanel.tsx`, `components/LintPageButton.tsx`, `components/ViolationsList.tsx`, `components/ViolationItem.tsx`, `components/ModeToggle.tsx`, `components/PresetSwitcher.tsx`, `components/ActionBar.tsx`, `components/LintPanelHeader.tsx`
+- `view/LinterPanel.tsx`, `ui/controls/LintPageButton.tsx`, `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx`, `ui/controls/ModeToggle.tsx`, `ui/controls/PresetSwitcher.tsx`, `ui/controls/ActionBar.tsx`, `ui/panel/LintPanelHeader.tsx`
 
 ## Notes and limitations
 

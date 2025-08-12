@@ -46,8 +46,9 @@ export const createStyleService = () => {
               const name = await style.getName();
               let properties = {};
               // Combo detection is grammar/preset-specific.
-              // For Lumos and current presets, treat only `is-` prefix as combo.
-              const isCombo = (name?.startsWith('is-') ?? false);
+              // Align with Lumos grammar: treat variant-like classes as combos even if misformatted
+              // Matches: is-foo, is_bar, isActive
+              const isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
 
               if (name && name.startsWith('u-')) {
                 try {
@@ -115,9 +116,8 @@ export const createStyleService = () => {
         const id = style.id;
         const name = await style.getName();
         const trimmedName = name?.trim() || "";
-        // Combo detection is grammar/preset-specific.
-        // For Lumos and current presets, treat only `is-` prefix as combo.
-        const isCombo = trimmedName.startsWith('is-');
+        // Combo detection aligned with Lumos grammar: allow misformatted variants to be flagged
+        const isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
         
         if (id && !seenIds.has(id)) {
           seenIds.add(id);

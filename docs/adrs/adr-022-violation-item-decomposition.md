@@ -6,7 +6,7 @@
 
 ## Context
 
-`src/features/linter/components/ViolationItem.tsx` had grown to encapsulate multiple responsibilities:
+`src/features/linter/components/ViolationItem.tsx` had grown to encapsulate multiple responsibilities (now located under `src/features/linter/ui/violations/ViolationItem.tsx`):
 
 - Rendering header information (severity dot/text, name, context/role/unknown badges)
 - Rendering details (parsed duplicate/format messages, suggested name, order/combos, highlight action, class badge)
@@ -24,7 +24,7 @@ Then simplify `ViolationItem.tsx` to compose these two:
 
 - Preserve item id construction and `AccordionItem` shape
 - No behavior changes (IDs, highlight behavior, message parsing, styles remain intact)
-- Keep files under `features/linter/components/` to minimize churn
+- Keep files under `features/linter/ui/violations/` to reflect current grouping
 
 ## Consequences
 

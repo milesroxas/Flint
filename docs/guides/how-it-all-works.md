@@ -175,9 +175,9 @@ Result object highlights (`RuleResult`):
 ## UI components
 
 - `LinterPanel.tsx`: wrapper section that wires the page/element mode toggle, actions, and renders results
-- `ui/LintPageButton.tsx`: action button (loading state and count)
-- `ui/ViolationsList.tsx`: list of `RuleResult` items
-- `ui/ViolationItem.tsx` (composes `ui/ViolationHeader` and `ui/ViolationDetails`):
+- `ui/controls/LintPageButton.tsx`: action button (loading state and count)
+- `ui/violations/ViolationsList.tsx`: list of `RuleResult` items
+- `ui/violations/ViolationItem.tsx` (composes `ui/violations/ViolationHeader` and `ui/violations/ViolationDetails`):
   - badges: severity, context, role, “Unrecognized Element”
   - duplicate utility display: formatted single property payload or parsed list
   - ordering section: `currentOrder` and `properOrder`
@@ -185,8 +185,8 @@ Result object highlights (`RuleResult`):
   - “Suggested” name when supplied by metadata
   - element highlight button using `selectElementById`
   - in page view, opening a violation accordion item will automatically trigger a highlight for that item’s `metadata.elementId`
-- `ui/ModeToggle.tsx`: uses shared `Button` component for consistent styling and a11y
-- `ui/PresetSwitcher.tsx`: performs dynamic `import()` to reset style caches on preset changes
+- `ui/controls/ModeToggle.tsx`: uses shared `Button` component for consistent styling and a11y
+- `ui/controls/PresetSwitcher.tsx`: performs dynamic `import()` to reset style caches on preset changes
 - Labels for contexts and roles are centralized in `src/features/linter/lib/labels.ts`
 
 ## Development and build

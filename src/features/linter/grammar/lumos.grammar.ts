@@ -3,7 +3,10 @@ import type { GrammarAdapter, ParsedClass, ClassKind } from "@/features/linter/m
 function getClassKind(name: string): ClassKind {
   if (name.startsWith("u-")) return "utility";
   if (name.startsWith("c-")) return "component" as ClassKind; // tolerated by ClassKind union via assignment narrowing
-  if (name.startsWith("is-")) return "combo";
+  // Treat variant-like classes as combos even when incorrectly formatted
+  // Matches: is-foo, is_bar, isActive
+  const comboLike = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+  if (comboLike.test(name)) return "combo";
   return "custom";
 }
 

@@ -40,13 +40,13 @@ We made small, targeted edits to remove the debt while preserving behavior:
 
 ## Affected Files
 
-- `src/features/linter/components/PresetSwitcher.tsx`
+- `src/features/linter/ui/controls/PresetSwitcher.tsx`
 - `src/features/window/components/ExtensionWrapper.tsx`
-- `src/features/linter/components/ViolationItem.tsx`
-- `src/components/ui/badge.tsx`
-- `src/features/linter/components/ModeToggle.tsx`
-- `src/features/linter/components/LintPageButton.tsx`
-- `src/features/linter/components/LintPanelHeader.tsx`
+- `src/features/linter/ui/violations/ViolationItem.tsx`
+- `src/shared/ui/badge.tsx`
+- `src/features/linter/ui/controls/ModeToggle.tsx`
+- `src/features/linter/ui/controls/LintPageButton.tsx`
+- `src/features/linter/ui/panel/LintPanelHeader.tsx`
 - `src/features/linter/lib/labels.ts` (new)
 
 ## Alternatives Considered
