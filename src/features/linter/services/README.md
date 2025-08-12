@@ -6,7 +6,7 @@
   - Selects grammar and role resolver from the active preset (see `linter.factory.ts`)
   - Creates the element-context classifier with the active preset’s `contextConfig`
   - Exposes `lintElement(element)` and `lintElementWithMeta(element)` (includes `appliedClassNames`, `contextsMap`, and `roles`)
-  - Adds `metadata.role` to violations so UI can render per‑item role badges
+  - Attaches `metadata.role` to violations when resolvable so the UI can render per‑item role badges
 
 - `page-lint-service.ts`
 

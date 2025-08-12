@@ -9,6 +9,9 @@ import {
 import { ActionBar } from "@/features/linter/ui/controls/ActionBar";
 import { useElementLint } from "@/features/linter/store/elementLint.store";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
+import SeverityFilter, {
+  type SeverityFilterValue,
+} from "@/features/linter/ui/controls/SeverityFilter";
 
 export function LinterPanel() {
   const { results, passedClassNames, loading, error, hasRun, lintPage } =
@@ -16,6 +19,9 @@ export function LinterPanel() {
   const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("page");
+  const [severityFilter, setSeverityFilter] =
+    useState<SeverityFilterValue>("all");
+  const [filtersCondensed, setFiltersCondensed] = useState(false);
 
   const {
     results: elementResults,
@@ -28,15 +34,42 @@ export function LinterPanel() {
     () => (mode === "page" ? results : elementResults),
     [mode, results, elementResults]
   );
+  const filteredViolations: RuleResult[] = useMemo(() => {
+    if (mode !== "page") return activeViolations;
+    if (severityFilter === "all") return activeViolations;
+    return activeViolations.filter((v) => v.severity === severityFilter);
+  }, [mode, activeViolations, severityFilter]);
   const activePassedClassNames: string[] = useMemo(
     () => (mode === "page" ? passedClassNames : elementClassNames),
     [mode, passedClassNames, elementClassNames]
   );
   const isBusy = mode === "page" ? loading : elementLoading;
 
+  const errorCount = useMemo(
+    () =>
+      mode === "page"
+        ? results.filter((v) => v.severity === "error").length
+        : 0,
+    [mode, results]
+  );
+  const warningCount = useMemo(
+    () =>
+      mode === "page"
+        ? results.filter((v) => v.severity === "warning").length
+        : 0,
+    [mode, results]
+  );
+  const suggestionCount = useMemo(
+    () =>
+      mode === "page"
+        ? results.filter((v) => v.severity === "suggestion").length
+        : 0,
+    [mode, results]
+  );
+
   return (
-    <section className="pb-20">
-      <div>
+    <section className="h-full flex flex-col">
+      <div className="pl-4 pr-0 pb-12 flex-1 min-h-0 flex flex-col">
         {error && (
           <div className="flex items-center gap-2 py-2 text-sm text-destructive">
             <AlertCircle className="h-3 w-3" />
@@ -52,21 +85,13 @@ export function LinterPanel() {
         )}
 
         {!error && (
-          <div className="p-4">
+          <div className="flex flex-col min-h-0 ">
             <ModeToggle
               mode={mode}
               onChange={(next) => {
-                try {
-                  usePageLint.getState().clearResults();
-                } catch (err: unknown) {
-                  if ((import.meta as any)?.env?.DEV) {
-                    // eslint-disable-next-line no-console
-                    console.debug("[LinterPanel] clearResults failed", err);
-                  }
-                }
                 setMode(next);
               }}
-              className="mb-2"
+              className="pt-4"
             />
 
             {mode === "page" && !loading && !hasRun ? (
@@ -75,16 +100,33 @@ export function LinterPanel() {
                 Click the button to lint this page
               </div>
             ) : (
-              <>
-                <ViolationsList
-                  violations={activeViolations}
-                  passedClassNames={activePassedClassNames}
-                  showHighlight={mode === "page"}
-                />
-                <div className="mt-2 text-[10px] text-muted-foreground">
+              <div className="flex-1 min-h-0 flex flex-col">
+                {mode === "page" && (
+                  <div className="pr-4 sticky top-0 z-10 bg-gradient-to-b from-background to-transparent pt-4 w-full">
+                    <SeverityFilter
+                      filter={severityFilter}
+                      counts={{
+                        error: errorCount,
+                        warning: warningCount,
+                        suggestion: suggestionCount,
+                      }}
+                      onChange={setSeverityFilter}
+                      condensed={filtersCondensed}
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
+                  <ViolationsList
+                    violations={filteredViolations}
+                    passedClassNames={activePassedClassNames}
+                    showHighlight={mode === "page"}
+                    onScrollStateChange={setFiltersCondensed}
+                  />
+                </div>
+                <div className="mt-2 text-[10px] text-muted-foreground px-4">
                   Opinion: {opinionMode} · View: {mode}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -93,6 +135,7 @@ export function LinterPanel() {
         loading={isBusy}
         mode={mode}
         issueCount={activeViolations.length}
+        hasRun={mode === "page" ? hasRun : false}
         onLint={async () => {
           if (mode === "page") {
             await lintPage();

@@ -34,5 +34,7 @@ export default function ExtensionWrapper({
     void resizeExtension();
   }, []);
 
-  return <div className="overflow-y-auto overflow-x-hidden">{children}</div>;
+  return (
+    <div className="h-[360px] overflow-clip flex flex-col">{children}</div>
+  );
 }

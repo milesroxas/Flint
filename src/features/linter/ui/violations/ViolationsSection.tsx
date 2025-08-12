@@ -12,13 +12,38 @@ export interface ViolationsSectionProps {
 }
 
 export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
-  title,
+  // title,
   items,
   showHighlight = true,
   defaultOpenIds = [],
 }) => {
   const prevOpenSetRef = React.useRef<Set<string>>(new Set<string>());
   const [openValues, setOpenValues] = React.useState<string[]>(defaultOpenIds);
+  const prevDefaultOpenSetRef = React.useRef<Set<string>>(
+    new Set(defaultOpenIds)
+  );
+
+  // Keep open state in sync when the caller provides a new default set
+  // This restores the auto-open behavior when switching modes or lists change
+  React.useEffect(() => {
+    const nextDefaultSet = new Set(defaultOpenIds);
+    const prevDefaultSet = prevDefaultOpenSetRef.current;
+    const isSameSize = nextDefaultSet.size === prevDefaultSet.size;
+    let isEqual = isSameSize;
+    if (isEqual) {
+      for (const id of nextDefaultSet) {
+        if (!prevDefaultSet.has(id)) {
+          isEqual = false;
+          break;
+        }
+      }
+    }
+    if (!isEqual) {
+      setOpenValues(defaultOpenIds);
+      prevOpenSetRef.current = new Set(defaultOpenIds);
+      prevDefaultOpenSetRef.current = nextDefaultSet;
+    }
+  }, [defaultOpenIds]);
 
   const getItemId = (violation: RuleResult, index: number): string =>
     `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
@@ -27,9 +52,9 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
 
   return (
     <div className="mb-2">
-      <div className="text-xs font-semibold text-muted-foreground mb-1">
+      {/* <div className="text-xs text-muted-foreground mb-1">
         {title} ({items.length})
-      </div>
+      </div> */}
       <Accordion
         type="multiple"
         value={openValues}

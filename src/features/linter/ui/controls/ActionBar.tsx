@@ -7,6 +7,7 @@ interface ActionBarProps {
   mode: "element" | "page";
   issueCount: number;
   onLint: () => Promise<void> | void;
+  hasRun?: boolean;
 }
 
 export const ActionBar: React.FC<ActionBarProps> = ({
@@ -14,6 +15,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   mode,
   issueCount,
   onLint,
+  hasRun = false,
 }) => {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-t">
@@ -27,7 +29,9 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               issueCount={issueCount}
               fullWidth
               className="bg-accent text-accent-foreground hover:bg-slate-800 h-full rounded-sm text-base"
-              label={mode === "page" ? "Lint Page" : "Re‑lint"}
+              label={
+                mode === "page" ? (hasRun ? "Re-Lint" : "Lint Page") : "Re-Lint"
+              }
             />
           </div>
         </div>

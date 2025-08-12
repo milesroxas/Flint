@@ -42,7 +42,7 @@ export const lumosComboLimitRule: NamingRule = {
   description: "Limit the number of combo classes applied to an element.",
   example: "base_custom is-large is-active",
   type: "naming",
-  severity: "warning",
+  severity: "error",
   enabled: true,
   category: "format",
   targetClassTypes: ["combo"],

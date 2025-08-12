@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@/shared/ui/button";
+// import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import {
   Collapsible,
@@ -13,7 +13,7 @@ import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
 } from "@/features/linter/lib/message-parser";
-import { selectElementById } from "@/features/window/select-element";
+// import { selectElementById } from "@/features/window/select-element";
 
 interface ViolationDetailsProps {
   violation: RuleResult;
@@ -22,7 +22,7 @@ interface ViolationDetailsProps {
 
 export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
   violation,
-  showHighlight = true,
+  // showHighlight = true,
 }) => {
   const parsedMessage = parseDuplicateMessage(violation.message);
   const formattedProperty = violation.metadata?.formattedProperty;
@@ -72,22 +72,41 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
         )}
 
       {Array.isArray(violation.metadata?.combos) && (
-        <div className="mt-1 text-[11px]">
-          Combos (in order):{" "}
-          {violation.metadata.combos.map((c: string, i: number) => (
-            <Badge key={`${c}-${i}`} className="ml-1">
-              {c}
+        <div className="mt-1 text-[11px]  border-l border-destructive pl-2">
+          <div className="mb-2">
+            <Badge className="truncate max-w-full" variant="newProperty">
+              <span className="text-left flex items-center">
+                <code className="font-mono text-xs px-1">
+                  {(violation.metadata as any)?.baseCustomClass ||
+                    violation.className ||
+                    "—"}
+                </code>
+              </span>
             </Badge>
-          ))}
-          {typeof violation.metadata?.maxCombos === "number" && (
-            <span className="ml-2 text-muted-foreground">
-              Limit: {violation.metadata.maxCombos}
-            </span>
-          )}
+          </div>
+
+          <div className="mb-2 border-l border-destructive pl-2">
+            {violation.metadata.combos.map((c: string, i: number) => (
+              <div className="mb-2">
+                <div className="flex items-center" key={`${c}-${i}`}>
+                  <Badge className="ml-1" isCombo={true}>
+                    {c}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {showHighlight && violation.metadata?.elementId && (
+      {violation.metadata?.detectionSource && (
+        <div className="mt-1 text-[10px] text-muted-foreground">
+          Detection:{" "}
+          {violation.metadata.detectionSource === "api" ? "API" : "Heuristic"}
+        </div>
+      )}
+
+      {/* {showHighlight && violation.metadata?.elementId && (
         <div className="mt-1.5">
           <Button
             variant="outline"
@@ -110,7 +129,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
             Highlight element
           </Button>
         </div>
-      )}
+      )} */}
 
       {violation.ruleId !== "no-styles-or-classes" && (
         <ClassBadge violation={violation} />

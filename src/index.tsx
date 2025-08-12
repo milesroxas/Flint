@@ -8,10 +8,12 @@ import { LinterPanel } from "@/features/linter/view/LinterPanel";
 
 const Root: React.FC = () => (
   <ExtensionWrapper>
-    <div>
+    <div className="flex h-full flex-col">
       <Header />
       {/* LinterPanel orchestrates page/element views with a mode switch */}
-      <LinterPanel />
+      <div className="flex-1 min-h-0">
+        <LinterPanel />
+      </div>
     </div>
   </ExtensionWrapper>
 );

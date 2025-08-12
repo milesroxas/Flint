@@ -19,7 +19,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 ### Features
 
-- Class type detection: custom, utility, combo
+- Class type detection: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to variant-like heuristic)
 - Naming validation per class type
 - Utility duplicate and overlapping property detection
 - Element‑context classification (componentRoot, childGroup, childGroupInvalid)
@@ -54,7 +54,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 - Path alias: `@/* → src/*` (see `tsconfig.json`)
 - Webflow integration:
   - Dev: custom Vite plugin injects Webflow extension scripts and serves `/__webflow` from `webflow.json`
-  - Runtime: defensive access to Designer APIs (`getAllElements`, `getStyles`, `getChildren`, `setSelectedElement`, `setExtensionSize`)
+  - Runtime: defensive access to Designer APIs (`getAllElements`, `getStyles`, `getChildren`, `setSelectedElement`, `setExtensionSize`); combo detection uses `style.isComboClass()` when available
 
 ### Architecture overview
 

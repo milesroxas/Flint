@@ -255,7 +255,7 @@ export const createRuleRunner = (
             isCombo: true,
             example: "base_custom is-*",
             context: contexts[0],
-            metadata: { elementId: elId },
+            metadata: { elementId: elId, detectionSource: (offendingCombo as any).detectionSource },
           });
         }
       }
@@ -268,6 +268,10 @@ export const createRuleRunner = (
       const comboLimitCfg = ruleRegistry.getRuleConfiguration("lumos-combo-class-limit");
       const maxCombos = Number(comboLimitCfg?.customSettings?.["maxCombos"] ?? 2);
       if ((comboLimitCfg?.enabled ?? true) && combos.length > maxCombos) {
+        // Determine the base custom class this element uses (earliest custom by order)
+        const baseCustomName = [...list]
+          .filter(s => getClassType(s.name, (s as any).isCombo) === "custom")
+          .sort((a, b) => a.order - b.order)[0]?.name;
         results.push({
           ruleId: "lumos-combo-class-limit",
           name: "Too many combo classes",
@@ -277,7 +281,7 @@ export const createRuleRunner = (
           isCombo: true,
           example: "base_custom is-large is-active",
           context: contexts[0],
-          metadata: { elementId: elId, combos, maxCombos },
+          metadata: { elementId: elId, combos, maxCombos, baseCustomClass: baseCustomName },
         });
       }
 
@@ -317,7 +321,7 @@ export const createRuleRunner = (
 
     // Debug log removed to reduce noise
     
-    for (const { name, properties, elementId, isCombo, order } of stylesWithElement as any) {
+    for (const { name, properties, elementId, isCombo, order, detectionSource } of stylesWithElement as any) {
       // Debug log removed to reduce noise
 
       // Get the contexts for this element
@@ -353,9 +357,13 @@ export const createRuleRunner = (
 
       for (const rule of applicableRules) {
         const ruleResults = executeRule(rule, name, properties, elementContexts, allStyles);
-        // attach elementId metadata for highlight; merge if existing
+        // attach elementId and detection source (for debug) when available; merge if existing
         ruleResults.forEach(r => {
-          r.metadata = { ...(r.metadata ?? {}), elementId };
+          const merged = { ...(r.metadata ?? {}), elementId } as any;
+          if (detectionSource && !merged.detectionSource) {
+            merged.detectionSource = detectionSource;
+          }
+          r.metadata = merged;
         });
         results.push(...ruleResults);
       }

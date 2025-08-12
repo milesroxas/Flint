@@ -16,6 +16,8 @@ export interface StyleInfo {
   order: number;
   // True when Webflow marks this style as a combo class; fallback to name prefix when API unavailable
   isCombo: boolean;
+  // Minimal debug: indicate whether combo detection came from the Webflow API or heuristic
+  detectionSource?: "api" | "heuristic";
 }
 
 export interface ElementStyleInfo {
@@ -45,10 +47,23 @@ export const createStyleService = () => {
             try {
               const name = await style.getName();
               let properties = {};
-              // Combo detection is grammar/preset-specific.
-              // Align with Lumos grammar: treat variant-like classes as combos even if misformatted
-              // Matches: is-foo, is_bar, isActive
-              const isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
+              // Prefer Webflow Designer API for combo detection; fall back to heuristic
+              let isCombo = false;
+              let detectionSource: "api" | "heuristic" = "heuristic";
+              if (typeof style.isComboClass === "function") {
+                try {
+                  isCombo = await style.isComboClass();
+                  detectionSource = "api";
+                } catch (err) {
+                  // Fallback to heuristic if API throws
+                  isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
+                  detectionSource = "heuristic";
+                }
+              } else {
+                // Heuristic fallback when API isn't available
+                isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
+                detectionSource = "heuristic";
+              }
 
               if (name && name.startsWith('u-')) {
                 try {
@@ -63,7 +78,8 @@ export const createStyleService = () => {
                 name: name?.trim() || "",
                 properties,
                 index,
-                isCombo
+                isCombo,
+                detectionSource
               };
             } catch (err) {
               if (DEBUG) console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err);
@@ -116,8 +132,21 @@ export const createStyleService = () => {
         const id = style.id;
         const name = await style.getName();
         const trimmedName = name?.trim() || "";
-        // Combo detection aligned with Lumos grammar: allow misformatted variants to be flagged
-        const isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
+        // Prefer Webflow Designer API for combo detection; fall back to heuristic
+        let isCombo = false;
+        let detectionSource: "api" | "heuristic" = "heuristic";
+        if (typeof style.isComboClass === "function") {
+          try {
+            isCombo = await style.isComboClass();
+            detectionSource = "api";
+          } catch {
+            isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
+            detectionSource = "heuristic";
+          }
+        } else {
+          isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
+          detectionSource = "heuristic";
+        }
         
         if (id && !seenIds.has(id)) {
           seenIds.add(id);
@@ -131,7 +160,7 @@ export const createStyleService = () => {
             }
           }
 
-          uniqueStyles.push({ id, name: trimmedName, properties, order: i, isCombo });
+          uniqueStyles.push({ id, name: trimmedName, properties, order: i, isCombo, detectionSource });
           if (DEBUG) console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
         }
       } catch (err) {

@@ -6,10 +6,7 @@ import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 
-declare const webflow: {
-  subscribe: (event: "selectedelement", cb: (el: any) => void) => () => void;
-  getSelectedElement: () => Promise<any>;
-} | undefined;
+// Intentionally unused type guard removed to satisfy no-unused-vars rule; access via window.webflow at runtime
 
 interface ElementLintState {
   results: RuleResult[];

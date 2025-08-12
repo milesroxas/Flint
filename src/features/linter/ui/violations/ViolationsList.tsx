@@ -9,12 +9,14 @@ interface ViolationsListProps {
   violations: RuleResult[];
   passedClassNames?: string[]; // optional: when provided, enables Passed tab
   showHighlight?: boolean; // controls highlight element button in items
+  onScrollStateChange?: (isScrolled: boolean) => void; // notify parent when list scrolled from top
 }
 
 export const ViolationsList: React.FC<ViolationsListProps> = ({
   violations,
   passedClassNames = [],
   showHighlight = true,
+  onScrollStateChange,
 }) => {
   const errors = useMemo(
     () => violations.filter((v) => v.severity === "error"),
@@ -52,42 +54,50 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   );
 
   return (
-    <div className="w-full">
-      <ViolationsSection
-        title="Errors"
-        items={errors}
-        showHighlight={showHighlight}
-        defaultOpenIds={defaultOpenIds}
-      />
-      <ViolationsSection
-        title="Warnings"
-        items={warnings}
-        showHighlight={showHighlight}
-        defaultOpenIds={defaultOpenIds}
-      />
-      <ViolationsSection
-        title="Suggestions"
-        items={suggestions}
-        showHighlight={showHighlight}
-        defaultOpenIds={defaultOpenIds}
-      />
-
-      {passedOnly.length > 0 && (
-        <div className="mt-2 space-y-1">
-          <div className="text-[11px] text-green-700">
-            Passed ({passedOnly.length})
-          </div>
-          <ScrollArea className="h-40">
-            <div className="grid grid-cols-1 gap-1 pr-2">
-              {passedOnly.map((cls) => (
-                <Badge key={cls} variant="secondary" className="justify-start">
-                  <code className="font-mono">{cls}</code>
-                </Badge>
-              ))}
+    <div className="h-full flex flex-col min-h-0 pt-2">
+      <ScrollArea
+        className="h-full flex-1 min-h-0"
+        onIsScrolledChange={onScrollStateChange}
+      >
+        <div className="pr-4">
+          <ViolationsSection
+            title="Errors"
+            items={errors}
+            showHighlight={showHighlight}
+            defaultOpenIds={defaultOpenIds}
+          />
+          <ViolationsSection
+            title="Warnings"
+            items={warnings}
+            showHighlight={showHighlight}
+            defaultOpenIds={defaultOpenIds}
+          />
+          <ViolationsSection
+            title="Suggestions"
+            items={suggestions}
+            showHighlight={showHighlight}
+            defaultOpenIds={defaultOpenIds}
+          />
+          {passedOnly.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <div className="text-[11px] text-green-700">
+                Passed ({passedOnly.length})
+              </div>
+              <div className="grid grid-cols-1 gap-1 pr-2">
+                {passedOnly.map((cls) => (
+                  <Badge
+                    key={cls}
+                    variant="secondary"
+                    className="justify-start"
+                  >
+                    <code className="font-mono">{cls}</code>
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </ScrollArea>
+          )}
         </div>
-      )}
+      </ScrollArea>
     </div>
   );
 };
