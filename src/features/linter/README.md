@@ -110,25 +110,29 @@ The system assigns element contexts to support context-aware rules.
 - `element-context.ts`
   - Defines `ElementContext` (`'componentRoot' | 'childGroup'`) and classifier interfaces
 
-### Hooks, store, and UI
+### View, UI, hooks, and store
 
-- Hooks
+#### View
 
-- `hooks/useElementLint.ts`: subscribes to Webflow `selectedelement`, runs element lint, returns `violations`, `contexts`, `classNames`, `roles`, and `isLoading`
-- `hooks/usePageLint.ts`: thin wrapper around the store
+- `view/LinterPanel.tsx`: entry container for page/element modes with a mode toggle, status banners, toolbar, and results list.
 
--- Store
+#### UI
 
-- `store/usePageLintStore.ts`: Zustand store exposing `lintPage`, results, and status
-- Uses shared registry initialization so page and element flows are aligned
+- `components/ViolationsList.tsx`, `components/ViolationItem.tsx`: reusable rendering of violations; supports highlight-on-open in page mode.
+- `components/ModeToggle.tsx`: page/element toggle buttons.
+- `components/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
+- `components/ActionBar.tsx` and `components/LintPageButton.tsx`: bottom toolbar and primary actions.
+- `components/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
 
-- UI
-- `components/LintPanel.tsx`: renders current selected element violations, contexts, and roles (header + per‑violation badge)
-- `components/PageLintSection.tsx`: full-page lint trigger and results; supports switching between page and element view
-- `components/LintPageButton.tsx`: action button with loading/issue count state
-- `components/ViolationsList.tsx` and `components/ViolationItem.tsx`: render violations; structured duplicate details displayed when available
-- `components/ModeToggle.tsx`: uses shared `Button` variants for consistent a11y and focus
-- `components/PresetSwitcher.tsx`: lists available preset IDs from the dynamic registry and uses dynamic `import()` to reset caches on preset change
+#### Hooks
+
+- `hooks/useElementLint.ts`: re-exports the new Zustand store hook for backward compatibility.
+- `hooks/usePageLint.ts`: thin wrapper around the page store.
+
+#### Store
+
+- `store/usePageLintStore.ts`: Zustand store exposing `lintPage`, results, and status.
+- `store/elementLint.store.ts`: Zustand store for selected-element lint; mirrors page store state shape and provides `refresh`.
 
 ## Runtime flows
 
@@ -180,8 +184,8 @@ The system assigns element contexts to support context-aware rules.
 - `entities/style/model/style.service.ts`, `entities/element/model/element-context-classifier.ts`
 - `rules/*` (naming, property, context-aware)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
-- `store/usePageLintStore.ts`
-- `components/LintPanel.tsx`, `components/PageLintSection.tsx`, `components/LintPageButton.tsx`, `components/ViolationsList.tsx`, `components/ViolationItem.tsx`
+- `store/usePageLintStore.ts`, `store/elementLint.store.ts`
+- `view/LinterPanel.tsx`, `components/LintPageButton.tsx`, `components/ViolationsList.tsx`, `components/ViolationItem.tsx`, `components/ModeToggle.tsx`, `components/PresetSwitcher.tsx`, `components/ActionBar.tsx`, `components/LintPanelHeader.tsx`
 
 ## Notes and limitations
 

@@ -59,7 +59,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 ### Architecture overview
 
 - See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
-- Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`.
+- Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
 
 ### Documentation index
 
@@ -129,7 +129,7 @@ src/
     style/model/
   features/
     linter/
-      model/ services/ grammar/ roles/ store/ components/
+      model/ services/ grammar/ roles/ store/ components/ view/
     window/
   presets/
   processes/scan/

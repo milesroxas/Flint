@@ -5,7 +5,7 @@ This document describes the current, implemented architecture of the Webflow Des
 ### Runtime and bootstrapping
 
 - Entry HTML: `index.html` mounts a root container and loads `src/index.tsx`.
-- Root render: `src/index.tsx` renders the extension UI via React 18 `createRoot`, wrapping the app in `ExtensionWrapper` and mounting `Header` and the unified `PageLintSection` panel.
+- Root render: `src/index.tsx` renders the extension UI via React 18 `createRoot`, wrapping the app in `ExtensionWrapper` and mounting `Header` and the unified `LinterPanel`.
 - Webflow wrapper: `src/features/window/components/ExtensionWrapper.tsx` performs a safe Designer‑API resize on mount using `webflow.setExtensionSize`, with dev‑only logs and a graceful no‑API fallback.
 - Dev integration: `vite.config.ts` registers a custom plugin that injects Webflow’s designer extension scripts in development and serves extension metadata at `/__webflow`. Aliases `@ → ./src` are configured for imports.
 
@@ -16,19 +16,20 @@ This document describes the current, implemented architecture of the Webflow Des
   - `element/model/element-context-classifier.ts`: builds a parent map from Designer elements and classifies each element into contexts using preset‑provided `contextConfig`. Caches parent maps by element‑count signature.
   - `element/model/element-context.types.ts`: contracts for classifier, contexts, and Webflow types.
 - `src/features/linter`
-  - `model/linter.factory.ts`: lifecycle for the linter. Exposes `ensureLinterInitialized(mode, preset)`, `setPreset`, `getCurrentPreset`, and a global `ruleRegistry`. On (re)initialize, resets style caches.
-  - `services/`
-    - `registry.ts`: composes the global `ruleRegistry` and `ruleConfigService`, and `initializeRuleRegistry` which registers a preset’s rules, applies opinion mode, and merges persisted configuration.
-    - `rule-registry.ts`: in‑memory rule store and configuration API (enable/disable, severity, per‑rule custom settings, import/export/merge).
-    - `rule-configuration-service.ts`: persistence to `localStorage` with schema merge and unknown‑key drops.
-    - `utility-class-analyzer.ts`: builds utility property maps to detect exact duplicates and overlapping property sets; provides formatted metadata for UI.
-    - `rule-runner.ts`: executes rules with element context. Also performs element‑level ordering checks (utilities/combos after base custom), combo‑count limits, and variant base checks. Attaches `metadata.elementId` and, when available, `metadata.role` for UI.
-    - `page-lint-service.ts`: orchestration for full‑page scans. Loads all styles, maps elements to applied styles, classifies contexts in batch, runs rules, and attaches role metadata per element.
-    - `element-lint-service.ts`: orchestration for selected‑element scans. Builds/reuses utility maps and a cached page‑wide context snapshot, then runs rules and computes role(s) for the element.
-  - `grammar/*` and `roles/*`: per‑preset `GrammarAdapter` and `RoleResolver` used to parse the first custom class and map it to an `ElementRole`.
-  - `hooks/`: `useElementLint` (subscribes to Designer `selectedelement`) and `usePageLint` (thin store wrapper).
-  - `store/`: `usePageLintStore.ts` (Zustand + devtools) exposes `lintPage`, `clearResults`, and state: `results`, `passedClassNames`, `loading`, `error`, `hasRun`.
-  - `components/`: UI for the lint panel: `LintPanel`, `ViolationsList`, `ViolationItem`, `ModeToggle`, `PresetSwitcher`, etc.
+- `model/linter.factory.ts`: lifecycle for the linter. Exposes `ensureLinterInitialized(mode, preset)`, `setPreset`, `getCurrentPreset`, and a global `ruleRegistry`. On (re)initialize, resets style caches.
+- `services/`
+  - `registry.ts`: composes the global `ruleRegistry` and `ruleConfigService`, and `initializeRuleRegistry` which registers a preset’s rules, applies opinion mode, and merges persisted configuration.
+  - `rule-registry.ts`: in‑memory rule store and configuration API (enable/disable, severity, per‑rule custom settings, import/export/merge).
+  - `rule-configuration-service.ts`: persistence to `localStorage` with schema merge and unknown‑key drops.
+  - `utility-class-analyzer.ts`: builds utility property maps to detect exact duplicates and overlapping property sets; provides formatted metadata for UI.
+  - `rule-runner.ts`: executes rules with element context. Also performs element‑level ordering checks (utilities/combos after base custom), combo‑count limits, and variant base checks. Attaches `metadata.elementId` and, when available, `metadata.role` for UI.
+  - `page-lint-service.ts`: orchestration for full‑page scans. Loads all styles, maps elements to applied styles, classifies contexts in batch, runs rules, and attaches role metadata per element.
+  - `element-lint-service.ts`: orchestration for selected‑element scans. Builds/reuses utility maps and a cached page‑wide context snapshot, then runs rules and computes role(s) for the element.
+- `grammar/*` and `roles/*`: per‑preset `GrammarAdapter` and `RoleResolver` used to parse the first custom class and map it to an `ElementRole`.
+- `hooks/`: `useElementLint` (re-exports the Zustand hook), and `usePageLint` (thin store wrapper).
+- `store/`: `usePageLintStore.ts` (Zustand + devtools) and `elementLint.store.ts` unify page/element state and actions.
+- `view/`: `LinterPanel` orchestrates page/element views with a mode toggle.
+- `components/`: presentational pieces: `ViolationsList`, `ViolationItem`, `ModeToggle`, `PresetSwitcher`, etc.
 - `src/presets`: `*.preset.ts` files define rule packs, grammar/role resolvers, and optional `contextConfig` for the classifier. A dynamic registry in `src/presets/index.ts` auto‑discovers all presets at build time.
 - `src/rules`: rule implementations grouped by category: `naming`, `property`, and `context-aware`.
 - `src/processes/scan`: process orchestrators for page and element scans used by hooks and store.

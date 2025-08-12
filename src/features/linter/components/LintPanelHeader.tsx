@@ -3,36 +3,32 @@ import { Badge } from "@/components/ui/badge";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";
-// preset switching handled elsewhere
-// removed preset switch from element header
 
-interface LintPanelHeaderProps {
-  violationCount: number;
-  errorCount: number;
-  warningCount: number;
-  suggestionCount: number;
+interface LintSummaryProps {
+  total: number;
+  errors: number;
+  warnings: number;
+  suggestions: number;
   mode?: "strict" | "balanced" | "lenient";
   contexts?: ElementContext[];
   roles?: ElementRole[];
 }
 
-// labels centralized in lib/labels
-
-export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
-  violationCount,
-  errorCount,
-  warningCount,
-  suggestionCount,
+export const LintPanelHeader: React.FC<LintSummaryProps> = ({
+  total,
+  errors,
+  warnings,
+  suggestions,
   mode,
   contexts = [],
   roles = [],
 }) => {
-  // De-duplicate contexts and roles to reduce visual noise
   const uniqueContexts: ElementContext[] = Array.from(new Set(contexts));
   const uniqueRoles: ElementRole[] = Array.from(new Set(roles));
-  // If a role equals a shown context (e.g., "childGroup"), hide the duplicate role chip
   const contextSet = new Set<ElementContext>(uniqueContexts);
-  const filteredRoles = uniqueRoles.filter((r) => !contextSet.has(r as ElementContext));
+  const filteredRoles = uniqueRoles.filter(
+    (r) => !contextSet.has(r as ElementContext)
+  );
 
   return (
     <div className="relative mb-2 rounded-md border bg-card px-2 py-2">
@@ -40,9 +36,7 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[12px] font-semibold text-foreground">
-              {violationCount > 0
-                ? `Found ${violationCount} issues`
-                : "No issues found"}
+              {total > 0 ? `Found ${total} issues` : "No issues found"}
             </span>
             {mode && (
               <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
@@ -51,15 +45,15 @@ export const LintPanelHeader: React.FC<LintPanelHeaderProps> = ({
             )}
             <span className="inline-flex items-center gap-1 flex-wrap">
               <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-1.5 py-0.5 text-[10px]">
-                {errorCount}
+                {errors}
                 <span className="ml-1 opacity-80">errors</span>
               </span>
               <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px]">
-                {warningCount}
+                {warnings}
                 <span className="ml-1 opacity-80">warnings</span>
               </span>
               <span className="inline-flex items-center rounded-full bg-muted text-foreground/80 px-1.5 py-0.5 text-[10px]">
-                {suggestionCount}
+                {suggestions}
                 <span className="ml-1 opacity-80">suggestions</span>
               </span>
             </span>

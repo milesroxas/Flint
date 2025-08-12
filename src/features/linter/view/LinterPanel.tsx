@@ -1,45 +1,38 @@
-// src/features/linter/components/PageLintSection.tsx
-import { usePageLint } from "@/features/linter/store/pageLint.store";
 import { useMemo, useState } from "react";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsList } from "@/features/linter/components/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { ModeToggle, type LintViewMode } from "./ModeToggle";
-import { ActionBar } from "./ActionBar";
-import { useElementLint } from "@/features/linter/hooks/useElementLint";
+import {
+  ModeToggle,
+  type LintViewMode,
+} from "@/features/linter/components/ModeToggle";
+import { ActionBar } from "@/features/linter/components/ActionBar";
+import { useElementLint } from "@/features/linter/store/elementLint.store";
+import { usePageLint } from "@/features/linter/store/pageLint.store";
 
-export function PageLintSection() {
+export function LinterPanel() {
   const { results, passedClassNames, loading, error, hasRun, lintPage } =
     usePageLint();
   const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("page");
 
-  // Element lint data via hook
   const {
-    violations: elementViolations,
+    results: elementResults,
     classNames: elementClassNames,
-    isLoading: elementLoading,
+    loading: elementLoading,
     refresh: refreshElementLint,
   } = useElementLint();
 
   const activeViolations: RuleResult[] = useMemo(
-    () => (mode === "page" ? results : elementViolations),
-    [mode, results, elementViolations]
+    () => (mode === "page" ? results : elementResults),
+    [mode, results, elementResults]
   );
   const activePassedClassNames: string[] = useMemo(
     () => (mode === "page" ? passedClassNames : elementClassNames),
     [mode, passedClassNames, elementClassNames]
   );
   const isBusy = mode === "page" ? loading : elementLoading;
-
-  // Severity-grouped lists for consistent UI (element or page)
-  // keep for potential badges/counters; not used directly in rendering currently
-  // const grouped = useMemo(() => ({
-  //   errors: results.filter((v) => v.severity === "error"),
-  //   warnings: results.filter((v) => v.severity === "warning"),
-  //   suggestions: results.filter((v) => v.severity === "suggestion"),
-  // }), [results]);
 
   return (
     <section className="pb-20 border-b bg-muted/50">
@@ -51,9 +44,7 @@ export function PageLintSection() {
           </div>
         )}
 
-        {/* CTA will be rendered below the ModeToggle to ensure the toggle is always visible */}
-
-        {!error && !loading && hasRun && count === 0 && (
+        {!error && !loading && hasRun && count === 0 && mode === "page" && (
           <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-600">
             <CheckCircle2 className="h-3 w-3" />
             No issues found
@@ -67,8 +58,11 @@ export function PageLintSection() {
               onChange={(next) => {
                 try {
                   usePageLint.getState().clearResults();
-                } catch (err) {
-                  /* ignore store errors */
+                } catch (err: unknown) {
+                  if ((import.meta as any)?.env?.DEV) {
+                    // eslint-disable-next-line no-console
+                    console.debug("[LinterPanel] clearResults failed", err);
+                  }
                 }
                 setMode(next);
               }}

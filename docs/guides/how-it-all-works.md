@@ -174,7 +174,7 @@ Result object highlights (`RuleResult`):
 
 ## UI components
 
-- `PageLintSection.tsx`: wrapper section that wires the page lint button and renders results
+- `LinterPanel.tsx`: wrapper section that wires the page/element mode toggle, actions, and renders results
 - `LintPageButton.tsx`: action button (loading state and count)
 - `ViolationsList.tsx`: list of `RuleResult` items
 - `ViolationItem.tsx`:

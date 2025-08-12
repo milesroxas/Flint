@@ -4,14 +4,14 @@ import { createRoot } from "react-dom/client";
 import Header from "@/components/Header";
 import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
 
-import { PageLintSection } from "./features/linter/components/PageLintSection";
+import { LinterPanel } from "@/features/linter/view/LinterPanel";
 
 const Root: React.FC = () => (
   <ExtensionWrapper>
     <div>
       <Header />
-      {/* Element/Page results are unified under PageLintSection with a mode switch */}
-      <PageLintSection />
+      {/* LinterPanel orchestrates page/element views with a mode switch */}
+      <LinterPanel />
     </div>
   </ExtensionWrapper>
 );
