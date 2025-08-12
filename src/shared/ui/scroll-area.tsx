@@ -6,16 +6,20 @@ import { cn } from "@/lib/utils";
 interface ScrollAreaProps
   extends React.ComponentProps<typeof ScrollAreaPrimitive.Root> {
   onIsScrolledChange?: (value: boolean) => void;
+  onScrollDirectionChange?: (direction: "up" | "down") => void;
 }
 
 function ScrollArea({
   className,
   children,
   onIsScrolledChange,
+  onScrollDirectionChange,
   ...props
 }: ScrollAreaProps) {
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const lastTopRef = React.useRef(0);
+  const lastDirRef = React.useRef<"up" | "down">("down");
 
   React.useEffect(() => {
     const el = viewportRef.current;
@@ -24,6 +28,23 @@ function ScrollArea({
       const scrolled = el.scrollTop > 0;
       setIsScrolled(scrolled);
       if (onIsScrolledChange) onIsScrolledChange(scrolled);
+
+      if (onScrollDirectionChange) {
+        const prevTop = lastTopRef.current;
+        const nextTop = el.scrollTop;
+        const delta = nextTop - prevTop;
+        // Only react when movement is noticeable (>= 2px)
+        if (Math.abs(delta) >= 2) {
+          const dir: "up" | "down" = delta > 0 ? "down" : "up";
+          if (dir !== lastDirRef.current) {
+            lastDirRef.current = dir;
+            onScrollDirectionChange(dir);
+          }
+          lastTopRef.current = nextTop;
+        } else {
+          lastTopRef.current = nextTop;
+        }
+      }
     };
     handleScroll();
     el.addEventListener("scroll", handleScroll, { passive: true } as any);

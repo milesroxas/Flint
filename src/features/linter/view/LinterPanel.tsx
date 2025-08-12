@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -22,6 +23,14 @@ export function LinterPanel() {
   const [severityFilter, setSeverityFilter] =
     useState<SeverityFilterValue>("all");
   const [filtersCondensed, setFiltersCondensed] = useState(false);
+  const [hideModeToggle, setHideModeToggle] = useState(false);
+
+  // Ensure element mode never auto-hides the mode toggle.
+  useEffect(() => {
+    if (mode !== "page") {
+      setHideModeToggle(false);
+    }
+  }, [mode]);
 
   const {
     results: elementResults,
@@ -86,13 +95,21 @@ export function LinterPanel() {
 
         {!error && (
           <div className="flex flex-col min-h-0 ">
-            <ModeToggle
-              mode={mode}
-              onChange={(next) => {
-                setMode(next);
-              }}
-              className="pt-4"
-            />
+            <div
+              className={cn(
+                "pt-4 transition-[opacity,transform,height,margin] duration-300 ease-in-out will-change-[opacity,transform]",
+                hideModeToggle
+                  ? "opacity-0 -translate-y-2 h-0 -mb-2"
+                  : "opacity-100 translate-y-0 h-auto mb-4"
+              )}
+            >
+              <ModeToggle
+                mode={mode}
+                onChange={(next) => {
+                  setMode(next);
+                }}
+              />
+            </div>
 
             {mode === "page" && !loading && !hasRun ? (
               <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">
@@ -102,7 +119,7 @@ export function LinterPanel() {
             ) : (
               <div className="flex-1 min-h-0 flex flex-col">
                 {mode === "page" && (
-                  <div className="pr-4 sticky top-0 z-10 bg-gradient-to-b from-background to-transparent pt-4 w-full">
+                  <div className="pr-4 sticky top-0 z-10 bg-gradient-to-b from-background to-transparent w-full">
                     <SeverityFilter
                       filter={severityFilter}
                       counts={{
@@ -120,7 +137,16 @@ export function LinterPanel() {
                     violations={filteredViolations}
                     passedClassNames={activePassedClassNames}
                     showHighlight={mode === "page"}
-                    onScrollStateChange={setFiltersCondensed}
+                    onScrollStateChange={
+                      mode === "page" ? setFiltersCondensed : undefined
+                    }
+                    onScrollDirectionChange={
+                      mode === "page"
+                        ? (dir) => {
+                            setHideModeToggle(dir === "down");
+                          }
+                        : undefined
+                    }
                   />
                 </div>
                 <div className="mt-2 text-[10px] text-muted-foreground px-4">

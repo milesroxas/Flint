@@ -10,6 +10,7 @@ interface ViolationsListProps {
   passedClassNames?: string[]; // optional: when provided, enables Passed tab
   showHighlight?: boolean; // controls highlight element button in items
   onScrollStateChange?: (isScrolled: boolean) => void; // notify parent when list scrolled from top
+  onScrollDirectionChange?: (direction: "up" | "down") => void; // notify parent of scroll direction
 }
 
 export const ViolationsList: React.FC<ViolationsListProps> = ({
@@ -17,6 +18,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   passedClassNames = [],
   showHighlight = true,
   onScrollStateChange,
+  onScrollDirectionChange,
 }) => {
   const errors = useMemo(
     () => violations.filter((v) => v.severity === "error"),
@@ -58,6 +60,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
       <ScrollArea
         className="h-full flex-1 min-h-0"
         onIsScrolledChange={onScrollStateChange}
+        onScrollDirectionChange={onScrollDirectionChange}
       >
         <div className="pr-4">
           <ViolationsSection
