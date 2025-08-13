@@ -51,7 +51,7 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   if (items.length === 0) return null;
 
   return (
-    <div className="mb-2">
+    <div className="mb-2 pt-2">
       {/* <div className="text-xs text-muted-foreground mb-1">
         {title} ({items.length})
       </div> */}

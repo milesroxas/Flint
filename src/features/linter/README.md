@@ -103,12 +103,12 @@ The system assigns element contexts to support context-aware rules.
 
 ### Types
 
-- `rule-types.ts`
+- `src/features/linter/model/rule.types.ts`
   - `RuleResult` includes `context` and optional `metadata`
   - `BaseRule` optionally declares `context` to target specific element contexts
   - `RuleConfiguration` stores enabled, severity, and `customSettings`
-- `element-context.ts`
-  - Defines `ElementContext` (`'componentRoot' | 'childGroup'`) and classifier interfaces
+- `src/entities/element/model/element-context.types.ts`
+  - Defines `ElementContext` (`'componentRoot' | 'childGroup' | 'childGroupInvalid'`) and classifier interfaces
 
 ### View, UI, hooks, and store
 

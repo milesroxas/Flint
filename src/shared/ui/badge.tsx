@@ -4,7 +4,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { Severity } from "@/features/linter/model/rule.types";
 
 const badgeVariants = cva(
   "inline-flex items-center justify-center leading-none rounded-sm border-none px-1.5 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:self-center [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
@@ -20,17 +19,13 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         inheritedProperty:
-          "bg-amber-200/50 rounded-xs px-2 font-mono  text-yellow-700",
-        newProperty: "bg-blue-200/50 rounded-xs px-2 font-mono text-blue-700",
-      },
-      severity: {
-        error: "bg-destructive text-white",
-        warning: "bg-yellow-500 text-white",
-        suggestion: "bg-blue-500 text-white",
+          "bg-warning/20 rounded-xs px-2 font-mono text-warning",
+        newProperty:
+          "bg-suggestion/20 rounded-xs px-2 font-mono text-suggestion",
       },
       isCombo: {
-        true: "bg-gray-500 text-white text-xs rounded-xs ",
-        false: "bg-[#006ACC] text-primary-foreground text-xs rounded-xs",
+        true: "bg-accent/10 text-accent text-xs rounded-xs",
+        false: "bg-muted text-foreground text-xs rounded-xs",
       },
       copyable: {
         true: "cursor-pointer hover:opacity-90 active:opacity-75",
@@ -44,13 +39,10 @@ const badgeVariants = cva(
   }
 );
 
-type BadgeSeverity = Extract<Severity, "error" | "warning" | "suggestion">;
-
 function Badge({
   className,
   variant,
   asChild = false,
-  severity,
   isCombo,
   copyable = false,
   children,
@@ -58,7 +50,6 @@ function Badge({
 }: React.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants> & {
     asChild?: boolean;
-    severity?: BadgeSeverity;
     isCombo?: boolean;
     copyable?: boolean;
   }) {
@@ -116,7 +107,6 @@ function Badge({
       className={cn(
         badgeVariants({
           variant,
-          severity,
           isCombo,
           copyable,
         }),
@@ -129,12 +119,12 @@ function Badge({
       {copyable &&
         (copied ? (
           <CircleCheckBig
-            className="ml-1 h-3 w-3 text-green-200"
+            className="ml-1 h-3 w-3 text-accent"
             aria-label="Copied"
           />
         ) : error ? (
           <AlertCircle
-            className="ml-1 h-3 w-3 text-red-500"
+            className="ml-1 h-3 w-3 text-error"
             aria-label="Copy failed"
           />
         ) : (

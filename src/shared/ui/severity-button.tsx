@@ -2,12 +2,36 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import type { Severity } from "@/features/linter/model/rule.types";
-import {
-  severityDot,
-  severityText,
-  severityBg,
-  severityBgActive,
-} from "@/features/linter/lib/severity-styles";
+
+const severityDot: Record<Severity, string> = {
+  error: "bg-error",
+  warning: "bg-warning",
+  suggestion: "bg-suggestion",
+};
+
+const severityText: Record<Severity, string> = {
+  error: "text-error",
+  warning: "text-warning-foreground",
+  suggestion: "text-suggestion-foreground",
+};
+
+const severityBg: Record<Severity, string> = {
+  error:
+    "bg-error/10 hover:bg-error-hover active:bg-error-active text-error hover:text-error-foreground",
+  warning:
+    "bg-warning/30 hover:bg-warning-hover active:bg-warning-active text-warning-foreground",
+  suggestion:
+    "bg-suggestion/30 hover:bg-suggestion-hover active:bg-suggestion-active text-suggestion-foreground",
+};
+
+const severityBgActive: Record<Severity, string> = {
+  error:
+    "bg-error-hover hover:bg-error-active active:bg-error-active text-error-foreground",
+  warning:
+    "bg-warning-hover hover:bg-warning-active active:bg-warning-active text-warning-foreground",
+  suggestion:
+    "bg-suggestion-hover hover:bg-suggestion-active active:bg-suggestion-active text-suggestion-foreground",
+};
 
 const severityButtonVariants = cva(
   "relative overflow-hidden duration-300 ease-in-out outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[border-radius,background-color,color,opacity,transform,padding] [border-radius:var(--rb)] [will-change:border-radius]",
@@ -28,27 +52,41 @@ const severityButtonVariants = cva(
       },
     },
     compoundVariants: [
-      { severity: "error", active: false, className: cn(severityBg.error) },
-      { severity: "warning", active: false, className: cn(severityBg.warning) },
+      {
+        severity: "error",
+        active: false,
+        className: cn(severityBg.error, "hover:text-error-foreground"),
+      },
+      {
+        severity: "warning",
+        active: false,
+        className: cn(severityBg.warning, "hover:text-warning-foreground"),
+      },
       {
         severity: "suggestion",
         active: false,
-        className: cn(severityBg.suggestion),
+        className: cn(
+          severityBg.suggestion,
+          "hover:text-suggestion-foreground"
+        ),
       },
       {
         severity: "error",
         active: true,
-        className: cn(severityBgActive.error),
+        className: cn(severityBgActive.error, "text-error-foreground"),
       },
       {
         severity: "warning",
         active: true,
-        className: cn(severityBgActive.warning),
+        className: cn(severityBgActive.warning, "text-warning-foreground"),
       },
       {
         severity: "suggestion",
         active: true,
-        className: cn(severityBgActive.suggestion),
+        className: cn(
+          severityBgActive.suggestion,
+          "text-suggestion-foreground"
+        ),
       },
     ],
     defaultVariants: {
@@ -112,7 +150,6 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
         <span className="mt-1 text-xs">{expandedLabel}</span>
       </span>
 
-      {/* Reserve space to prevent height shift */}
       <span className="invisible select-none">
         <span className={cn(condensed ? "text-[10px]" : "text-xl")}>0</span>
       </span>

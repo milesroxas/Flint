@@ -38,7 +38,7 @@ flowchart TD
    - Builds or reuses a page‑level parent map and classifies contexts for all elements on the page
    - Parses the first custom class with the preset grammar and maps it to an `ElementRole` via the preset role resolver; reconciles `wrap` with the DOM context
    - Runs `RuleRunner.runRulesOnStylesWithContext`
-   - Stamps `metadata.role` per violation when resolvable
+   - Stamps `metadata.role` per violation when resolvable; the role is derived from the first custom class via the active preset’s grammar and role resolver, with `_wrap` demoted to `childGroup` when not a root context
 4. Hook returns `{ violations, contexts, classNames, roles, isLoading }` to the UI.
 
 ### Full page
@@ -61,7 +61,7 @@ flowchart TD
 
 ### Grammar basics
 
-- Kind detection: `u-` → `utility`, `is-` → `combo`, `c-` → `component`, otherwise `custom`.
+- Kind detection: `u-` → `utility`, variant-like `is-*`/`is_*`/`isCamelCase` → `combo`, `c-` → `component`, otherwise `custom`.
 - `lumos.grammar.ts`: underscore `_` tokens; assign `type`, optional `variation`, and `elementToken` as the last token.
 - `client-first.grammar.ts`: normalizes `-` to `_` before tokenization to keep role parsing consistent.
 
@@ -152,8 +152,8 @@ Result object highlights (`RuleResult`):
 `src/entities/style/model/style.service.ts`
 
 - Site styles
-  - `getAllStylesWithProperties()` caches site‑wide styles for the session and returns `{ name, properties, order, isCombo }[]`.
-  - Current combo detection uses the `is-` prefix; plug in `style.isComboClass()` when reliable.
+  - `getAllStylesWithProperties()` caches site‑wide styles for the session and returns `{ name, properties, order, isCombo, detectionSource }[]`.
+  - Combo detection prefers Webflow `style.isComboClass()` when available, with a safe fallback to variant-like prefix (`is-*`, `is_*`, `isCamelCase`). The `detectionSource` indicates `api` or `heuristic`.
 - Applied styles
   - `getAppliedStyles(element)` returns deduped styles applied to a Designer element
   - `sortStylesByType(styles)` sorts combos after custom while preserving original order within groups
@@ -189,6 +189,16 @@ Result object highlights (`RuleResult`):
 - `ui/controls/PresetSwitcher.tsx`: performs dynamic `import()` to reset style caches on preset changes
 - Labels for contexts and roles are centralized in `src/features/linter/lib/labels.ts`
 
+## API surface map (quick reference)
+
+- Preset registry: `src/presets/index.ts` → `getPresetIds()`, `resolvePresetOrFallback()`
+- Linter lifecycle: `src/features/linter/model/linter.factory.ts` → `ensureLinterInitialized()`, `setPreset()`
+- Services: `createElementLintService()`, `createPageLintService()`
+- Runner: `createRuleRunner()` → `runRulesOnStylesWithContext()`
+- Analyzer: `createUtilityClassAnalyzer()`
+- Classifier: `createElementContextClassifier()`
+- Style IO: `createStyleService()` → `getAllStylesWithProperties()`, `getAppliedStyles()`
+
 ## Development and build
 
 - Dev server
@@ -212,8 +222,10 @@ Result object highlights (`RuleResult`):
 
 ## Testing
 
-- Run tests: `npx vitest`
-- Tests live under `src/features/linter/services/__tests__/` and include parity, integration, and snapshot tests.
+- Run tests: `pnpm exec vitest`
+- Tests live under:
+  - `src/features/linter/services/__tests__/` (unit, parity, snapshot)
+  - `src/entities/style/model/__tests__/` (style service behavior)
 
 ## Extensibility
 

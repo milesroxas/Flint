@@ -17,7 +17,7 @@ import SeverityFilter, {
 export function LinterPanel() {
   const { results, passedClassNames, loading, error, hasRun, lintPage } =
     usePageLint();
-  const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
+  // const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("page");
   const [severityFilter, setSeverityFilter] =
@@ -78,9 +78,9 @@ export function LinterPanel() {
 
   return (
     <section className="h-full flex flex-col">
-      <div className="pl-4 pr-0 pb-12 flex-1 min-h-0 flex flex-col">
+      <div className="pl-4 pr-0 pb-14 flex-1 min-h-0 flex flex-col">
         {error && (
-          <div className="flex items-center gap-2 py-2 text-sm text-destructive">
+          <div className="flex items-center gap-2 py-2 text-sm text-error">
             <AlertCircle className="h-3 w-3" />
             {error}
           </div>
@@ -112,7 +112,7 @@ export function LinterPanel() {
             </div>
 
             {mode === "page" && !loading && !hasRun ? (
-              <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">
+              <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
                 <AlertCircle className="h-3 w-3" />
                 Click the button to lint this page
               </div>
@@ -149,9 +149,9 @@ export function LinterPanel() {
                     }
                   />
                 </div>
-                <div className="mt-2 text-[10px] text-muted-foreground px-4">
+                {/* <div className="mt-2 text-[10px] text-muted-foreground px-4">
                   Opinion: {opinionMode} · View: {mode}
-                </div>
+                </div> */}
               </div>
             )}
           </div>

@@ -2,21 +2,16 @@
 
 ## Overview
 
-The current FlowLint UI can display element contexts (the classifier uses Webflow’s DOM structure to detect when an element is the root of a component), but it does not yet surface the semantic **role** of each element.
-
-The `linter.types.ts` file defines an `ElementRole` union covering roles such as `container`, `layout`, `title`, `actions`, etc., and the unified plan explains that the lint pipeline should parse class names using a `GrammarAdapter` and then map each parsed class to a role using a `RoleResolver`.
-
-However, there is no runtime logic wired up to perform this parsing or mapping — the only context currently exposed is `componentRoot` from the `element-context-classifier`.
-
-This guide describes how to extend the FlowLint codebase to provide robust role identification for both Lumos and Client-First naming conventions. The goal is to parse the first custom class on an element, infer its role (e.g., `title`, `text`, `actions`), and surface that role in the linter context so that context-aware rules and the UI can react appropriately.
+The linter now computes and displays semantic element roles derived from class names, in addition to DOM contexts. The pipeline parses the first custom class via the active preset’s grammar and maps it to an `ElementRole` using the preset’s role resolver. Services attach the resolved role to each violation’s metadata so the UI can render badges and group items as needed.
 
 ---
 
 ## Current state
 
-- **Element contexts** – `element-context-classifier.ts` assigns only one context (`componentRoot`) by checking for classes ending in `_wrap` that have an ancestor with classes like `section_contain`, `u-section…` or `c-…`.
-- **Types scaffolding** – `linter.types.ts` defines `ElementRole`, `ParsedClass`, `GrammarAdapter` and `RoleResolver` but there are no implementations.
-- **UI** – `LintPanelHeader.tsx` accepts an array of roles and converts each role to a human-friendly label (e.g., `componentRoot` → “Component Root”). Currently the UI always receives an empty roles array because roles are never computed.
+- **Element contexts** – `element-context-classifier.ts` assigns `componentRoot`, `childGroup`, and `childGroupInvalid` based on `_wrap` placement and parent/container rules.
+- **Grammar & roles** – Implemented for Lumos and Client‑first under `src/features/linter/grammar/*` and `src/features/linter/roles/*`.
+- **Services** – `element-lint-service.ts` and `page-lint-service.ts` compute roles by parsing the first custom class and reconciling `_wrap` with DOM context (demoting to `childGroup` when not a root).
+- **UI** – `ViolationHeader.tsx` displays role badges when `violation.metadata.role` is present.
 
 ---
 
@@ -75,9 +70,9 @@ The grammar parser should skip these and operate only on the **first custom clas
 
 ---
 
-## Implementation plan
+## Implementation details
 
-### 1. Create grammar adapters
+### Grammar adapters
 
 `src/features/linter/grammar/`
 
@@ -101,7 +96,7 @@ The grammar parser should skip these and operate only on the **first custom clas
 
 ---
 
-### 2. Implement role resolvers
+### Role resolvers
 
 `src/features/linter/roles/`
 
@@ -140,7 +135,7 @@ The grammar parser should skip these and operate only on the **first custom clas
 
 ---
 
-### 3. Integrate grammar and roles into presets
+### Presets
 
 Example:
 
@@ -157,7 +152,7 @@ export const lumosPreset: Preset = {
 
 ---
 
-### 4. Enhance the linter pipeline
+### Pipeline wiring
 
 In `rule-runner.ts`:
 
@@ -168,7 +163,7 @@ In `rule-runner.ts`:
 
 ---
 
-### 5. Testing and validation
+### Testing and validation
 
 - **Grammar adapters**: class names → expected `ParsedClass`.
 - **Role resolvers**: tokens → correct `ElementRole`, including wrap/childGroup handling.
@@ -176,7 +171,7 @@ In `rule-runner.ts`:
 
 ---
 
-### 6. Migration and configuration
+### Notes on configuration
 
 - Feature flag initially.
 - `ProjectConfig.roleAliases` to map custom tokens to built-in roles.

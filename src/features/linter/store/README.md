@@ -44,11 +44,10 @@ src/features/linter/store/usePageLintStore.ts
 
 ## Installation
 
-Ensure you have the following packages installed:
+Already included in this project. If needed in isolation:
 
 ```bash
-npm install zustand
-npm install --save-dev @types/zustand
+pnpm add zustand
 ```
 
 ## Usage
@@ -126,7 +125,7 @@ These services are reused across lint runs.
 
 ```tsx
 import React from "react";
-import { usePageLintStore } from "@/features/linter/stores/pageLintStore";
+import { usePageLintStore } from "@/features/linter/store/usePageLintStore";
 
 export function LintButton() {
   const loading = usePageLintStore((state) => state.loading);

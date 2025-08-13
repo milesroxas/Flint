@@ -48,7 +48,7 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
                 {errors}
                 <span className="ml-1 opacity-80">errors</span>
               </span>
-              <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px]">
+              <span className="inline-flex items-center rounded-full bg-warning/20 text-warning-foreground px-1.5 py-0.5 text-[10px]">
                 {warnings}
                 <span className="ml-1 opacity-80">warnings</span>
               </span>
@@ -62,8 +62,8 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
             {uniqueContexts.map((c) => (
               <Badge
                 key={`ctx-${c}`}
-                variant="outline"
-                className="text-blue-600 border-blue-300 bg-blue-50 text-[10px]"
+                variant="newProperty"
+                className="text-[10px]"
               >
                 {contextToLabel(c)}
               </Badge>
@@ -71,8 +71,8 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
             {filteredRoles.map((r) => (
               <Badge
                 key={`role-${r}`}
-                variant="outline"
-                className="text-violet-700 border-violet-300 bg-violet-50 text-[10px]"
+                variant="secondary"
+                className="text-[10px]"
               >
                 {roleToLabel(r)}
               </Badge>

@@ -3,10 +3,10 @@
 Defines preset-specific class name parsers used for role identification and class kind resolution.
 
 - `lumos.grammar.ts`
-  - Kind detection: `u-` → utility, `is-` → combo, `c-` → component, otherwise custom
+  - Kind detection: `u-` → utility, `is-*`/`is_*`/`isCamelCase` → combo (variant-like also treated as combo), `c-` → component, otherwise custom
   - Tokenization: underscore `_` tokens; assigns `type`, optional `variation`, and `elementToken` (last token)
 - `client-first.grammar.ts`
-  - Same kind detection; normalizes dashes to underscores before tokenization
+  - Kind detection: `u-` → utility, `is-` → combo, `c-` → component, otherwise custom; normalizes dashes to underscores before tokenization
 
 Usage
 

@@ -19,10 +19,11 @@
   - Filters by class type and context; executes naming and property rules
   - Accepts an optional class kind resolver derived from the active grammar; falls back to prefix heuristics when not provided
   - Handles utility duplicate detection with formatted metadata in results
+  - Emits ordering violations per element: utilities before base custom, combos before base custom, combo limit, and variant requires base; includes `metadata.elementId` and `detectionSource` when applicable
 
 - `rule-registry.ts`, `registry.ts`, `rule-configuration-service.ts`
 
   - Global registry management, configuration persistence and merging, and opinion mode application
 
 - `utility-class-analyzer.ts`
-  - Detects exact duplicate single‑property utilities and overlapping property sets
+  - Detects exact duplicate single‑property utilities and overlapping property sets, and exposes formatted property details for single‑property exact matches

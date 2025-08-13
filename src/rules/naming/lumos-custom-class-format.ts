@@ -53,7 +53,7 @@ export const lumosCustomClassFormatRule: NamingRule = {
       return {
         ruleId: lumosCustomClassFormatRule.id,
         name: lumosCustomClassFormatRule.name,
-        message: `"${className}" is not a valid custom class format. Must be lowercase, underscore-separated, with at least 2 segments (type_element or type_variant_element). Child group roots may include additional group tokens before the final element (e.g., type[_variant]_[group]_wrap).`,
+        message: `This class is invalid. Use lowercase, underscore-separated names with at least two segments (type_element or type_variant_element). Child group roots may add group tokens before the final element, e.g., type[_variant]_[group]_wrap.`,
         severity: "error",
         className,
         isCombo: false,
@@ -69,8 +69,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
     const element = segments[segments.length - 1];
 
     const knownElements = [
-      "wrap", "contain", "container", "layout", "text", "title", "icon",
-      "img", "image", "group", "label", "heading", "button", "link", "field"
+      "page_main","wrap", "contain", "container", "layout", "text", "title", "icon",
+      "img", "image", "eyebrow", "group", "label", "heading", "button", "link", "field"
     ];
 
     const projectTerms: string[] =

@@ -106,7 +106,7 @@ This document describes the current, implemented architecture of the Webflow Des
 
 - Scripts: see `package.json`.
   - `pnpm dev`: Vite dev server with the Webflow plugin and `/__webflow` metadata.
-  - `pnpm build:development` / `pnpm build:prod`: TypeScript compile, Vite build, `webflow extension bundle`, and move `bundle.zip` into timestamped folders under `bundle/development` or `bundle/prod`.
+  - `pnpm build:dev` / `pnpm build:prod`: TypeScript compile, Vite build, `webflow extension bundle`, and move `bundle.zip` into timestamped folders under `bundle/development` or `bundle/prod`.
   - `pnpm lint`: ESLint across the repo.
 - Vite build outputs `dist/bundle.js` and `dist/styles.css` (see `rollupOptions.output`).
 - `webflow.json` configures the extension name, `publicDir`, custom size, and Designer API version.
@@ -115,7 +115,47 @@ This document describes the current, implemented architecture of the Webflow Des
 
 ### Testing
 
-- Tests run with Vitest; integration and snapshot tests live under `src/features/linter/services/__tests__/`.
+- Tests run with Vitest.
+- Test locations:
+  - `src/features/linter/services/__tests__/` (unit, parity, snapshot)
+  - `src/entities/style/model/__tests__/` (style service)
+
+### API surface map (key exports by file)
+
+- `src/entities/style/model/style.service.ts`
+  - `createStyleService()` → `{ getAllStylesWithProperties, getAppliedStyles, getAppliedStylesWithElementId, sortStylesByType, getAppliedClassNames }`
+  - `resetStyleServiceCache()`
+- `src/entities/element/model/element-context-classifier.ts`
+  - `createElementContextClassifier(config?)` → `{ classifyElement, classifyPageElements }`
+- `src/features/linter/services/rule-runner.ts`
+  - `createRuleRunner(ruleRegistry, utilityAnalyzer, classKindResolver?)` → `{ runRulesOnStylesWithContext }`
+- `src/features/linter/services/utility-class-analyzer.ts`
+  - `createUtilityClassAnalyzer()` → `{ getUtilityClassPropertiesMap, getPropertyToClassesMap, buildPropertyMaps, analyzeDuplicates }`
+- `src/features/linter/services/registry.ts`
+  - `ruleRegistry`, `ruleConfigService`
+  - `initializeRuleRegistry(mode?, presetId?)`, `addCustomRule(rule)`
+- `src/features/linter/model/linter.factory.ts`
+  - `ensureLinterInitialized(mode?, preset?)`, `setPreset(presetId)`, `getCurrentPreset()`, `getAvailablePresetIds()`
+- `src/presets/index.ts`
+  - `getAllPresets()`, `getPresetIds()`, `getPresetById(id)`, `getDefaultPresetId()`, `resolvePresetOrFallback(id?)`
+- `src/features/linter/services/element-lint-service.ts`
+  - `createElementLintService()` → `{ lintElement(element), lintElementWithMeta(element) }`
+- `src/features/linter/services/page-lint-service.ts`
+  - `createPageLintService(styleService, ruleRunner)` → `{ lintCurrentPage(elements) }`
+- `src/processes/scan/scan-selected-element.ts`
+  - `scanSelectedElement(element)`, `scanSelectedElementWithMeta(element)`
+- `src/processes/scan/scan-current-page.ts`
+  - `scanCurrentPage(elements)`, `scanCurrentPageWithMeta(elements)`
+- `src/features/window/select-element.ts`
+  - `selectElementById(elementId)`
+- `src/features/linter/store/usePageLintStore.ts`
+  - `usePageLintStore` (Zustand): state `{ results, passedClassNames, loading, error, hasRun }`, actions `{ lintPage, clearResults }`
+- `src/features/linter/store/elementLint.store.ts`
+  - `useElementLintStore` (Zustand): state `{ results, contexts, classNames, roles, loading, error }`, actions `{ refresh, clear }`
+- `src/features/linter/hooks/useElementLint.ts`
+  - Re-exports `useElementLint` from the store
+- `src/features/linter/hooks/usePageLint.ts`
+  - `usePageLint()` wrapper around `usePageLintStore`
 
 ### Key constraints and behavior
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import { Button } from "@/shared/ui/button";
+
 import { Badge } from "@/shared/ui/badge";
 import {
   Collapsible,
@@ -8,12 +8,13 @@ import {
 } from "@/shared/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RuleResult } from "@/features/linter/model/rule.types";
+import { RuleResult, Severity } from "@/features/linter/model/rule.types";
+
 import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
 } from "@/features/linter/lib/message-parser";
-// import { selectElementById } from "@/features/window/select-element";
+import { ViolationMessage } from "./ViolationMessage";
 
 interface ViolationDetailsProps {
   violation: RuleResult;
@@ -26,6 +27,12 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
 }) => {
   const parsedMessage = parseDuplicateMessage(violation.message);
   const formattedProperty = violation.metadata?.formattedProperty;
+  const sev = violation.severity as Severity;
+  const severityLeftBorder: Record<Severity, string> = {
+    error: "border-l-error",
+    warning: "border-l-warning",
+    suggestion: "border-l-suggestion",
+  };
 
   return (
     <div className="text-[12px] leading-5 w-full min-w-0 overflow-hidden">
@@ -41,8 +48,10 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
       )}
 
       {violation.metadata?.suggestedName && (
-        <div className="mt-1 text-[11px]">
-          <span className="opacity-80 mr-2">Suggested:</span>
+        <div className="mt-2 text-[11px]">
+          <span className="text-muted-foreground mr-2 font-medium">
+            Suggested Fix:
+          </span>
           <Badge
             isCombo={false}
             copyable
@@ -72,7 +81,12 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
         )}
 
       {Array.isArray(violation.metadata?.combos) && (
-        <div className="mt-1 text-[11px]  border-l border-destructive pl-2">
+        <div
+          className={cn(
+            "mt-1 text-[11px] border-l pl-2",
+            severityLeftBorder[sev]
+          )}
+        >
           <div className="mb-2">
             <Badge className="truncate max-w-full" variant="newProperty">
               <span className="text-left flex items-center">
@@ -85,7 +99,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
             </Badge>
           </div>
 
-          <div className="mb-2 border-l border-destructive pl-2">
+          <div className={cn("mb-2 border-l pl-2", severityLeftBorder[sev])}>
             {violation.metadata.combos.map((c: string, i: number) => (
               <div className="mb-2">
                 <div className="flex items-center" key={`${c}-${i}`}>
@@ -99,41 +113,13 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
         </div>
       )}
 
-      {violation.metadata?.detectionSource && (
-        <div className="mt-1 text-[10px] text-muted-foreground">
-          Detection:{" "}
-          {violation.metadata.detectionSource === "api" ? "API" : "Heuristic"}
-        </div>
-      )}
-
-      {/* {showHighlight && violation.metadata?.elementId && (
-        <div className="mt-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[11px]"
-            onClick={async () => {
-              const id = violation.metadata?.elementId as string | undefined;
-              if (!id) return;
-              if (import.meta.env.DEV) {
-                // eslint-disable-next-line no-console
-                console.debug("[flowlint] click highlight", {
-                  ruleId: violation.ruleId,
-                  className: violation.className,
-                  elementId: id,
-                });
-              }
-              await selectElementById(id);
-            }}
-          >
-            Highlight element
-          </Button>
-        </div>
-      )} */}
-
-      {violation.ruleId !== "no-styles-or-classes" && (
-        <ClassBadge violation={violation} />
-      )}
+      {violation.metadata?.detectionSource &&
+        violation.metadata.detectionSource !== "api" && (
+          <div className="mt-1 text-[10px] text-muted-foreground">
+            Detection:{" "}
+            {violation.metadata.detectionSource === "api" ? "API" : "Heuristic"}
+          </div>
+        )}
     </div>
   );
 };
@@ -149,17 +135,13 @@ interface FormattedPropertyMessageProps {
 const FormattedPropertyMessage: React.FC<FormattedPropertyMessageProps> = ({
   property,
 }) => (
-  <div className="space-y-2  min-w-0 overflow-hidden">
-    <p className="text-muted-foreground">
-      This utility class is an exact duplicate of another single-property class:
-    </p>
-    <div className="space-y-1.5 pl-2 border-l-2 border-muted w-full min-w-0 overflow-hidden">
-      <PropertyDuplicate property={property} />
-    </div>
-    <p className="text-[11px] text-muted-foreground italic">
-      Consolidate these classes.
-    </p>
-  </div>
+  <ViolationMessage
+    variant="list"
+    message="This utility class is an exact duplicate of another single-property class:"
+    footer="Consolidate these classes."
+  >
+    <PropertyDuplicate property={property} />
+  </ViolationMessage>
 );
 
 interface DuplicatePropertiesMessageProps {
@@ -169,17 +151,15 @@ interface DuplicatePropertiesMessageProps {
 const DuplicatePropertiesMessage: React.FC<DuplicatePropertiesMessageProps> = ({
   parsedMessage,
 }) => (
-  <div className="space-y-2 w-full min-w-0 overflow-hidden">
-    <p className="text-muted-foreground">{parsedMessage.intro}</p>
-    <div className="space-y-1.5 pl-2 border-l-2 border-muted w-full min-w-0 overflow-hidden">
-      {parsedMessage.properties.map((prop, idx) => (
-        <PropertyDuplicate key={idx} property={prop} />
-      ))}
-    </div>
-    <p className="text-[11px] text-muted-foreground italic">
-      Consider consolidating.
-    </p>
-  </div>
+  <ViolationMessage
+    variant="list"
+    message={parsedMessage.intro}
+    footer="Consider consolidating."
+  >
+    {parsedMessage.properties.map((prop, idx) => (
+      <PropertyDuplicate key={idx} property={prop} />
+    ))}
+  </ViolationMessage>
 );
 
 interface PropertyDuplicateProps {
@@ -240,27 +220,21 @@ interface DefaultMessageProps {
 const DefaultMessage: React.FC<DefaultMessageProps> = ({
   message,
   example,
-}) => (
-  <div>
-    <p className="text-muted-foreground">{message}</p>
-    {example && (
-      <p className="mt-1 font-mono text-[11px] bg-muted/30 px-2 py-1 rounded inline-block">
-        {example}
-      </p>
-    )}
-  </div>
-);
+}) => <ViolationMessage variant="plain" message={message} example={example} />;
 
-interface ClassBadgeProps {
+export interface ClassBadgeProps {
   violation: RuleResult;
 }
 
-const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
-  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground w-full min-w-0">
-    <span className="opacity-80 flex-shrink-0">Class:</span>
-    <Badge isCombo={violation.isCombo} className="truncate max-w-full">
+export const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
+  <div className="mt-1.5 pl-2">
+    <Badge
+      isCombo={violation.isCombo}
+      variant="newProperty"
+      className="truncate max-w-full "
+    >
       <span className="text-left flex items-center">
-        <code className="font-mono text-[10px]">
+        <code className="font-mono text-xs font-normal">
           {violation.className || "—"}
         </code>
       </span>

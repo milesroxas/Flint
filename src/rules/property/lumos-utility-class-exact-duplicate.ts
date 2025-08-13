@@ -9,7 +9,7 @@ export const lumosUtilityClassExactDuplicateRule: PropertyRule = {
   enabled: true,
   category: "semantics",
   targetClassTypes: ["utility"],
-  analyze: () => [] // Handled by UtilityClassAnalyzer
+  analyze: () => [] 
 };
 
 

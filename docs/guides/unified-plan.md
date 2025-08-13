@@ -46,20 +46,22 @@ This document pairs the product plan with the detailed technical architecture. I
 
 ### Class types and conventions
 
-- `custom`: underscore‑separated, lowercase alphanumeric, 2–3 segments.
+- `custom`: underscore‑separated, lowercase alphanumeric, typically 2–3 segments.
 - `utility`: starts with `u-`, dash‑delimited.
-- `combo`: starts with `is-`, dash‑delimited.
-  The rule runner derives class type from prefixes and chooses rules accordingly.
+- `combo`: variant-like class names such as `is-*`, `is_*`, or `isCamelCase` (or when the Designer API marks a class as combo via `style.isComboClass()`).
+  The rule runner derives class type via a grammar‑derived resolver and treats variant‑like names as combos even if misformatted.
 
 ### Element contexts
 
-- Supported value today: `componentRoot`.
+- Supported values: `componentRoot`, `childGroup`, `childGroupInvalid`.
 - Classifier defaults:
 
   - `wrapSuffix`: `_wrap`
-  - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`
+  - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`, `/^page_main/`
+  - `requireDirectParentContainerForRoot`: `true`
+  - `childGroupRequiresSharedTypePrefix`: `true`
 
-- Behavior: any element with a class ending `_wrap` that has an ancestor matching any parent pattern is classified as `componentRoot`.
+- Behavior: elements ending with `_wrap` at a permitted container parent are `componentRoot`. Nested wraps under a root become `childGroup` when prefix/group name validation passes, otherwise `childGroupInvalid`.
 
 ### Services and flows
 
@@ -70,8 +72,8 @@ This document pairs the product plan with the detailed technical architecture. I
 - `element-context-classifier.ts`: builds a parent map via `getChildren()` traversal and classifies contexts.
 - Hooks and store:
 
-  - `useElementLint.ts`: subscribes to `selectedelement`, initializes registry with default + context‑aware rules, loads persisted config, lints the selected element.
-  - `usePageLintStore.ts`: performs full‑page lint but currently registers **default rules only**. Context‑aware rules are not registered here.
+  - `useElementLint.ts`: subscribes to `selectedelement`, initializes the registry, lints the selected element, and exposes `results`, `classNames`, `contexts`, and `roles`.
+  - `usePageLintStore.ts`: performs full‑page lint using the same initialization path to ensure parity.
 
 - UI specifics:
 
@@ -80,7 +82,7 @@ This document pairs the product plan with the detailed technical architecture. I
 
 ### Known limitation today
 
-- Full‑page lint path registers only default rules. The selected‑element flow initializes the global registry with default + context‑aware rules. This creates a parity gap between page and element scans. Fix proposed below.
+- None specific to registry parity; both paths share the same initialization routine.
 
 ---
 

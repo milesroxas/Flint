@@ -35,7 +35,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
           <Button variant="ghost" size="icon" className="h-full w-8">
             <span
               aria-hidden
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-white text-[10px] font-semibold"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background text-[10px] font-semibold"
             >
               {presetInitial}
             </span>

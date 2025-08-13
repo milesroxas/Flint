@@ -15,4 +15,4 @@ Dynamic discovery
 
 Initialization
 
-- Call `ensureLinterInitialized(mode, presetId?)` from `linter.factory.ts`. Under the hood, `initializeRuleRegistry(mode, presetId)` resolves the preset from the dynamic registry, registers its rules, applies opinion mode, and merges persisted configuration. Services resolve `grammar`, `roles`, and `contextConfig` from the active preset (falling back to Lumos grammar/roles if omitted).
+- Call `ensureLinterInitialized(mode, presetId?)` from `src/features/linter/model/linter.factory.ts`. Under the hood, `initializeRuleRegistry(mode, presetId)` resolves the preset from the dynamic registry, registers its rules, applies opinion mode, and merges persisted configuration. Services resolve `grammar`, `roles`, and `contextConfig` from the active preset (falling back to Lumos grammar/roles if omitted).

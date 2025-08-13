@@ -19,7 +19,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 ### Features
 
-- Class type detection: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to variant-like heuristic)
+- Class type detection: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to variant-like heuristic such as `is-`, `is_`, or `isCamelCase`)
 - Naming validation per class type
 - Utility duplicate and overlapping property detection
 - Element‑context classification (componentRoot, childGroup, childGroupInvalid)
@@ -54,12 +54,13 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 - Path alias: `@/* → src/*` (see `tsconfig.json`)
 - Webflow integration:
   - Dev: custom Vite plugin injects Webflow extension scripts and serves `/__webflow` from `webflow.json`
-  - Runtime: defensive access to Designer APIs (`getAllElements`, `getStyles`, `getChildren`, `setSelectedElement`, `setExtensionSize`); combo detection uses `style.isComboClass()` when available
+  - Runtime: defensive access to Designer APIs (`getAllElements`, `getAllStyles`, `getStyles`, `getChildren`, `setSelectedElement`); combo detection uses `style.isComboClass()` when available with heuristic fallback
 
 ### Architecture overview
 
 - See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
 - Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
+  - Auto-highlight on violation open in page mode is implemented in `src/features/linter/ui/violations/ViolationsSection.tsx` via `selectElementById` with a fallback `flowlint:highlight` event.
 
 ### Documentation index
 
@@ -118,7 +119,8 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
   ```bash
   pnpm exec vitest
   ```
-- Integration and snapshot tests: `src/features/linter/services/__tests__/`
+- Unit, parity, and snapshot tests: `src/features/linter/services/__tests__/`
+- Style service tests: `src/entities/style/model/__tests__/`
 
 ### Project structure
 

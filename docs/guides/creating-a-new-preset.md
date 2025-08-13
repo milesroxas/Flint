@@ -332,7 +332,9 @@ If you rely on Webflow Designer APIs (e.g., element selection, resizing), consul
 
 ## Step 8 — Testing
 
-Aim for unit and integration coverage that mirrors existing suites under `src/features/linter/services/__tests__/`.
+Aim for unit, parity, and snapshot coverage similar to existing suites.
+
+See also: [Testing Rules and Presets](./testing-rules.md) for a quick-start template to exercise a single rule or a whole preset.
 
 1. Grammar unit tests
 
@@ -382,10 +384,10 @@ describe("acmeRoles", () => {
 });
 ```
 
-3. Integration tests
+3. Parity and snapshot tests
 
-- Consider adding a parity test similar to `src/features/linter/services/__tests__/lumos.preset.parity.test.ts` for your preset’s expected outcomes.
-- Use `scan.process.integration.test.ts` as a template to validate end‑to‑end scanning with your preset active.
+- Add a parity test similar to `src/features/linter/services/__tests__/lumos.preset.parity.test.ts` for your preset’s expected rule IDs.
+- Add a snapshot test similar to `src/features/linter/services/__tests__/rule.messages.snapshot.test.ts` to stabilize rule ids and names.
 
 Run all tests:
 
@@ -450,7 +452,13 @@ pnpm exec vitest
 - Existing presets: `src/presets/lumos.preset.ts`, `src/presets/client-first.preset.ts`
 - Existing adapters: `src/features/linter/grammar/*`, `src/features/linter/roles/*`
 - Rules: `src/rules/**`
-- Tests: `src/features/linter/services/__tests__/**`
+- Tests: `src/features/linter/services/__tests__/**`, `src/entities/style/model/__tests__/**`
+
+## API surface map (preset-related)
+
+- `src/presets/index.ts`: `getPresetIds()`, `resolvePresetOrFallback()`, `getDefaultPresetId()`
+- `src/features/linter/model/linter.factory.ts`: `ensureLinterInitialized()`, `setPreset()`, `getCurrentPreset()`
+- `src/features/linter/services/registry.ts`: `initializeRuleRegistry()`, `addCustomRule()`
 - Webflow Designer Extensions: [Docs](https://developers.webflow.com/docs/designer-extensions), [API Reference](https://developers.webflow.com/docs/designer-extensions-api-reference)
 
 ---
@@ -462,5 +470,5 @@ pnpm exec vitest
 - [ ] Rules created and added to preset `rules`
 - [ ] `contextConfig` tuned (optional)
 - [ ] Preset file created and auto‑discovered (visible in `PresetSwitcher`)
-- [ ] Tests added (grammar, roles, and integration)
+- [ ] Tests added (grammar, roles, parity/snapshot)
 - [ ] `pnpm exec vitest` passes and preset works in `pnpm dev`
