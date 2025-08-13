@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ExtensionWrapper({
   children,
@@ -34,7 +34,29 @@ export default function ExtensionWrapper({
     void resizeExtension();
   }, []);
 
+  // Maintain a concrete pixel height so descendant h-full/min-h-0 and
+  // ScrollArea measurements remain stable for animations and sticky UI.
+  const [height, setHeight] = useState<number>(() => {
+    const h = typeof window !== "undefined" ? window.innerHeight || 360 : 360;
+    return Math.max(360, Math.min(800, h));
+  });
+
+  useEffect(() => {
+    const onResize = () => {
+      const next = Math.max(360, Math.min(800, window.innerHeight || 360));
+      setHeight(next);
+    };
+    window.addEventListener("resize", onResize, { passive: true } as any);
+    onResize();
+    return () => window.removeEventListener("resize", onResize as any);
+  }, []);
+
   return (
-    <div className="h-[360px] overflow-clip flex flex-col">{children}</div>
+    <div
+      className="overflow-visible flex flex-col"
+      style={{ height: `${height}px` }}
+    >
+      {children}
+    </div>
   );
 }

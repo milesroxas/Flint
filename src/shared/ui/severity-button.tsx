@@ -9,6 +9,12 @@ const severityDot: Record<Severity, string> = {
   suggestion: "bg-suggestion",
 };
 
+const severityDotActive: Record<Severity, string> = {
+  error: "bg-error-foreground",
+  warning: "bg-warning-foreground",
+  suggestion: "bg-suggestion-foreground",
+};
+
 const severityText: Record<Severity, string> = {
   error: "text-error",
   warning: "text-warning-foreground",
@@ -133,7 +139,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
         <span
           className={cn(
             "inline-block size-2 rounded-full",
-            severityDot[severity]
+            active ? severityDotActive[severity] : severityDot[severity]
           )}
         />
         {count}

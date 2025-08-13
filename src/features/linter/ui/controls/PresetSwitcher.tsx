@@ -32,10 +32,10 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
     <div className="rounded-sm border bg-card flex items-stretch h-full">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-full w-8">
+          <Button variant="ghost" size="icon" className="h-full w-8 rounded-xs">
             <span
               aria-hidden
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background text-[10px] font-semibold"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-xs bg-foreground text-background text-[10px] font-semibold"
             >
               {presetInitial}
             </span>
@@ -43,7 +43,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent asChild>
-          <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md border bg-popover shadow-md p-1 z-30">
+          <div className="absolute bottom-full left-0 mb-2 ml-2 w-40 rounded-xs border bg-popover shadow-md p-1 z-30">
             {available.map((id) => (
               <button
                 key={id}
@@ -101,8 +101,8 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                   setOpen(false);
                   onPresetChange?.(id);
                 }}
-                className={`block w-full text-left rounded-sm px-2 py-1.5 text-[11px] hover:bg-accent ${
-                  preset === id ? "bg-accent/60" : ""
+                className={`w-full text-left rounded-xs px-2 py-1.5 mb-1 text-[11px] hover:bg-accent hover:text-accent-foreground ${
+                  preset === id ? "bg-accent/60 text-accent-foreground" : ""
                 }`}
               >
                 {id}
