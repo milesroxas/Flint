@@ -7,13 +7,15 @@ export const cfContainersCleanRule: PropertyRule = createContextAwarePropertyRul
   description:
     "Do not apply spacing utilities (padding-/margin-/gap-) to container elements; move spacing to an inner wrapper.",
   example: "container-large padding-medium ➜ move padding-medium to a wrapper inside the container",
-  context: "container",
+  context: "componentRoot",
   category: "semantics",
   severity: "warning",
   targetClassTypes: ["utility"],
   analyze: (className: string): RuleResult[] => {
     const issues: RuleResult[] = [];
-    if (/^(padding|margin|gap|spacer)-/.test(className)) {
+    const name = className.startsWith('u-') ? className.slice(2) : className;
+    const head = name.split('-')[0];
+    if (["padding", "margin", "gap", "spacer"].includes(head)) {
       issues.push({
         ruleId: "cf-containers-clean",
         name: "Client-First: Containers Should Be Clean",

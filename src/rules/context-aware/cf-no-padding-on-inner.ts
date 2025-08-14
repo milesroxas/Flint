@@ -13,7 +13,8 @@ export const cfNoPaddingOnInnerRule: PropertyRule = createContextAwarePropertyRu
   targetClassTypes: ["utility"],
   analyze: (className: string): RuleResult[] => {
     const violations: RuleResult[] = [];
-    if (className.startsWith("padding-")) {
+    const name = className.startsWith('u-') ? className.slice(2) : className;
+    if (name.startsWith("padding-")) {
       violations.push({
         ruleId: "cf-no-padding-on-inner",
         name: "Client-First: Avoid Padding Utilities on Inner Elements",
