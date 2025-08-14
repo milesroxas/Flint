@@ -46,13 +46,13 @@ export const HeightSwitcher: React.FC = () => {
   }
 
   return (
-    <div className="relative rounded-sm border bg-card flex items-stretch h-full">
+    <div className="relative rounded-xs border bg-card flex items-stretch h-full">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="group h-full w-7 rounded-sm focus-visible:ring-0 transition-colors text-foreground"
+            className="group h-full w-7 rounded-xs focus-visible:ring-0 transition-colors text-foreground"
           >
             <MoveVertical
               aria-hidden

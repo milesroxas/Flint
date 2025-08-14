@@ -7,7 +7,7 @@ export const lumosUtilityClassDuplicatePropertiesRule: PropertyRule = {
     "Utility classes should avoid having duplicate properties with other classes.",
   type: "property",
   severity: "suggestion",
-  enabled: true,
+  enabled: false,
   category: "semantics",
   targetClassTypes: ["utility"],
   analyze: () => [] // Handled by UtilityClassAnalyzer

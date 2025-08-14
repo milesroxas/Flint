@@ -69,8 +69,8 @@ export const lumosCustomClassFormatRule: NamingRule = {
     const element = segments[segments.length - 1];
 
     const knownElements = [
-      "page_main","wrap", "contain", "container", "layout", "text", "title", "icon",
-      "img", "image", "eyebrow", "group", "label", "heading", "button", "link", "field"
+      "page_main","wrap", "main", "contain", "container", "layout", "text", "title", "icon",
+      "img", "image", "eyebrow", "marker", "group", "label", "heading", "button", "link", "field"
     ];
 
     const projectTerms: string[] =

@@ -21,7 +21,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 - Class type detection: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to variant-like heuristic such as `is-`, `is_`, or `isCamelCase`)
 - Naming validation per class type
-- Utility duplicate and overlapping property detection
+- Utility exact-duplicate detection (identical full property sets). Overlap-only checks are disabled by default.
 - Element‑context classification (componentRoot, childGroup, childGroupInvalid)
 - Role identification from the first custom class per preset
 - Presets and opinion modes with persisted rule configuration

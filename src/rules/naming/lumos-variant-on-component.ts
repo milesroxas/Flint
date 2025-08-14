@@ -14,13 +14,13 @@ export const lumosVariantOnComponentRule: NamingRule = {
   // Evaluated in runner context via evaluate hook using metadata.combos if available
   test: () => true,
   evaluate: (className: string): RuleResult | null => {
-    // Pure format check: ensure dashes, no underscores
-    if (!/^is-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(className)) {
+
+    if (!/^is-[a-z0-9]+(?:-[a-z0-9]+)*$|^u-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(className)) {
       return {
         ruleId: "lumos-variant-on-component",
         name: "Lumos Variant on Component",
-        message: "Variant classes must start with is- and use dashes (no underscores).",
-        severity: "warning",
+        message: "Variant classes must start with is- or an existing u- utility class and use dashes (no underscores).",
+        severity: "error",
         className,
         isCombo: true,
       };

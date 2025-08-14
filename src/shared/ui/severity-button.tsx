@@ -25,16 +25,16 @@ const severityBg: Record<Severity, string> = {
   error:
     "bg-error/10 hover:bg-error-hover active:bg-error-active text-error hover:text-error-foreground",
   warning:
-    "bg-warning/30 hover:bg-warning-hover active:bg-warning-active text-warning-foreground",
+    "bg-warning/20 hover:bg-warning-hover active:bg-warning-active text-warning",
   suggestion:
-    "bg-suggestion/30 hover:bg-suggestion-hover active:bg-suggestion-active text-suggestion-foreground",
+    "bg-suggestion/20 hover:bg-suggestion-hover active:bg-suggestion-active text-suggestion",
 };
 
 const severityBgActive: Record<Severity, string> = {
   error:
     "bg-error-hover hover:bg-error-active active:bg-error-active text-error-foreground",
   warning:
-    "bg-warning-hover hover:bg-warning-active active:bg-warning-active text-warning-foreground",
+    "bg-warning hover:bg-warning-active active:bg-warning-active text-warning-foreground",
   suggestion:
     "bg-suggestion-hover hover:bg-suggestion-active active:bg-suggestion-active text-suggestion-foreground",
 };

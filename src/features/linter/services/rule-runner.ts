@@ -97,26 +97,33 @@ export const createRuleRunner = (
 
     // Check if this specific rule should fire based on duplicate type
     const isExactDuplicateRule = rule.id === "lumos-utility-class-exact-duplicate";
-    const isDuplicatePropertiesRule = rule.id === "lumos-utility-class-duplicate-properties";
-
-    if ((isExactDuplicateRule && !duplicateInfo.isExactMatch) ||
-        (isDuplicatePropertiesRule && duplicateInfo.isExactMatch)) {
+    // Only fire when exact full-property duplicates are detected
+    if (isExactDuplicateRule && !duplicateInfo.isExactMatch) {
       return [];
     }
 
-    // Use the formatted property for exact matches if available
+    // Build message and metadata for UI rendering
     let message: string;
-    
-    if (duplicateInfo.isExactMatch && duplicateInfo.formattedProperty) {
-      const { property, value, classes } = duplicateInfo.formattedProperty;
-      message = `This utility class is an exact duplicate of another single-property class: ${property}:${value} (also in: ${classes.join(', ')}). Consolidate these classes.`;
+    const metadata: Record<string, any> = {};
+
+    if (duplicateInfo.isExactMatch) {
+      if (duplicateInfo.formattedProperty) {
+        const { property, value, classes } = duplicateInfo.formattedProperty;
+        message = `This utility class is an exact duplicate of another single-property class: ${property}:${value} (also in: ${classes.join(', ')}). Consolidate these classes.`;
+        metadata.formattedProperty = duplicateInfo.formattedProperty;
+      } else if (duplicateInfo.exactMatches && duplicateInfo.exactMatches.length > 0) {
+        message = `This utility class has an identical set of properties as: ${duplicateInfo.exactMatches.join(', ')}. Consolidate these classes.`;
+        metadata.exactMatches = duplicateInfo.exactMatches;
+      } else {
+        // Fallback to listing duplicate properties if for some reason we lack exactMatches list
+        const dupPropMessages = Array.from(duplicateInfo.duplicateProperties.entries())
+          .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`);
+        message = `This utility class is an exact duplicate. ${dupPropMessages.join('; ')}`;
+      }
     } else {
       const dupPropMessages = Array.from(duplicateInfo.duplicateProperties.entries())
-        .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`)
-      
-      message = duplicateInfo.isExactMatch
-        ? `This utility class is an exact duplicate of another single-property class: ${dupPropMessages.join('; ')}. Consolidate these classes.`
-        : `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`
+        .map(([prop, classes]) => `${prop} (also in: ${classes.join(', ')})`);
+      message = `This utility class has duplicate properties: ${dupPropMessages.join('; ')}. Consider consolidating.`;
     }
 
     // Debug log removed to reduce noise
@@ -129,10 +136,8 @@ export const createRuleRunner = (
       className,
       isCombo: false,
       context: elementContexts[0],
-      // Include formatted property data in metadata for better UI rendering
-      metadata: duplicateInfo.formattedProperty ? { 
-        formattedProperty: duplicateInfo.formattedProperty 
-      } : undefined
+      // Include structured data in metadata for better UI rendering
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined
     }];
   };
 

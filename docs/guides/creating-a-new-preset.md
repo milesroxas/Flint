@@ -263,6 +263,10 @@ You can reuse or extend existing Lumos/Client‑First rules as templates:
 - `src/rules/property/lumos-utility-class-exact-duplicate.ts`
 - `src/rules/context-aware/*`
 
+Note on duplicate utilities:
+
+- The analyzer flags only exact duplicates (identical full property sets). Overlap‑only cases are not treated as duplicates. The legacy "duplicate properties" rule is disabled by default.
+
 ---
 
 ## Step 5 — Create the Preset file
@@ -439,7 +443,7 @@ pnpm exec vitest
   - Expected: grammar maps `_wrap` to `componentRoot`, but classifier can demote to `childGroup` when not at root. See `element-context-classifier.ts` and adjust `contextConfig`.
 
 - Duplicate utilities detection seems off
-  - The utility analyzer works on `u-*` styles. Ensure your site styles and prefixes align with defaults or extend grammar if needed.
+  - The analyzer only reports exact duplicates: another `u-*` class with an identical full set of properties. Overlap‑only cases will not fire. Ensure your utilities use the `u-` prefix or extend grammar/prefixes as needed.
 
 ---
 

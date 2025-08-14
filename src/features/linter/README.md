@@ -6,7 +6,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 
 - **Class type detection**: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to `is-` prefix)
 - **Naming validation**: format rules for each class type
-- **Duplicate detection**: utility class duplicate and overlap checks
+- **Duplicate detection**: exact duplicate utility detection (full property set). Overlap-only checks are disabled by default.
 - **Context-aware rules**: rules scoped to element contexts (e.g., component roots)
 - **Role identification**: parses the first custom class using a preset GrammarAdapter and maps it to an ElementRole via a RoleResolver (e.g., title, text, actions, container). Services attach `metadata.role` on violations for UI badges.
 - **Config persistence**: per-rule settings merged from schemas and stored in localStorage

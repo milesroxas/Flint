@@ -122,7 +122,7 @@ flowchart TD
    - Execute:
      - Naming rules: prefer `evaluate(name, { config })` else fallback `test(name)`
      - Property rules: analyze `properties` with access to utility duplicate maps and all styles
-4. Utility duplicate handling is centralized in the analyzer (see below), and results include a formatted single‑property payload when applicable.
+4. Utility duplicate handling is centralized in the analyzer (see below). Results include a formatted single‑property payload when applicable, and `exactMatches` for full‑property identical utilities.
 5. Every result includes `metadata.elementId` for UI integrations. Services may stamp `metadata.role` for badges.
 
 Result object highlights (`RuleResult`):
@@ -132,6 +132,7 @@ Result object highlights (`RuleResult`):
 - `metadata` may include:
   - `elementId`
   - `formattedProperty` for exact single‑property utility duplicates
+  - `exactMatches` for full‑property exact duplicates (list of identical utility classes)
   - Ordering metadata: `currentOrder`, `properOrder`
   - Combo metadata: `combos`, `maxCombos`, `suggestedName` (when available)
   - `role` for UI role badges
@@ -143,9 +144,8 @@ Result object highlights (`RuleResult`):
 - Builds:
   - `utilityClassPropertiesMap`: `u-*` → style entries with properties
   - `propertyToClassesMap`: `prop:value` → set of `u-*` classes
-- Analyzes a given utility’s `properties` to find duplicates in other utilities:
-  - Flags overlapping properties
-  - Detects exact single‑property duplicates and emits a formatted payload: `{ property, value, classes }`
+  - Exact full‑property duplicates produce `metadata.exactMatches` (the identical utility class names)
+  - For single‑property utilities, also emits a formatted payload: `{ property, value, classes }`
 
 ## Style service and caching
 
@@ -179,7 +179,7 @@ Result object highlights (`RuleResult`):
 - `ui/violations/ViolationsList.tsx`: list of `RuleResult` items
 - `ui/violations/ViolationItem.tsx` (composes `ui/violations/ViolationHeader` and `ui/violations/ViolationDetails`):
   - badges: severity, context, role, “Unrecognized Element”
-  - duplicate utility display: formatted single property payload or parsed list
+  - duplicate utility display: list of identical utility classes (`exactMatches`); for single‑property utilities, a formatted property/value payload with the matching classes
   - ordering section: `currentOrder` and `properOrder`
   - combos section: list and `maxCombos`
   - “Suggested” name when supplied by metadata

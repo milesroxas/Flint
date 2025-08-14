@@ -4,6 +4,8 @@ export interface UtilityClassDuplicateInfo {
   className: string;
   duplicateProperties: Map<string, string[]>;
   isExactMatch: boolean;
+  // Classes that have an identical full property set (key/value pairs)
+  exactMatches?: string[];
   // Add formatted property information for better display
   formattedProperty?: {
     property: string;
@@ -15,6 +17,7 @@ export interface UtilityClassDuplicateInfo {
 export const createUtilityClassAnalyzer = () => {
   const utilityClassPropertiesMap = new Map<string, {name: string, properties: any}[]>();
   const propertyToClassesMap = new Map<string, Set<string>>();
+  const exactPropertiesToClassesMap = new Map<string, Set<string>>();
   let lastAllStylesCount = -1;
   const DEBUG = false;
   
@@ -25,6 +28,23 @@ export const createUtilityClassAnalyzer = () => {
   
   const getPropertyToClassesMap = () => {
     return propertyToClassesMap;
+  };
+
+  const getExactPropertiesToClassesMap = () => {
+    return exactPropertiesToClassesMap;
+  };
+
+  const normalizeProperties = (props: any): string => {
+    try {
+      const sortedKeys = Object.keys(props || {}).sort();
+      const normalized: Record<string, any> = {};
+      for (const key of sortedKeys) {
+        normalized[key] = props[key];
+      }
+      return JSON.stringify(normalized);
+    } catch {
+      return JSON.stringify(props || {});
+    }
   };
 
   const logDuplicateProperties = (): void => {
@@ -48,6 +68,7 @@ export const createUtilityClassAnalyzer = () => {
     // Build the utility class properties map
     utilityClassPropertiesMap.clear();
     propertyToClassesMap.clear();
+    exactPropertiesToClassesMap.clear();
     for (const style of allStyles) {
       if (style.name.startsWith('u-')) {
         const existingClasses = utilityClassPropertiesMap.get(style.name) || [];
@@ -60,7 +81,7 @@ export const createUtilityClassAnalyzer = () => {
     
     if (DEBUG) console.log('Utility class properties map:', utilityClassPropertiesMap);
     
-    // Create property-to-classes mapping
+    // Create property-to-classes mapping and exact properties mapping
     utilityClassPropertiesMap.forEach((styleEntries, className) => {
       for (const entry of styleEntries) {
         for (const [propName, propValue] of Object.entries(entry.properties)) {
@@ -72,6 +93,13 @@ export const createUtilityClassAnalyzer = () => {
           
           propertyToClassesMap.get(propKey)?.add(className);
         }
+
+        // exact properties fingerprint
+        const fingerprint = normalizeProperties(entry.properties);
+        if (!exactPropertiesToClassesMap.has(fingerprint)) {
+          exactPropertiesToClassesMap.set(fingerprint, new Set<string>());
+        }
+        exactPropertiesToClassesMap.get(fingerprint)?.add(className);
       }
     });
 
@@ -82,6 +110,7 @@ export const createUtilityClassAnalyzer = () => {
     const duplicateProps = new Map<string, string[]>();
     const propCount = Object.keys(properties).length;
     let formattedProperty: { property: string; value: string; classes: string[] } | undefined;
+    let exactMatches: string[] = [];
     
     // Check each property for duplicates
     for (const [propName, propValue] of Object.entries(properties)) {
@@ -106,30 +135,25 @@ export const createUtilityClassAnalyzer = () => {
       }
     }
     
-    if (duplicateProps.size === 0) {
+    // Check for exact full-property duplicates (not limited to single-property classes)
+    const fingerprint = normalizeProperties(properties);
+    const classesWithSameFingerprint = exactPropertiesToClassesMap.get(fingerprint);
+    if (classesWithSameFingerprint && classesWithSameFingerprint.size > 1) {
+      exactMatches = Array.from(classesWithSameFingerprint).filter(cls => cls !== className);
+    }
+
+    if (duplicateProps.size === 0 && exactMatches.length === 0) {
       return null;
     }
 
-    // Check for exact single-property matches
-    let isExactMatch = false;
-    if (propCount === 1 && duplicateProps.size === 1) {
-      const [, duplicateClasses] = Array.from(duplicateProps.entries())[0];
-      
-      const exactMatches = duplicateClasses.filter(cls => {
-        const entries = utilityClassPropertiesMap.get(cls) || [];
-        if (entries.length === 0) return false;
-        
-        const otherProps = entries[0].properties;
-        return Object.keys(otherProps).length === 1;
-      });
-      
-      isExactMatch = exactMatches.length > 0;
-    }
+    // Exact match if there are any classes with identical full property set
+    const isExactMatch = exactMatches.length > 0;
 
     return {
       className,
       duplicateProperties: duplicateProps,
       isExactMatch,
+      exactMatches: exactMatches.length > 0 ? exactMatches : undefined,
       formattedProperty
     };
   };
@@ -137,6 +161,7 @@ export const createUtilityClassAnalyzer = () => {
   return {
     getUtilityClassPropertiesMap,
     getPropertyToClassesMap,
+    getExactPropertiesToClassesMap,
     buildPropertyMaps,
     analyzeDuplicates
   } as const;

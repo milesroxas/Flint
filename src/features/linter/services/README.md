@@ -26,4 +26,5 @@
   - Global registry management, configuration persistence and merging, and opinion mode application
 
 - `utility-class-analyzer.ts`
-  - Detects exact duplicate single‑property utilities and overlapping property sets, and exposes formatted property details for single‑property exact matches
+  - Detects exact duplicate utilities by comparing the full property set (key/value pairs)
+  - Emits `metadata.exactMatches` for full‑property identical utilities and a formatted property payload for single‑property exact matches

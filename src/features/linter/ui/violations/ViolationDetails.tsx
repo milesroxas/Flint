@@ -36,7 +36,10 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
 
   return (
     <div className="text-[12px] leading-5 w-full min-w-0 overflow-hidden">
-      {formattedProperty ? (
+      {Array.isArray(violation.metadata?.exactMatches) &&
+      violation.metadata.exactMatches.length > 0 ? (
+        <ExactMatchesMessage classes={violation.metadata.exactMatches} />
+      ) : formattedProperty ? (
         <FormattedPropertyMessage property={formattedProperty} />
       ) : parsedMessage ? (
         <DuplicatePropertiesMessage parsedMessage={parsedMessage} />
@@ -211,6 +214,28 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
     </div>
   );
 };
+
+interface ExactMatchesMessageProps {
+  classes: string[];
+}
+
+const ExactMatchesMessage: React.FC<ExactMatchesMessageProps> = ({
+  classes,
+}) => (
+  <ViolationMessage
+    variant="list"
+    message="This utility class has an identical set of properties as these classes:"
+    footer="Consolidate these classes."
+  >
+    <div className="mt-1 space-y-1">
+      {classes.map((cls, idx) => (
+        <Badge key={idx} isCombo={false} copyable>
+          {cls}
+        </Badge>
+      ))}
+    </div>
+  </ViolationMessage>
+);
 
 interface DefaultMessageProps {
   message: string;

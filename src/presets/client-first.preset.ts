@@ -3,13 +3,13 @@ import type { Preset } from "@/features/linter/model/linter.types";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
 
-import { cfCustomKebabCaseRule } from "@/rules/naming/cf-custom-kebab-case";
 import { cfVariantIsPrefixRule } from "@/rules/naming/cf-variant-is-prefix";
 import { cfUnknownUtilityFamilyRule } from "@/rules/naming/cf-unknown-utility-family";
 
 import { cfNoUtilitiesOnRootRule } from "@/rules/context-aware/cf-no-utilities-on-root";
 import { cfInnerWrapperRecommendedRule } from "@/rules/context-aware/cf-inner-wrapper-recommended";
 import { cfContainersCleanRule } from "@/rules/context-aware/cf-containers-clean";
+import { cfNoPaddingOnInnerRule } from "@/rules/context-aware/cf-no-padding-on-inner";
 
 export const clientFirstPreset: Preset & { rules: Rule[] } = {
   id: "client-first",
@@ -21,6 +21,11 @@ export const clientFirstPreset: Preset & { rules: Rule[] } = {
       "section_contain",
       /^u-section/,
       /^c-/,
+      /^page_/,
+      /^main_/,
+      /^section_/,
+      /^container-/,
+      /^padding-/,
     ],
     requireDirectParentContainerForRoot: true,
     childGroupRequiresSharedTypePrefix: true,
@@ -31,13 +36,13 @@ export const clientFirstPreset: Preset & { rules: Rule[] } = {
   },
   rules: [
     // naming
-    cfCustomKebabCaseRule,
     cfVariantIsPrefixRule,
     cfUnknownUtilityFamilyRule,
     // structure/context-aware (placeholders for future enrichment)
     cfNoUtilitiesOnRootRule,
     cfInnerWrapperRecommendedRule,
     cfContainersCleanRule,
+    cfNoPaddingOnInnerRule,
   ],
 };
 
