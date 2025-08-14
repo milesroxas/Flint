@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+
+import type { StyleInfo, StyleWithElement } from '@/entities/style/model/style.service';
+import type { ElementContext } from '@/entities/element/model/element-context.types';
 import { createRuleRegistry } from '@/features/linter/services/rule-registry';
 import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
 import { createRuleRunner } from '@/features/linter/services/rule-runner';
@@ -7,9 +10,6 @@ import { cfNoUtilitiesOnRootRule } from '@/rules/context-aware/cf-no-utilities-o
 import { cfInnerWrapperRecommendedRule } from '@/rules/context-aware/cf-inner-wrapper-recommended';
 import { cfContainersCleanRule } from '@/rules/context-aware/cf-containers-clean';
 import { cfNoPaddingOnInnerRule } from '@/rules/context-aware/cf-no-padding-on-inner';
-
-import type { StyleInfo, StyleWithElement } from '@/entities/style/model/style.service';
-import type { ElementContext } from '@/entities/element/model/element-context.types';
 
 const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
 

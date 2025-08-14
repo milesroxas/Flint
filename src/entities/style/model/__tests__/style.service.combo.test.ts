@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createStyleService, resetStyleServiceCache } from "@/entities/style/model/style.service";
+import { createStyleService } from "@/entities/style/model/style.service";
+import { resetStyleServiceCache } from "@/entities/style/model/style-service-cache";
 
 type MockStyleOpts = {
   id: string;

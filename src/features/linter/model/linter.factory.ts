@@ -1,6 +1,5 @@
 import { ruleRegistry, initializeRuleRegistry } from "@/features/linter/services/registry";
 import { getDefaultPresetId, getPresetIds } from "@/presets";
-import { resetStyleServiceCache } from "@/entities/style/model/style.service";
 import type { OpinionMode } from "@/features/linter/model/opinion.modes";
 
 let isInitialized = false;
@@ -14,7 +13,16 @@ export function ensureLinterInitialized(mode: OpinionMode = "balanced", preset: 
   currentMode = mode;
   currentPreset = preset;
   // Invalidate style cache when registry (and potentially preset) changes
-  resetStyleServiceCache();
+  void (async () => {
+    try {
+      const mod = await import("@/entities/style/model/style-cache");
+      if (mod && typeof mod.resetStyleServiceCache === "function") {
+        mod.resetStyleServiceCache();
+      }
+    } catch {
+      // Ignore errors in cache reset during initialization
+    }
+  })();
 }
 
 export function getRuleRegistry() {

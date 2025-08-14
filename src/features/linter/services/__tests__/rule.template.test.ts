@@ -38,7 +38,7 @@ const toStylesWithElement = (
   return toAllStyles(classNames, propertiesByClass).map((s) => ({ ...s, elementId }));
 };
 
-const runRuleOnClasses = (
+export const runRuleOnClasses = (
   rule: Rule,
   classNames: string[],
   options?: {

@@ -1,4 +1,5 @@
 // Rehomed from features/linter/services/style-service.ts (no logic changes)
+import { getStyleServiceCache, setStyleServiceCache } from './style-service-cache';
 
 interface Style {
   id: string;
@@ -29,12 +30,11 @@ export interface StyleWithElement extends StyleInfo {
   elementId: string;
 }
 
-// Module-level cache for site-wide styles (memoized for the session)
-let cachedAllStylesPromise: Promise<StyleInfo[]> | null = null;
 const DEBUG = false;
 
 export const createStyleService = () => {
   const getAllStylesWithProperties = (): Promise<StyleInfo[]> => {
+    let cachedAllStylesPromise = getStyleServiceCache();
     if (!cachedAllStylesPromise) {
       if (DEBUG) console.log('Fetching ALL styles from the entire Webflow site...');
       cachedAllStylesPromise = (async () => {
@@ -96,6 +96,7 @@ export const createStyleService = () => {
           order: index
         }));
       })();
+      setStyleServiceCache(cachedAllStylesPromise);
     }
 
     return cachedAllStylesPromise as Promise<StyleInfo[]>;
@@ -235,10 +236,5 @@ export const createStyleService = () => {
 };
 
 export type StyleService = ReturnType<typeof createStyleService>;
-
-// Optional: allow manual cache reset if the site styles materially change
-export function resetStyleServiceCache() {
-  cachedAllStylesPromise = null;
-}
 
 

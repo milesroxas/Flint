@@ -30,11 +30,21 @@ describe("lumosRoles.mapToRole", () => {
 
 describe("lumosRoles.isContainerLike", () => {
   it("detects container-like roles", () => {
-    const asParsed = (name: string) => lumosGrammar.parse(name);
-    expect(lumosRoles.isContainerLike(asParsed("section_container"))).toBe(true);
-    expect(lumosRoles.isContainerLike(asParsed("card_layout"))).toBe(true);
-    expect(lumosRoles.isContainerLike(asParsed("card_wrap"))).toBe(false);
-    expect(lumosRoles.isContainerLike(asParsed("card_title"))).toBe(false);
+    const testCases = [
+      { name: "section_container", expected: true },
+      { name: "card_layout", expected: true },
+      { name: "card_wrap", expected: false },
+      { name: "card_title", expected: false }
+    ];
+
+    testCases.forEach(({ name, expected }) => {
+      const parsed = lumosGrammar.parse(name);
+      if (lumosRoles.isContainerLike) {
+        expect(lumosRoles.isContainerLike(parsed)).toBe(expected);
+      } else {
+        throw new Error("isContainerLike method not implemented in lumosRoles");
+      }
+    });
   });
 });
 

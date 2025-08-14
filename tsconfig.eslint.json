@@ -8,8 +8,11 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/**/__tests__/**/*.ts",
-    "src/**/__tests__/**/*.tsx"
-  ]
+    "src/**/__tests__/**/*.tsx",
+    "src/**/__tests__/**/*.test.ts",
+    "src/**/__tests__/**/*.test.tsx"
+  ],
+  "exclude": []
 }
 
 
