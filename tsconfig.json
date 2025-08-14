@@ -32,6 +32,7 @@
     "node_modules",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/**/__tests__/**"
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx"
   ]
 }
