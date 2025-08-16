@@ -158,6 +158,20 @@ export function createPageLintService(
       }
     );
 
+    // Stamp canonical page results with element metadata for UI (selection/role badges)
+    const hydratedPageResults = pageResults.map((r) => {
+      const elementId = (r as any).elementId as string | undefined;
+      const role = elementId ? (rolesByElement[elementId] as any) : undefined;
+      return {
+        ...r,
+        metadata: {
+          ...(r.metadata ?? {}),
+          ...(elementId ? { elementId } : {}),
+          ...(role ? { role } : {}),
+        },
+      } as typeof r;
+    });
+
     // 7. Element-scope rules with roles
     const results = ruleRunner.runRulesOnStylesWithContext(
       allAppliedStyles,
@@ -179,7 +193,7 @@ export function createPageLintService(
       }.`
     );
 
-    return [...pageResults, ...results];
+    return [...hydratedPageResults, ...results];
   }
 
   return { lintCurrentPage };
