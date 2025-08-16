@@ -274,16 +274,30 @@ export const createRuleRunner = (
   const runRulesOnStylesWithContext = (
     stylesWithElement: StyleWithElement[],
     elementContextsMap: Record<string, ElementContext[]>,
-    allStyles: StyleInfo[]
+    allStyles: StyleInfo[],
+    rolesByElement?: Record<
+      string,
+      import("@/features/linter/model/linter.types").ElementRole
+    >,
+    getParentId?: (elementId: string) => string | null,
+    getChildrenIds?: (elementId: string) => string[],
+    getAncestorIds?: (elementId: string) => string[],
+    parseClass?: (
+      name: string
+    ) => import("@/features/linter/model/linter.types").ParsedClass
   ): RuleResult[] => {
     const results: RuleResult[] = [];
 
     // Group by element for element-level analysis
     const byElement = new Map<string, StyleWithElement[]>();
+    const byElementClassNames = new Map<string, string[]>();
     for (const s of stylesWithElement) {
       const list = byElement.get(s.elementId) ?? [];
       list.push(s);
       byElement.set(s.elementId, list);
+      const names = byElementClassNames.get(s.elementId) ?? [];
+      names.push(s.name as any);
+      byElementClassNames.set(s.elementId, names);
     }
 
     // 1) Element-level phase: call analyzeElement on any rule that provides it
@@ -308,10 +322,27 @@ export const createRuleRunner = (
             getClassType,
             getRuleConfig: (id: string) =>
               ruleRegistry.getRuleConfiguration(id),
+            rolesByElement: rolesByElement as any,
+            getRoleForElement: (id: string) =>
+              (rolesByElement ? rolesByElement[id] : undefined) as any,
+            getParentId,
+            getChildrenIds,
+            getAncestorIds,
+            getClassNamesForElement: (id: string) =>
+              byElementClassNames.get(id) ?? [],
+            parseClass,
           });
           elementResults.forEach((r) => {
             r.context = r.context ?? contexts[0];
-            r.metadata = { ...(r.metadata ?? {}), elementId: elId };
+            const role = rolesByElement ? rolesByElement[elId] : undefined;
+            const parentId =
+              typeof getParentId === "function" ? getParentId(elId) : undefined;
+            r.metadata = {
+              ...(r.metadata ?? {}),
+              elementId: elId,
+              role,
+              parentId,
+            };
           });
           results.push(...elementResults);
         }
@@ -349,7 +380,17 @@ export const createRuleRunner = (
           allStyles
         );
         ruleResults.forEach((r) => {
-          const merged = { ...(r.metadata ?? {}), elementId } as any;
+          const role = rolesByElement ? rolesByElement[elementId] : undefined;
+          const parentId =
+            typeof getParentId === "function"
+              ? getParentId(elementId)
+              : undefined;
+          const merged = {
+            ...(r.metadata ?? {}),
+            elementId,
+            role,
+            parentId,
+          } as any;
           if (detectionSource && !merged.detectionSource)
             merged.detectionSource = detectionSource;
           r.metadata = merged;

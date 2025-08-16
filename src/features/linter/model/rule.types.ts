@@ -113,6 +113,17 @@ export interface ElementAnalysisArgs {
   allStyles: StyleInfo[];
   getClassType: (className: string, isCombo?: boolean) => ClassType;
   getRuleConfig: (ruleId: string) => RuleConfiguration | undefined;
+  rolesByElement?: import("@/features/linter/model/linter.types").RolesByElement;
+  getRoleForElement?: (
+    elementId: string
+  ) => import("@/features/linter/model/linter.types").ElementRole;
+  getParentId?: (elementId: string) => string | null;
+  getChildrenIds?: (elementId: string) => string[];
+  getAncestorIds?: (elementId: string) => string[];
+  getClassNamesForElement?: (elementId: string) => string[];
+  parseClass?: (
+    name: string
+  ) => import("@/features/linter/model/linter.types").ParsedClass;
 }
 
 export interface RuleConfiguration {

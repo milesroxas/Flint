@@ -1,9 +1,9 @@
 // src/features/linter/store/usePageLintStore.ts
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import type { RuleResult } from '@/features/linter/model/rule.types';
-import { scanCurrentPageWithMeta } from '@/processes/scan/scan-current-page';
-import { ensureLinterInitialized } from '@/features/linter/model/linter.factory';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import type { RuleResult } from "@/features/linter/model/rule.types";
+import { scanCurrentPageWithMeta } from "@/features/linter/processes/scan/scan-current-page";
+import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Process orchestrator handles service setup per scan
@@ -45,12 +45,15 @@ export const usePageLintStore = create<PageLintStore>()(
         try {
           ensureLinterInitialized("balanced");
           const elements = await webflow.getAllElements();
-          const { results, classNames } = await scanCurrentPageWithMeta(elements);
+          const { results, classNames } = await scanCurrentPageWithMeta(
+            elements
+          );
           set({ results, passedClassNames: classNames, loading: false });
         } catch (error) {
-          console.error('[PageLintStore] Error during linting:', error);
+          console.error("[PageLintStore] Error during linting:", error);
           set({
-            error: error instanceof Error ? error.message : 'Failed to lint page',
+            error:
+              error instanceof Error ? error.message : "Failed to lint page",
             results: [],
             loading: false,
           });
@@ -62,7 +65,7 @@ export const usePageLintStore = create<PageLintStore>()(
       },
     }),
     {
-      name: 'page-lint-store',
+      name: "page-lint-store",
       serialize: { options: true },
     }
   )

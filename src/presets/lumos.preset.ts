@@ -1,33 +1,36 @@
 import type { Rule } from "@/features/linter/model/rule.types";
 import type { Preset } from "@/features/linter/model/linter.types";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
-import { lumosRoles } from "@/features/linter/roles/lumos.roles";
 
 // Naming rules
-import { lumosCustomClassFormatRule } from "@/rules/naming/lumos-custom-class-format";
-import { lumosUtilityClassFormatRule } from "@/rules/naming/lumos-utility-class-format";
-import { lumosComboClassFormatRule } from "@/rules/naming/lumos-combo-class-format";
-import { lumosComponentClassFormatRule } from "@/rules/naming/lumos-component-class-format";
+import { lumosCustomClassFormatRule } from "@/features/linter/rules/naming/lumos-custom-class-format";
+import { lumosUtilityClassFormatRule } from "@/features/linter/rules/naming/lumos-utility-class-format";
+import { lumosComboClassFormatRule } from "@/features/linter/rules/naming/lumos-combo-class-format";
+import { lumosComponentClassFormatRule } from "@/features/linter/rules/naming/lumos-component-class-format";
 import {
   lumosUtilitiesAfterCustomOrderingRule,
   lumosComboLimitRule,
-} from "@/rules/naming/lumos-class-ordering";
+} from "@/features/linter/rules/naming/lumos-class-ordering";
 
 // Property rules
-import { lumosUtilityClassExactDuplicateRule } from "@/rules/property/lumos-utility-class-exact-duplicate";
-import { lumosUtilityClassDuplicatePropertiesRule } from "@/rules/property/lumos-utility-class-duplicate-properties";
+import { lumosUtilityClassExactDuplicateRule } from "@/features/linter/rules/property/lumos-utility-class-exact-duplicate";
+import { lumosUtilityClassDuplicatePropertiesRule } from "@/features/linter/rules/property/lumos-utility-class-duplicate-properties";
 
-// Context-aware rules
-import { componentRootSemanticNaming } from "@/rules/context-aware/component-root-semantic-naming";
-import { componentRootNoDisplayUtilities } from "@/rules/context-aware/component-root-no-display-utilities";
-import { componentRootRequiredStructure } from "@/rules/context-aware/component-root-required-structure";
-import { lumosVariantRequiresBaseRule } from "@/rules/naming/lumos-class-ordering";
-import { lumosChildGroupReferencesParentRule } from "@/rules/context-aware/lumos-child-group-references-parent";
+// Context-aware rules (keep only those that do not duplicate canonical role rules)
+import { componentRootSemanticNaming } from "@/features/linter/rules/context-aware/component-root-semantic-naming";
+import { componentRootNoDisplayUtilities } from "@/features/linter/rules/context-aware/component-root-no-display-utilities";
+import { lumosVariantRequiresBaseRule } from "@/features/linter/rules/naming/lumos-class-ordering";
+// Removed: lumosChildGroupReferencesParentRule (replaced by canonical child-group-key-match)
+import { lumosRoleDetectors } from "@/features/linter/detectors/lumos.detectors";
+import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
+import { createComponentRootStructureRule } from "@/features/linter/rules/canonical/component-root-structure";
+import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
 
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
   grammar: lumosGrammar,
-  roles: lumosRoles,
+  roleDetectors: lumosRoleDetectors,
+  roleDetectionConfig: { threshold: 0.6 },
   contextConfig: {
     wrapSuffix: "_wrap",
     parentClassPatterns: ["section_contain", /^u-section/, /^c-/, /^page_main/],
@@ -39,6 +42,10 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     childGroupPrefixJoiner: "_",
   },
   rules: [
+    // canonical structural rules (preset-agnostic)
+    createSectionParentIsMainRule(),
+    createComponentRootStructureRule(),
+    createChildGroupKeyMatchRule(),
     // naming
     lumosCustomClassFormatRule,
     lumosUtilityClassFormatRule,
@@ -51,10 +58,9 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     // property
     lumosUtilityClassExactDuplicateRule,
     lumosUtilityClassDuplicatePropertiesRule,
-    // context-aware
+    // context-aware (legacy but compatible)
     componentRootSemanticNaming,
     componentRootNoDisplayUtilities,
-    componentRootRequiredStructure,
-    lumosChildGroupReferencesParentRule,
+    // removed: componentRootRequiredStructure (covered by canonical component-root-structure)
   ],
 };

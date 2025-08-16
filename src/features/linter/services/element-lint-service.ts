@@ -1,14 +1,24 @@
 import { createStyleService } from "@/entities/style/model/style.service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
-import { ensureLinterInitialized, getRuleRegistry, getCurrentPreset } from "@/features/linter/model/linter.factory";
+import {
+  ensureLinterInitialized,
+  getRuleRegistry,
+  getCurrentPreset,
+} from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { StyleWithElement } from "@/entities/style/model/style.service";
 import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
-import type { WebflowElement, ElementWithClassNames } from "@/entities/element/model/element-context.types";
-import type { ElementRole, GrammarAdapter, RoleResolver } from "@/features/linter/model/linter.types";
+import type {
+  WebflowElement,
+  ElementWithClassNames,
+} from "@/entities/element/model/element-context.types";
+import type {
+  RoleDetector,
+  RoleDetectionConfig,
+  RolesByElement,
+} from "@/features/linter/model/linter.types";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
-import { lumosRoles } from "@/features/linter/roles/lumos.roles";
 // dynamic presets will supply grammar/roles; keep lumos as safe fallback
 import { resolvePresetOrFallback } from "@/presets";
 
@@ -30,40 +40,21 @@ function createServiceInstance() {
   const presetId = getCurrentPreset();
   const activePreset = resolvePresetOrFallback(presetId);
   const activeGrammar = activePreset.grammar || lumosGrammar;
-  const ruleRunner = createRuleRunner(getRuleRegistry(), utilityAnalyzer, (name: string, isCombo?: boolean) => {
-    if (isCombo === true) return "combo";
-    const kind = activeGrammar.parse(name).kind as any;
-    return kind === "utility" || kind === "combo" ? kind : "custom";
-  });
+  const ruleRunner = createRuleRunner(
+    getRuleRegistry(),
+    utilityAnalyzer,
+    (name: string, isCombo?: boolean) => {
+      if (isCombo === true) return "combo";
+      const kind = activeGrammar.parse(name).kind as any;
+      return kind === "utility" || kind === "combo" ? kind : "custom";
+    }
+  );
   const elementCtx = createElementContextClassifier(activePreset.contextConfig);
   let cachedContextsMap: Record<string, any> | null = null;
   let cachedElementsSignature: string | null = null;
+  let cachedRolesByElement: RolesByElement | null = null;
 
-  function selectGrammarAndRoles(): { grammar: GrammarAdapter; roles: RoleResolver } {
-    const preset = resolvePresetOrFallback(getCurrentPreset());
-    const grammar = preset.grammar ?? lumosGrammar;
-    const roles = preset.roles ?? lumosRoles;
-    return { grammar, roles };
-  }
-
-  function isCustomKind(name: string): boolean {
-    const kind = activeGrammar.parse(name).kind as any;
-    return kind === "custom" || kind === "component" || kind === "unknown";
-  }
-
-  function computeElementRoles(classNames: string[], contexts: string[]): ElementRole[] {
-    if (!Array.isArray(classNames) || classNames.length === 0) return [];
-    const { grammar, roles } = selectGrammarAndRoles();
-    const firstCustom = classNames.find((n) => isCustomKind(n));
-    if (!firstCustom) return [];
-    const parsed = grammar.parse(firstCustom);
-    let role = roles.mapToRole(parsed);
-    // If "wrap" mapped to componentRoot but classifier did not flag root, treat as childGroup
-    if (role === "componentRoot" && !contexts.includes("componentRoot")) {
-      role = "childGroup";
-    }
-    return role === "unknown" ? [] : [role];
-  }
+  // Legacy grammar/roles helper removed; detectors provide roles
 
   /**
    * Lints a single Webflow element by:
@@ -74,8 +65,11 @@ function createServiceInstance() {
   async function lintElement(element: any): Promise<RuleResult[]> {
     try {
       // Check if element is valid and has required methods
-      if (!element || typeof element.getStyles !== 'function') {
-        console.error("[ElementLintService] Invalid element or missing getStyles method:", element);
+      if (!element || typeof element.getStyles !== "function") {
+        console.error(
+          "[ElementLintService] Invalid element or missing getStyles method:",
+          element
+        );
         return [];
       }
 
@@ -90,7 +84,10 @@ function createServiceInstance() {
       // 2. Get styles applied to the element
       const appliedStyles = await styleService.getAppliedStyles(element);
       if (appliedStyles.length === 0) {
-        if (DEBUG) console.log("[ElementLintService] No styles on element, returning default issue.");
+        if (DEBUG)
+          console.log(
+            "[ElementLintService] No styles on element, returning default issue."
+          );
         return [
           {
             ruleId: "no-styles-or-classes",
@@ -99,8 +96,8 @@ function createServiceInstance() {
             severity: "error",
             className: "",
             isCombo: false,
-            example: "header_wrap, u-padding-32, is-active"
-          }
+            example: "header_wrap, u-padding-32, is-active",
+          },
         ];
       }
 
@@ -111,68 +108,98 @@ function createServiceInstance() {
         (element?.id && (element.id as any).element) ??
         element?.id ??
         element?.nodeId ??
-        '';
+        "";
 
-      const stylesWithElement: StyleWithElement[] = sorted.map(style => ({
+      const stylesWithElement: StyleWithElement[] = sorted.map((style) => ({
         ...style,
-        elementId: elementKey
+        elementId: elementKey,
       }));
 
       // 4. Classify element context
       // Get all elements to build parent map (needed for context classification)
       // Build/reuse page contexts once per page snapshot
       const allElements = await webflow.getAllElements();
-      const validElements = allElements.filter(el => el && typeof el.getStyles === 'function');
-      const signature = `${validElements.length}`;
+      const validElements = allElements.filter(
+        (el) => el && typeof el.getStyles === "function"
+      );
+      const signature = `${validElements
+        .map((el) =>
+          String(
+            ((el as any)?.id && ((el as any).id as any).element) ??
+              (el as any)?.id ??
+              (el as any)?.nodeId ??
+              ""
+          )
+        )
+        .sort()
+        .join("|")}`;
 
       let elementContextsMap: Record<string, any>;
       if (cachedContextsMap && cachedElementsSignature === signature) {
         elementContextsMap = cachedContextsMap;
       } else {
-        const allElementsWithClassNames: ElementWithClassNames[] = await Promise.all(
-          validElements.map(async (el) => {
-            const classNames = await styleService.getAppliedClassNames(el);
-            return {
-              element: el as WebflowElement,
-              classNames: classNames.filter(name => name.trim() !== '')
-            };
-          })
+        const allElementsWithClassNames: ElementWithClassNames[] =
+          await Promise.all(
+            validElements.map(async (el) => {
+              const classNames = await styleService.getAppliedClassNames(el);
+              return {
+                element: el as WebflowElement,
+                classNames: classNames.filter((name) => name.trim() !== ""),
+              };
+            })
+          );
+        elementContextsMap = await elementCtx.classifyPageElements(
+          allElementsWithClassNames
         );
-        elementContextsMap = await elementCtx.classifyPageElements(allElementsWithClassNames);
         cachedContextsMap = elementContextsMap;
         cachedElementsSignature = signature;
+        try {
+          const activePresetForRoles = resolvePresetOrFallback(
+            getCurrentPreset()
+          );
+          const roleDetectors: RoleDetector[] =
+            activePresetForRoles.roleDetectors ?? [];
+          const roleDetectionConfig: RoleDetectionConfig | undefined =
+            activePresetForRoles.roleDetectionConfig;
+          const { createRoleDetectionService } = await import(
+            "@/features/linter/services/role-detection.service"
+          );
+          const roleDetection = createRoleDetectionService({
+            grammar: activePresetForRoles.grammar ?? activeGrammar,
+            detectors: roleDetectors,
+            config: roleDetectionConfig,
+          });
+          cachedRolesByElement = roleDetection.detectRolesForPage(
+            allElementsWithClassNames
+          );
+        } catch {
+          cachedRolesByElement = null;
+        }
       }
 
       if (DEBUG) {
         console.log("[ElementLintService] Current element key:", elementKey);
-        console.log("[ElementLintService] Current element contexts:", elementContextsMap[elementKey]);
+        console.log(
+          "[ElementLintService] Current element contexts:",
+          elementContextsMap[elementKey]
+        );
       }
 
       // 5. Run rules with proper element context
-      let results = ruleRunner.runRulesOnStylesWithContext(
-        stylesWithElement, 
-        elementContextsMap, 
-        allStyles
+      const getParentId = (): string | null => null; // Element flow: parent map optional here
+      const results = ruleRunner.runRulesOnStylesWithContext(
+        stylesWithElement,
+        elementContextsMap,
+        allStyles,
+        cachedRolesByElement ?? undefined,
+        getParentId
       );
-
-      // 6. Attach role metadata for the selected element (if resolvable)
-      try {
-        const contextsForElement: string[] = elementContextsMap[elementKey] || [];
-        const elementClassNames = stylesWithElement.map(s => s.name).filter(n => n.trim() !== "");
-        const roles = computeElementRoles(elementClassNames, contextsForElement);
-        if (roles.length > 0) {
-          const primaryRole = roles[0];
-          results = results.map(r => ({
-            ...r,
-            metadata: { ...(r.metadata ?? {}), role: primaryRole },
-          }));
-        }
-      } catch (e) {
-        // ignore role attachment errors to avoid impacting lint results
-      }
+      // Role metadata now provided via rolesByElement from cache
 
       console.log(
-        `[ElementLintService] Lint completed with ${results.length} issue${results.length === 1 ? "" : "s"}.`
+        `[ElementLintService] Lint completed with ${results.length} issue${
+          results.length === 1 ? "" : "s"
+        }.`
       );
 
       return results;
@@ -182,19 +209,28 @@ function createServiceInstance() {
     }
   }
 
-  async function lintElementWithMeta(element: any): Promise<{ results: RuleResult[]; appliedClassNames: string[]; elementContextsMap: Record<string, any>; roles: ElementRole[] }>{
+  async function lintElementWithMeta(element: any): Promise<{
+    results: RuleResult[];
+    appliedClassNames: string[];
+    elementContextsMap: Record<string, any>;
+    roles: import("@/features/linter/model/linter.types").ElementRole[];
+  }> {
     const [results, applied] = await Promise.all([
       lintElement(element),
-      styleService.getAppliedClassNames(element)
+      styleService.getAppliedClassNames(element),
     ]);
 
     const elementKey =
-      (element?.id && (element.id as any).element) ?? element?.id ?? element?.nodeId ?? "";
+      (element?.id && (element.id as any).element) ??
+      element?.id ??
+      element?.nodeId ??
+      "";
 
     // Reuse cached contexts map
     const elementContextsMap = cachedContextsMap || {};
-    const contextsForElement: string[] = elementContextsMap[elementKey] || [];
-    const roles = computeElementRoles(applied.filter((n: string) => n.trim() !== ""), contextsForElement);
+    const roleValue = (cachedRolesByElement?.[elementKey] ??
+      "unknown") as import("@/features/linter/model/linter.types").ElementRole;
+    const roles = roleValue === "unknown" ? [] : [roleValue];
     return { results, appliedClassNames: applied, elementContextsMap, roles };
   }
 
