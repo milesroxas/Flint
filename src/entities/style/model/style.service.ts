@@ -1,5 +1,8 @@
 // Rehomed from features/linter/services/style-service.ts (no logic changes)
-import { getStyleServiceCache, setStyleServiceCache } from './style-service-cache';
+import {
+  getStyleServiceCache,
+  setStyleServiceCache,
+} from "./style-service-cache";
 
 interface Style {
   id: string;
@@ -36,12 +39,17 @@ export const createStyleService = () => {
   const getAllStylesWithProperties = (): Promise<StyleInfo[]> => {
     let cachedAllStylesPromise = getStyleServiceCache();
     if (!cachedAllStylesPromise) {
-      if (DEBUG) console.log('Fetching ALL styles from the entire Webflow site...');
+      if (DEBUG)
+        console.log("Fetching ALL styles from the entire Webflow site...");
       cachedAllStylesPromise = (async () => {
         const allStyles = await webflow.getAllStyles();
-        if (DEBUG) console.log(`Retrieved ${allStyles.length} styles from webflow.getAllStyles()`);
+        if (DEBUG)
+          console.log(
+            `Retrieved ${allStyles.length} styles from webflow.getAllStyles()`
+          );
 
-        if (DEBUG) console.log('Extracting names and properties from all styles...');
+        if (DEBUG)
+          console.log("Extracting names and properties from all styles...");
         const allStylesWithProperties = await Promise.all(
           allStyles.map(async (style, index) => {
             try {
@@ -56,21 +64,29 @@ export const createStyleService = () => {
                   detectionSource = "api";
                 } catch (err) {
                   // Fallback to heuristic if API throws
-                  isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
+                  isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+                    name || ""
+                  );
                   detectionSource = "heuristic";
                 }
               } else {
                 // Heuristic fallback when API isn't available
-                isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(name || "");
+                isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+                  name || ""
+                );
                 detectionSource = "heuristic";
               }
 
-              if (name && name.startsWith('u-')) {
-                try {
-                  properties = await style.getProperties({ breakpoint: 'main' });
-                } catch (err) {
-                  if (DEBUG) console.error(`Error getting properties for style ${name}:`, err);
-                }
+              try {
+                // Retrieve unique (non-inherited) properties for all classes
+                // so combos/customs can be compared against utilities
+                properties = await style.getProperties({ breakpoint: "main" });
+              } catch (err) {
+                if (DEBUG)
+                  console.error(
+                    `Error getting properties for style ${name}:`,
+                    err
+                  );
               }
 
               return {
@@ -79,21 +95,36 @@ export const createStyleService = () => {
                 properties,
                 index,
                 isCombo,
-                detectionSource
+                detectionSource,
               };
             } catch (err) {
-              if (DEBUG) console.error(`Error getting name for style at index ${index}, ID ${style.id}:`, err);
-              return { id: style.id, name: "", properties: {}, index, isCombo: false };
+              if (DEBUG)
+                console.error(
+                  `Error getting name for style at index ${index}, ID ${style.id}:`,
+                  err
+                );
+              return {
+                id: style.id,
+                name: "",
+                properties: {},
+                index,
+                isCombo: false,
+              };
             }
           })
         );
 
-        const validStyles = allStylesWithProperties.filter(style => style.name);
-        if (DEBUG) console.log(`Found ${validStyles.length} valid styles with names out of ${allStyles.length} total styles`);
+        const validStyles = allStylesWithProperties.filter(
+          (style) => style.name
+        );
+        if (DEBUG)
+          console.log(
+            `Found ${validStyles.length} valid styles with names out of ${allStyles.length} total styles`
+          );
 
         return validStyles.map((style, index) => ({
           ...style,
-          order: index
+          order: index,
         }));
       })();
       setStyleServiceCache(cachedAllStylesPromise);
@@ -103,22 +134,27 @@ export const createStyleService = () => {
   };
 
   const getAppliedStyles = async (element: any): Promise<StyleInfo[]> => {
-    if (DEBUG) console.log('Getting styles applied to the selected element...');
+    if (DEBUG) console.log("Getting styles applied to the selected element...");
 
-    if (!element || typeof element.getStyles !== 'function') {
-      console.error('Element does not have getStyles method', element);
+    if (!element || typeof element.getStyles !== "function") {
+      console.error("Element does not have getStyles method", element);
       return [];
     }
-    
+
     let appliedStyles: Style[] = [];
     try {
       appliedStyles = await element.getStyles();
-      if (DEBUG) console.log(`Retrieved ${appliedStyles?.length || 0} styles applied to the selected element`);
+      if (DEBUG)
+        console.log(
+          `Retrieved ${
+            appliedStyles?.length || 0
+          } styles applied to the selected element`
+        );
     } catch (err) {
-      console.error('Error calling element.getStyles():', err);
+      console.error("Error calling element.getStyles():", err);
       return [];
     }
-    
+
     if (!appliedStyles?.length) {
       return [];
     }
@@ -126,7 +162,7 @@ export const createStyleService = () => {
     const seenIds = new Set<string>();
     const uniqueStyles: StyleInfo[] = [];
 
-    if (DEBUG) console.log('Processing applied styles...');
+    if (DEBUG) console.log("Processing applied styles...");
     for (let i = 0; i < appliedStyles.length; i++) {
       try {
         const style = appliedStyles[i];
@@ -141,28 +177,42 @@ export const createStyleService = () => {
             isCombo = await style.isComboClass();
             detectionSource = "api";
           } catch {
-            isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
+            isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+              trimmedName
+            );
             detectionSource = "heuristic";
           }
         } else {
-          isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(trimmedName);
+          isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+            trimmedName
+          );
           detectionSource = "heuristic";
         }
-        
+
         if (id && !seenIds.has(id)) {
           seenIds.add(id);
-          
+
           let properties = {};
-          if (trimmedName.startsWith('u-')) {
-            try {
-              properties = await style.getProperties({ breakpoint: 'main' });
-            } catch (err) {
-              console.error(`Error getting properties for style ${trimmedName}:`, err);
-            }
+          try {
+            // Retrieve unique (non-inherited) properties for all classes
+            properties = await style.getProperties({ breakpoint: "main" });
+          } catch (err) {
+            console.error(
+              `Error getting properties for style ${trimmedName}:`,
+              err
+            );
           }
 
-          uniqueStyles.push({ id, name: trimmedName, properties, order: i, isCombo, detectionSource });
-          if (DEBUG) console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
+          uniqueStyles.push({
+            id,
+            name: trimmedName,
+            properties,
+            order: i,
+            isCombo,
+            detectionSource,
+          });
+          if (DEBUG)
+            console.log(`Added unique style: ${trimmedName} (ID: ${id})`);
         }
       } catch (err) {
         console.error(`Error processing applied style at index ${i}:`, err);
@@ -174,7 +224,7 @@ export const createStyleService = () => {
 
   // Lightweight helper: only fetch class names for an element (no properties)
   const getAppliedClassNames = async (element: any): Promise<string[]> => {
-    if (!element || typeof element.getStyles !== 'function') {
+    if (!element || typeof element.getStyles !== "function") {
       return [];
     }
     let styles: Style[] = [];
@@ -211,9 +261,9 @@ export const createStyleService = () => {
     element: any
   ): Promise<StyleWithElement[]> => {
     const styles = await getAppliedStyles(element);
-    return styles.map(style => ({
+    return styles.map((style) => ({
       ...style,
-      elementId: element.id
+      elementId: element.id,
     }));
   };
 
@@ -231,10 +281,8 @@ export const createStyleService = () => {
     getAppliedStyles,
     getAppliedStylesWithElementId,
     sortStylesByType,
-    getAppliedClassNames
+    getAppliedClassNames,
   } as const;
 };
 
 export type StyleService = ReturnType<typeof createStyleService>;
-
-

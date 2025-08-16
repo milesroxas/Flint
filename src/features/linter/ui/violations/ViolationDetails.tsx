@@ -38,7 +38,10 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
     <div className="text-[12px] leading-5 w-full min-w-0 overflow-hidden">
       {Array.isArray(violation.metadata?.exactMatches) &&
       violation.metadata.exactMatches.length > 0 ? (
-        <ExactMatchesMessage classes={violation.metadata.exactMatches} />
+        <ExactMatchesMessage
+          classes={violation.metadata.exactMatches}
+          properties={(violation.metadata as any)?.exactMatchProperties}
+        />
       ) : formattedProperty ? (
         <FormattedPropertyMessage property={formattedProperty} />
       ) : parsedMessage ? (
@@ -140,7 +143,7 @@ const FormattedPropertyMessage: React.FC<FormattedPropertyMessageProps> = ({
 }) => (
   <ViolationMessage
     variant="list"
-    message="This utility class is an exact duplicate of another single-property class:"
+    message="This class is an exact duplicate of another single-property class:"
     footer="Consolidate these classes."
   >
     <PropertyDuplicate property={property} />
@@ -217,23 +220,43 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
 
 interface ExactMatchesMessageProps {
   classes: string[];
+  properties?: { property: string; value: string }[];
 }
 
 const ExactMatchesMessage: React.FC<ExactMatchesMessageProps> = ({
   classes,
+  properties,
 }) => (
   <ViolationMessage
     variant="list"
-    message="This utility class has an identical set of properties as these classes:"
+    message="This class has an identical set of properties as these classes:"
     footer="Consolidate these classes."
   >
     <div className="mt-1 space-y-1">
       {classes.map((cls, idx) => (
-        <Badge key={idx} isCombo={false} copyable>
-          {cls}
-        </Badge>
+        <div className="flex flex-col gap-2" key={idx}>
+          <Badge isCombo={false} copyable>
+            {cls}
+          </Badge>
+        </div>
       ))}
     </div>
+    {Array.isArray(properties) && properties.length > 0 && (
+      <div className="mt-2 space-y-1">
+        <h3 className="text-xs text-muted-foreground">Properties:</h3>
+        {properties.map((p, i) => (
+          <Badge
+            key={i}
+            variant="inheritedProperty"
+            className="break-words whitespace-normal font-normal text-xs flex gap-1"
+          >
+            <span className="text-left">
+              <strong>{p.property}:</strong> {p.value}
+            </span>
+          </Badge>
+        ))}
+      </div>
+    )}
   </ViolationMessage>
 );
 

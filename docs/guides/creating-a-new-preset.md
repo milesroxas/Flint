@@ -263,9 +263,14 @@ You can reuse or extend existing Lumos/Client‑First rules as templates:
 - `src/rules/property/lumos-utility-class-exact-duplicate.ts`
 - `src/rules/context-aware/*`
 
-Note on duplicate utilities:
+Note on duplicate detection:
 
-- The analyzer flags only exact duplicates (identical full property sets). Overlap‑only cases are not treated as duplicates. The legacy "duplicate properties" rule is disabled by default.
+- The analyzer is preset‑agnostic and checks all class types (utility, combo, custom) using only unique (non‑inherited) properties.
+- Classes with zero unique properties are ignored by duplicate analysis.
+- Exact duplicates (identical full property sets) are surfaced to the runner which emits:
+  - `metadata.formattedProperty` for single‑property exact duplicates
+  - `metadata.exactMatches` and `metadata.exactMatchProperties` for full‑property exact duplicates
+  - Overlap‑only cases are not treated as duplicates. The legacy "duplicate properties" rule remains disabled by default.
 
 ---
 
@@ -388,9 +393,8 @@ describe("acmeRoles", () => {
 });
 ```
 
-3. Parity and snapshot tests
+3. Snapshot tests
 
-- Add a parity test similar to `src/features/linter/services/__tests__/lumos.preset.parity.test.ts` for your preset’s expected rule IDs.
 - Add a snapshot test similar to `src/features/linter/services/__tests__/rule.messages.snapshot.test.ts` to stabilize rule ids and names.
 
 Run all tests:

@@ -44,7 +44,7 @@ describe('Rule messages snapshot (shape only)', () => {
         },
         {
           "id": "lumos-utility-class-exact-duplicate",
-          "name": "Exact Duplicate Utility Class",
+          "name": "Exact Duplicate Class",
         },
         {
           "id": "lumos-utility-class-duplicate-properties",

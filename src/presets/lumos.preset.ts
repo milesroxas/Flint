@@ -8,7 +8,10 @@ import { lumosCustomClassFormatRule } from "@/rules/naming/lumos-custom-class-fo
 import { lumosUtilityClassFormatRule } from "@/rules/naming/lumos-utility-class-format";
 import { lumosComboClassFormatRule } from "@/rules/naming/lumos-combo-class-format";
 import { lumosComponentClassFormatRule } from "@/rules/naming/lumos-component-class-format";
-import { lumosUtilitiesAfterCustomOrderingRule, lumosCombosAfterCustomOrderingRule, lumosComboLimitRule } from "@/rules/naming/lumos-class-ordering";
+import {
+  lumosUtilitiesAfterCustomOrderingRule,
+  lumosComboLimitRule,
+} from "@/rules/naming/lumos-class-ordering";
 
 // Property rules
 import { lumosUtilityClassExactDuplicateRule } from "@/rules/property/lumos-utility-class-exact-duplicate";
@@ -19,7 +22,6 @@ import { componentRootSemanticNaming } from "@/rules/context-aware/component-roo
 import { componentRootNoDisplayUtilities } from "@/rules/context-aware/component-root-no-display-utilities";
 import { componentRootRequiredStructure } from "@/rules/context-aware/component-root-required-structure";
 import { lumosVariantRequiresBaseRule } from "@/rules/naming/lumos-class-ordering";
-import { lumosVariantOnComponentRule } from "@/rules/naming/lumos-variant-on-component";
 import { lumosChildGroupReferencesParentRule } from "@/rules/context-aware/lumos-child-group-references-parent";
 
 export const lumosPreset: Preset & { rules: Rule[] } = {
@@ -28,12 +30,7 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
   roles: lumosRoles,
   contextConfig: {
     wrapSuffix: "_wrap",
-    parentClassPatterns: [
-      "section_contain",
-      /^u-section/,
-      /^c-/,
-      /^page_main/,
-    ],
+    parentClassPatterns: ["section_contain", /^u-section/, /^c-/, /^page_main/],
     requireDirectParentContainerForRoot: true,
     childGroupRequiresSharedTypePrefix: true,
     typePrefixSeparator: "_",
@@ -47,12 +44,10 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     lumosUtilityClassFormatRule,
     lumosComboClassFormatRule,
     lumosComponentClassFormatRule,
-    // element-level ordering/limits (evaluated in runner)
+    // element-level ordering/limits (evaluated via analyzeElement)
     lumosUtilitiesAfterCustomOrderingRule,
-    lumosCombosAfterCustomOrderingRule,
     lumosComboLimitRule,
     lumosVariantRequiresBaseRule,
-    lumosVariantOnComponentRule,
     // property
     lumosUtilityClassExactDuplicateRule,
     lumosUtilityClassDuplicatePropertiesRule,
@@ -63,5 +58,3 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     lumosChildGroupReferencesParentRule,
   ],
 };
-
-

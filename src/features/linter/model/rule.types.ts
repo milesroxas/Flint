@@ -22,7 +22,12 @@ export interface RuleResult {
 // -------------------------
 // Configuration Schema
 // -------------------------
-export type RuleConfigFieldType = "string" | "string[]" | "number" | "boolean" | "enum";
+export type RuleConfigFieldType =
+  | "string"
+  | "string[]"
+  | "number"
+  | "boolean"
+  | "enum";
 
 export interface RuleConfigField {
   label: string;
@@ -38,7 +43,12 @@ export type RuleConfigSchema = Record<string, RuleConfigField>;
 // Core Rule Types
 // -------------------------
 export type ClassType = "custom" | "utility" | "combo";
-export type RuleCategory = "format" | "semantics" | "performance" | "accessibility" | "custom";
+export type RuleCategory =
+  | "format"
+  | "semantics"
+  | "performance"
+  | "accessibility"
+  | "custom";
 export type RuleType = "naming" | "property";
 
 export interface BaseRule {
@@ -52,6 +62,7 @@ export interface BaseRule {
   category: RuleCategory;
   targetClassTypes: ClassType[];
   context?: ElementContext;
+  analyzeElement?: (args: ElementAnalysisArgs) => RuleResult[];
 }
 
 export interface NamingRule extends BaseRule {
@@ -85,11 +96,28 @@ export interface RuleContext {
   propertyToClassesMap: Map<string, Set<string>>;
 }
 
+// -------------------------
+// Element-level Analysis
+// -------------------------
+export interface ElementClassItem {
+  name: string;
+  order: number;
+  elementId: string;
+  isCombo?: boolean;
+  detectionSource?: string;
+}
+
+export interface ElementAnalysisArgs {
+  classes: ElementClassItem[];
+  contexts: ElementContext[];
+  allStyles: StyleInfo[];
+  getClassType: (className: string, isCombo?: boolean) => ClassType;
+  getRuleConfig: (ruleId: string) => RuleConfiguration | undefined;
+}
+
 export interface RuleConfiguration {
   ruleId: string;
   enabled: boolean;
   severity: Severity;
   customSettings: Record<string, unknown>;
 }
-
-

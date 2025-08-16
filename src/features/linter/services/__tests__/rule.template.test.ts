@@ -1,10 +1,13 @@
-import { describe, it } from 'vitest';
-import { createRuleRegistry } from '@/features/linter/services/rule-registry';
-import { createUtilityClassAnalyzer } from '@/features/linter/services/utility-class-analyzer';
-import { createRuleRunner } from '@/features/linter/services/rule-runner';
-import type { StyleInfo, StyleWithElement } from '@/entities/style/model/style.service';
-import type { Rule, RuleResult } from '@/features/linter/model/rule.types';
-import type { ElementContext } from '@/entities/element/model/element-context.types';
+import { describe, it } from "vitest";
+import { createRuleRegistry } from "@/features/linter/services/rule-registry";
+import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
+import { createRuleRunner } from "@/features/linter/services/rule-runner";
+import type {
+  StyleInfo,
+  StyleWithElement,
+} from "@/entities/style/model/style.service";
+import type { Rule, RuleResult } from "@/features/linter/model/rule.types";
+import type { ElementContext } from "@/entities/element/model/element-context.types";
 
 // Minimal helpers to quickly exercise a rule through the rule runner.
 // Copy this file and replace the commented sections inside tests with your rule/preset.
@@ -16,8 +19,7 @@ const toAllStyles = (
   propertiesByClass: Record<string, any> = {}
 ): StyleInfo[] => {
   return classNames.map((name, index) => {
-    const isUtility = name.startsWith('u-');
-    const properties = isUtility ? (propertiesByClass[name] ?? {}) : {};
+    const properties = propertiesByClass[name] ?? {};
     const isCombo = COMBO_LIKE_RE.test(name);
     return {
       id: `s-${index + 1}`,
@@ -25,7 +27,7 @@ const toAllStyles = (
       properties,
       order: index,
       isCombo,
-      detectionSource: 'heuristic'
+      detectionSource: "heuristic",
     };
   });
 };
@@ -35,7 +37,10 @@ const toStylesWithElement = (
   classNames: string[],
   propertiesByClass: Record<string, any> = {}
 ): StyleWithElement[] => {
-  return toAllStyles(classNames, propertiesByClass).map((s) => ({ ...s, elementId }));
+  return toAllStyles(classNames, propertiesByClass).map((s) => ({
+    ...s,
+    elementId,
+  }));
 };
 
 export const runRuleOnClasses = (
@@ -47,13 +52,19 @@ export const runRuleOnClasses = (
     contexts?: ElementContext[];
   }
 ): RuleResult[] => {
-  const elementId = options?.elementId ?? 'el-1';
+  const elementId = options?.elementId ?? "el-1";
   const propertiesByClass = options?.propertiesByClass ?? {};
   const contexts = options?.contexts ?? [];
 
   const allStyles = toAllStyles(classNames, propertiesByClass);
-  const stylesWithElement = toStylesWithElement(elementId, classNames, propertiesByClass);
-  const elementContextsMap: Record<string, ElementContext[]> = { [elementId]: contexts };
+  const stylesWithElement = toStylesWithElement(
+    elementId,
+    classNames,
+    propertiesByClass
+  );
+  const elementContextsMap: Record<string, ElementContext[]> = {
+    [elementId]: contexts,
+  };
 
   const registry = createRuleRegistry();
   registry.registerRule(rule);
@@ -63,17 +74,21 @@ export const runRuleOnClasses = (
   analyzer.buildPropertyMaps(allStyles);
 
   const runner = createRuleRunner(registry as any, analyzer);
-  return runner.runRulesOnStylesWithContext(stylesWithElement, elementContextsMap, allStyles);
+  return runner.runRulesOnStylesWithContext(
+    stylesWithElement,
+    elementContextsMap,
+    allStyles
+  );
 };
 
-describe.skip('Rule Template (copy and adapt)', () => {
-  it('naming rule example (replace with your rule import)', () => {
+describe.skip("Rule Template (copy and adapt)", () => {
+  it("naming rule example (replace with your rule import)", () => {
     // import { yourRule } from '@/rules/your/new-rule';
     // const results = runRuleOnClasses(yourRule, ['bad', 'good_custom-name']);
     // expect(results.some(r => r.ruleId === yourRule.id)).toBe(true);
   });
 
-  it('property rule example (duplicate utility properties)', () => {
+  it("property rule example (duplicate class properties)", () => {
     // import { yourPropertyRule } from '@/rules/property/your-rule';
     // const props = {
     //   'u-red': { color: 'red' },
@@ -83,7 +98,7 @@ describe.skip('Rule Template (copy and adapt)', () => {
     // expect(results.some(r => r.ruleId === yourPropertyRule.id)).toBe(true);
   });
 
-  it('preset smoke (register preset and assert a rule triggers)', () => {
+  it("preset smoke (register preset and assert a rule triggers)", () => {
     // import { lumosPreset } from '@/presets/lumos.preset';
     // const registry = createRuleRegistry();
     // registry.registerRules(lumosPreset.rules);
@@ -99,5 +114,3 @@ describe.skip('Rule Template (copy and adapt)', () => {
     // expect(results.length).toBeGreaterThan(0);
   });
 });
-
-

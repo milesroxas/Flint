@@ -19,6 +19,7 @@ pnpm exec vitest
 - Duplicate it next to other tests and unskip the `describe` block.
 
 2. Replace the commented sections with your rule or preset imports and expectations.
+3. Assign properties to any class you want considered in duplicate checks (utilities, combos, or customs). Classes with no properties are ignored as they have no unique values.
 
 ### Helper functions (from the template)
 
@@ -27,7 +28,8 @@ pnpm exec vitest
   - Returns `RuleResult[]` for easy assertions.
 - `toAllStyles(classNames, propertiesByClass?)` and `toStylesWithElement(elementId, classNames, propertiesByClass?)`:
   - Build `StyleInfo[]` and `StyleWithElement[]` with sane defaults.
-  - `u-*` classes accept `properties` via `propertiesByClass`.
+  - Any class can carry `properties` via `propertiesByClass` (not limited to `u-*`).
+  - Classes with an empty property object are treated as having no unique properties and are ignored by duplicate analysis.
   - Variant-like combo names (`is-*`, `is_*`, `isCamelCase`) are auto-marked as combos.
 
 ### Naming rule: minimal check
@@ -38,12 +40,12 @@ pnpm exec vitest
 // expect(results.some(r => r.ruleId === yourRule.id)).toBe(true);
 ```
 
-### Property rule: duplicate utilities
+### Property rule: duplicate classes
 
 ```ts
 // import { yourPropertyRule } from '@/rules/property/your-rule';
-// const props = { 'u-red': { color: 'red' }, 'u-red-dup': { color: 'red' } };
-// const results = runRuleOnClasses(yourPropertyRule, ['u-red', 'u-red-dup'], { propertiesByClass: props });
+// const props = { 'u-red': { color: 'red' }, 'is-Red': { color: 'red' } };
+// const results = runRuleOnClasses(yourPropertyRule, ['u-red', 'is-Red'], { propertiesByClass: props });
 // expect(results.some(r => r.ruleId === yourPropertyRule.id)).toBe(true);
 ```
 
@@ -68,7 +70,7 @@ pnpm exec vitest
 ### Current suites
 
 - Linter services tests: `src/features/linter/services/__tests__/`
-  - `lumos.grammar.test.ts`, `lumos.roles.test.ts`, `lumos.preset.parity.test.ts`, `rule.messages.snapshot.test.ts`, `scan.process.integration.test.ts`
+  - `lumos.grammar.test.ts`, `lumos.roles.test.ts`, `rule.messages.snapshot.test.ts`
 - Style service tests: `src/entities/style/model/__tests__/`
   - `style.service.combo.test.ts`
 
