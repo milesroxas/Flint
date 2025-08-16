@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
-import { scanSelectedElementWithMeta } from "@/processes/scan/scan-selected-element";
+import { scanSelectedElementWithMeta } from "@/features/linter/processes/scan/scan-selected-element";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";

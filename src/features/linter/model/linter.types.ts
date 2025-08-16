@@ -5,19 +5,14 @@ import type { ElementContextConfig } from "@/entities/element/model/element-cont
 export type ClassKind = "custom" | "utility" | "combo" | "unknown";
 
 export type ElementRole =
+  | "main"
+  | "section"
   | "componentRoot"
   | "childGroup"
+  // staged roles (reserved, not yet used by rules)
   | "container"
   | "layout"
   | "content"
-  | "title"
-  | "text"
-  | "actions"
-  | "button"
-  | "link"
-  | "icon"
-  | "list"
-  | "item"
   | "unknown";
 
 export interface ParsedClass {
@@ -44,6 +39,21 @@ export interface RoleResolver {
   isContainerLike?(parsed: ParsedClass): boolean;
 }
 
+// Role detection layer contracts
+export type RoleScore = { elementId: string; role: ElementRole; score: number };
+export type RolesByElement = Record<string, ElementRole>;
+export type RoleDetector = (input: {
+  elementId: string;
+  element: import("@/entities/element/model/element-context.types").WebflowElement;
+  classNames: string[];
+  parsedFirstCustom?: ParsedClass;
+  ancestryIds?: string[];
+}) => RoleScore | null;
+
+export interface RoleDetectionConfig {
+  threshold: number; // 0..1
+}
+
 export interface RuleResultLite {
   id: string;
   message: string;
@@ -66,6 +76,8 @@ export interface Preset {
   id: string;
   grammar?: GrammarAdapter;
   roles?: RoleResolver;
+  roleDetectors?: RoleDetector[];
+  roleDetectionConfig?: RoleDetectionConfig;
   rules: import("./rule.types").Rule[];
   /** Optional element-context classifier configuration for this preset */
   contextConfig?: Partial<ElementContextConfig>;

@@ -1,20 +1,21 @@
 import type { Rule } from "@/features/linter/model/rule.types";
 import type { Preset } from "@/features/linter/model/linter.types";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
-import { clientFirstRoles } from "@/features/linter/roles/client-first.roles";
 
-import { cfVariantIsPrefixRule } from "@/rules/naming/cf-variant-is-prefix";
-import { cfUnknownUtilityFamilyRule } from "@/rules/naming/cf-unknown-utility-family";
+import { cfVariantIsPrefixRule } from "@/features/linter/rules/naming/cf-variant-is-prefix";
+import { cfUnknownUtilityFamilyRule } from "@/features/linter/rules/naming/cf-unknown-utility-family";
 
-import { cfNoUtilitiesOnRootRule } from "@/rules/context-aware/cf-no-utilities-on-root";
-import { cfInnerWrapperRecommendedRule } from "@/rules/context-aware/cf-inner-wrapper-recommended";
-import { cfContainersCleanRule } from "@/rules/context-aware/cf-containers-clean";
-import { cfNoPaddingOnInnerRule } from "@/rules/context-aware/cf-no-padding-on-inner";
+import { cfNoUtilitiesOnRootRule } from "@/features/linter/rules/context-aware/cf-no-utilities-on-root";
+import { cfInnerWrapperRecommendedRule } from "@/features/linter/rules/context-aware/cf-inner-wrapper-recommended";
+import { cfContainersCleanRule } from "@/features/linter/rules/context-aware/cf-containers-clean";
+import { cfNoPaddingOnInnerRule } from "@/features/linter/rules/context-aware/cf-no-padding-on-inner";
+import { clientFirstRoleDetectors } from "@/features/linter/detectors/client-first.detectors";
 
 export const clientFirstPreset: Preset & { rules: Rule[] } = {
   id: "client-first",
   grammar: clientFirstGrammar,
-  roles: clientFirstRoles,
+  roleDetectors: clientFirstRoleDetectors,
+  roleDetectionConfig: { threshold: 0.6 },
   contextConfig: {
     wrapSuffix: "_wrap",
     parentClassPatterns: [
@@ -45,5 +46,3 @@ export const clientFirstPreset: Preset & { rules: Rule[] } = {
     cfNoPaddingOnInnerRule,
   ],
 };
-
-
