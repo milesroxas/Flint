@@ -64,14 +64,15 @@ export const createStyleService = () => {
                   detectionSource = "api";
                 } catch (err) {
                   // Fallback to heuristic if API throws
-                  isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
-                    name || ""
-                  );
+                  isCombo =
+                    /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/.test(
+                      name || ""
+                    );
                   detectionSource = "heuristic";
                 }
               } else {
                 // Heuristic fallback when API isn't available
-                isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+                isCombo = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/.test(
                   name || ""
                 );
                 detectionSource = "heuristic";
@@ -177,13 +178,13 @@ export const createStyleService = () => {
             isCombo = await style.isComboClass();
             detectionSource = "api";
           } catch {
-            isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+            isCombo = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/.test(
               trimmedName
             );
             detectionSource = "heuristic";
           }
         } else {
-          isCombo = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/.test(
+          isCombo = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/.test(
             trimmedName
           );
           detectionSource = "heuristic";

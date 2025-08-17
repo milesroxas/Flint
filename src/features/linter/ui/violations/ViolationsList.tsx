@@ -91,9 +91,9 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
                   <Badge
                     key={cls}
                     variant="secondary"
-                    className="justify-start"
+                    className="justify-start whitespace-normal break-words"
                   >
-                    <code className="font-mono">{cls}</code>
+                    <code className="font-mono break-all">{cls}</code>
                   </Badge>
                 ))}
               </div>

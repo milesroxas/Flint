@@ -33,7 +33,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   return (
     <AccordionItem key={id} value={id} className="border-b last:border-b-0">
       <AccordionTrigger className="py-2 px-1.5 w-full">
-        <div className="flex flex-col items-start gap-1 w-full">
+        <div className="flex flex-col items-start gap-1 w-full min-w-0">
           <ViolationHeader violation={violation} />
           {violation.ruleId !== "no-styles-or-classes" && (
             <div

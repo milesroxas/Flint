@@ -8,7 +8,7 @@ import {
 } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { StyleWithElement } from "@/entities/style/model/style.service";
-import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
+// import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
 import type {
   WebflowElement,
   ElementWithClassNames,
@@ -49,9 +49,8 @@ function createServiceInstance() {
       return kind === "utility" || kind === "combo" ? kind : "custom";
     }
   );
-  const elementCtx = createElementContextClassifier(activePreset.contextConfig);
+  // Context classifier removed from runtime; keep placeholder cache for API compatibility
   let cachedContextsMap: Record<string, any> | null = null;
-  let cachedElementsSignature: string | null = null;
   let cachedRolesByElement: RolesByElement | null = null;
 
   // Legacy grammar/roles helper removed; detectors provide roles
@@ -115,66 +114,81 @@ function createServiceInstance() {
         elementId: elementKey,
       }));
 
-      // 4. Classify element context
-      // Get all elements to build parent map (needed for context classification)
-      // Build/reuse page contexts once per page snapshot
+      // 4. Roles-only: skip context classification, build roles once per page snapshot
       const allElements = await webflow.getAllElements();
       const validElements = allElements.filter(
         (el) => el && typeof el.getStyles === "function"
       );
-      const signature = `${validElements
-        .map((el) =>
-          String(
-            ((el as any)?.id && ((el as any).id as any).element) ??
-              (el as any)?.id ??
-              (el as any)?.nodeId ??
-              ""
-          )
-        )
-        .sort()
-        .join("|")}`;
-
-      let elementContextsMap: Record<string, any>;
-      if (cachedContextsMap && cachedElementsSignature === signature) {
-        elementContextsMap = cachedContextsMap;
-      } else {
-        const allElementsWithClassNames: ElementWithClassNames[] =
-          await Promise.all(
-            validElements.map(async (el) => {
-              const classNames = await styleService.getAppliedClassNames(el);
-              return {
-                element: el as WebflowElement,
-                classNames: classNames.filter((name) => name.trim() !== ""),
-              };
-            })
+      const allElementsWithClassNames: ElementWithClassNames[] =
+        await Promise.all(
+          validElements.map(async (el) => {
+            const classNames = await styleService.getAppliedClassNames(el);
+            return {
+              element: el as WebflowElement,
+              classNames: classNames.filter((name) => name.trim() !== ""),
+            };
+          })
+        );
+      const elementContextsMap: Record<string, any> = {};
+      cachedContextsMap = elementContextsMap;
+      // Build parent map for graph helpers
+      const parentIdByChildId: Record<string, string | null> = {};
+      try {
+        for (const el of validElements as any[]) {
+          const childId = String(
+            (el?.id && el.id.element) ?? el?.id ?? el?.nodeId ?? ""
           );
-        elementContextsMap = await elementCtx.classifyPageElements(
+          const parent =
+            typeof el.getParent === "function" ? await el.getParent() : null;
+          const parentId = parent
+            ? String(
+                (parent?.id && parent.id.element) ??
+                  parent?.id ??
+                  parent?.nodeId ??
+                  ""
+              )
+            : null;
+          parentIdByChildId[childId] = parentId;
+        }
+      } catch {
+        // best-effort; may be partial in some contexts
+      }
+      const getParentId = (id: string): string | null =>
+        parentIdByChildId[id] ?? null;
+      const getChildrenIds = (id: string): string[] =>
+        Object.entries(parentIdByChildId)
+          .filter(([, parent]) => parent === id)
+          .map(([child]) => child);
+      const getAncestorIds = (id: string): string[] => {
+        const ancestors: string[] = [];
+        let p = getParentId(id);
+        while (p) {
+          ancestors.push(p);
+          p = getParentId(p);
+        }
+        return ancestors;
+      };
+      try {
+        const activePresetForRoles = resolvePresetOrFallback(
+          getCurrentPreset()
+        );
+        const roleDetectors: RoleDetector[] =
+          activePresetForRoles.roleDetectors ?? [];
+        const roleDetectionConfig: RoleDetectionConfig | undefined =
+          activePresetForRoles.roleDetectionConfig;
+        const { createRoleDetectionService } = await import(
+          "@/features/linter/services/role-detection.service"
+        );
+        const roleDetection = createRoleDetectionService({
+          grammar: activePresetForRoles.grammar ?? activeGrammar,
+          detectors: roleDetectors,
+          config: roleDetectionConfig,
+        });
+        cachedRolesByElement = roleDetection.detectRolesForPage(
           allElementsWithClassNames
         );
-        cachedContextsMap = elementContextsMap;
-        cachedElementsSignature = signature;
-        try {
-          const activePresetForRoles = resolvePresetOrFallback(
-            getCurrentPreset()
-          );
-          const roleDetectors: RoleDetector[] =
-            activePresetForRoles.roleDetectors ?? [];
-          const roleDetectionConfig: RoleDetectionConfig | undefined =
-            activePresetForRoles.roleDetectionConfig;
-          const { createRoleDetectionService } = await import(
-            "@/features/linter/services/role-detection.service"
-          );
-          const roleDetection = createRoleDetectionService({
-            grammar: activePresetForRoles.grammar ?? activeGrammar,
-            detectors: roleDetectors,
-            config: roleDetectionConfig,
-          });
-          cachedRolesByElement = roleDetection.detectRolesForPage(
-            allElementsWithClassNames
-          );
-        } catch {
-          cachedRolesByElement = null;
-        }
+      } catch {
+        cachedRolesByElement = null;
       }
 
       if (DEBUG) {
@@ -185,14 +199,18 @@ function createServiceInstance() {
         );
       }
 
-      // 5. Run rules with proper element context
-      const getParentId = (): string | null => null; // Element flow: parent map optional here
+      // 5. Run rules with proper element context and graph helpers
+      const activePresetForParse = resolvePresetOrFallback(getCurrentPreset());
       const results = ruleRunner.runRulesOnStylesWithContext(
         stylesWithElement,
         elementContextsMap,
         allStyles,
         cachedRolesByElement ?? undefined,
-        getParentId
+        getParentId,
+        getChildrenIds,
+        getAncestorIds,
+        (name: string) =>
+          (activePresetForParse.grammar ?? activeGrammar).parse(name)
       );
       // Role metadata now provided via rolesByElement from cache
 

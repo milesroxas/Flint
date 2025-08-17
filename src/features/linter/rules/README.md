@@ -32,11 +32,10 @@ src/features/linter/rules/
   property/
     lumos-utility-class-exact-duplicate.ts
     lumos-utility-class-duplicate-properties.ts
-  context-aware/
+  role-aware/
     component-root-semantic-naming.ts
     component-root-no-display-utilities.ts
     cf-no-utilities-on-root.ts
-    cf-inner-wrapper-recommended.ts
     cf-containers-clean.ts
     cf-no-padding-on-inner.ts
 ```
@@ -92,7 +91,7 @@ Do not duplicate these in presets. If a preset needs stronger/different behavior
 - Naming/formatting: `lumos-custom-class-format.ts`, `lumos-component-class-format.ts`, `lumos-utility-class-format.ts`, `lumos-combo-class-format.ts`
 - Ordering/variants (element‑level checks): `lumos-class-ordering.ts`
 - Property duplicate detection: `lumos-utility-class-exact-duplicate.ts`, `lumos-utility-class-duplicate-properties.ts`
-- Legacy‑compatible, non‑conflicting context‑aware:
+- Role‑aware (migrated from legacy context):
   - `component-root-semantic-naming.ts`
   - `component-root-no-display-utilities.ts`
 
@@ -101,9 +100,8 @@ These are registered in `src/presets/lumos.preset.ts` after the canonical rules.
 ### Client‑First (naming and lightweight structure hints)
 
 - Naming: `cf-variant-is-prefix.ts`, `cf-unknown-utility-family.ts`, `cf-custom-kebab-case.ts`
-- Lightweight context‑aware suggestions (kept compatible with role approach):
+- Role‑aware suggestions:
   - `cf-no-utilities-on-root.ts`
-  - `cf-inner-wrapper-recommended.ts`
   - `cf-containers-clean.ts`
   - `cf-no-padding-on-inner.ts`
 
@@ -129,7 +127,7 @@ These are registered in `src/presets/client-first.preset.ts`.
 
    - Shared structural checks → `canonical/`
    - Preset naming/format/property → `naming/` or `property/`
-   - Legacy‑compatible context checks (only when necessary) → `context-aware/`
+   - Role‑aware checks (migrated from legacy context) → `role-aware/`
 
 2. Register in a preset:
 

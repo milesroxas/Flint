@@ -3,14 +3,12 @@ import { devtools } from "zustand/middleware";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 import { scanSelectedElementWithMeta } from "@/features/linter/processes/scan/scan-selected-element";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 
 // Intentionally unused type guard removed to satisfy no-unused-vars rule; access via window.webflow at runtime
 
 interface ElementLintState {
   results: RuleResult[];
-  contexts: ElementContext[];
   classNames: string[];
   roles: ElementRole[];
   loading: boolean;
@@ -26,7 +24,6 @@ type ElementLintStore = ElementLintState & ElementLintActions;
 
 const initialState: ElementLintState = {
   results: [],
-  contexts: [],
   classNames: [],
   roles: [],
   loading: false,
@@ -45,26 +42,39 @@ export const useElementLintStore = create<ElementLintStore>()(
           set({ loading: true, error: null });
           const wf: any = (window as any).webflow;
           if (!wf || typeof wf.getSelectedElement !== "function") {
-            set({ results: [], contexts: [], classNames: [], roles: [], loading: false });
+            set({
+              results: [],
+              classNames: [],
+              roles: [],
+              loading: false,
+            });
             return;
           }
           const el = await wf.getSelectedElement();
           if (!el || typeof el.getStyles !== "function") {
-            set({ results: [], contexts: [], classNames: [], roles: [], loading: false });
+            set({
+              results: [],
+              classNames: [],
+              roles: [],
+              loading: false,
+            });
             return;
           }
           const meta = await scanSelectedElementWithMeta(el);
           set({
             results: meta.results,
             classNames: meta.classNames || [],
-            contexts: meta.contexts || [],
             roles: meta.roles || [],
             loading: false,
           });
         } catch (err: unknown) {
           // eslint-disable-next-line no-console
           console.error("[ElementLintStore] refresh failed", err);
-          set({ ...initialState, error: err instanceof Error ? err.message : "Failed to lint element" });
+          set({
+            ...initialState,
+            error:
+              err instanceof Error ? err.message : "Failed to lint element",
+          });
         }
       },
 
@@ -87,7 +97,12 @@ export const useElementLintStore = create<ElementLintStore>()(
         return;
       }
       if (!el || typeof el.getStyles !== "function") {
-        useElementLintStore.setState({ results: [], contexts: [], classNames: [], roles: [], loading: false });
+        useElementLintStore.setState({
+          results: [],
+          classNames: [],
+          roles: [],
+          loading: false,
+        });
         return;
       }
       useElementLintStore.setState({ loading: true, error: null });
@@ -96,14 +111,16 @@ export const useElementLintStore = create<ElementLintStore>()(
         useElementLintStore.setState({
           results: meta.results,
           classNames: meta.classNames || [],
-          contexts: meta.contexts || [],
           roles: meta.roles || [],
           loading: false,
         });
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("[ElementLintStore] event lint failed", err);
-        useElementLintStore.setState({ ...initialState, error: "Failed to lint element" });
+        useElementLintStore.setState({
+          ...initialState,
+          error: "Failed to lint element",
+        });
       }
     });
   } catch {
@@ -113,5 +130,3 @@ export const useElementLintStore = create<ElementLintStore>()(
 
 // Compatibility hook
 export const useElementLint = useElementLintStore;
-
-

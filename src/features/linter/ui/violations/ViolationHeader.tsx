@@ -2,7 +2,7 @@ import React from "react";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/lib/utils";
 import { RuleResult, Severity } from "@/features/linter/model/rule.types";
-import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";
+import { roleToLabel } from "@/features/linter/lib/labels";
 
 interface ViolationHeaderProps {
   violation: RuleResult;
@@ -11,7 +11,8 @@ interface ViolationHeaderProps {
 export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
   violation,
 }) => {
-  const sev = violation.severity as Severity;
+  const sevForUi: Severity = violation.severity as Severity;
+  const sevForUiLabel = violation.severity;
   const dotBySeverity: Record<Severity, string> = {
     error: "bg-error",
     warning: "bg-warning",
@@ -24,17 +25,26 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
   };
 
   const role = violation.metadata?.role as string | undefined;
-  const context = violation.context as string | undefined;
-  const isDuplicateRole = role && context && role === context;
+  const isDuplicateRole = false;
+
+  const isUnknownRole = role === "unknown";
 
   return (
-    <div className="flex min-w-0 items-center gap-2 w-full">
+    <div className="flex flex-wrap min-w-0 items-center gap-2 gap-y-1 w-full overflow-hidden">
       <span
-        className={cn("h-2 w-2 rounded-full flex-shrink-0", dotBySeverity[sev])}
+        className={cn(
+          "h-2 w-2 rounded-full flex-shrink-0",
+          dotBySeverity[sevForUi]
+        )}
         aria-hidden
-        title={violation.severity}
+        title={sevForUiLabel}
       />
-      <span className={cn("font-medium truncate text-xs", textBySeverity[sev])}>
+      <span
+        className={cn(
+          "font-medium text-xs min-w-0 whitespace-normal break-words",
+          textBySeverity[sevForUi]
+        )}
+      >
         {violation.name}
       </span>
       {violation.metadata?.unrecognizedElement && (
@@ -42,12 +52,8 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
           Unknown
         </Badge>
       )}
-      {violation.context && (
-        <Badge variant="newProperty" className="ml-2 text-[10px]">
-          {contextToLabel(violation.context)}
-        </Badge>
-      )}
-      {!isDuplicateRole && role && (
+      {/* Context badges removed; roles only */}
+      {!isDuplicateRole && role && !isUnknownRole && (
         <Badge variant="secondary" className="ml-1 text-[10px]">
           {roleToLabel(role as any)}
         </Badge>

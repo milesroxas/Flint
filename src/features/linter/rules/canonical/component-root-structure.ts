@@ -1,24 +1,23 @@
-import type { NamingRule } from "@/features/linter/model/rule.types";
+import type { Rule } from "@/features/linter/model/rule.types";
 
-export const createComponentRootStructureRule = (): NamingRule => ({
+export const createComponentRootStructureRule = (): Rule => ({
   id: "canonical:component-root-structure",
   name: "Component root must live under a section and contain structure",
   description:
     "Component root must be under a section and contain layout/content/childGroup.",
   example: '<section><div class="hero_wrap">...</div></section>',
-  category: "semantics",
-  type: "naming",
+  category: "structure",
+  type: "structure",
   severity: "warning",
   enabled: true,
   targetClassTypes: ["custom", "combo", "utility"],
-  test: () => true,
   analyzeElement: ({
+    elementId,
     classes,
     getRoleForElement,
     getParentId,
     getChildrenIds,
   }) => {
-    const elementId = classes[0]?.elementId;
     if (!elementId || typeof getRoleForElement !== "function") return [];
     const role = getRoleForElement(elementId);
     if (role !== "componentRoot") return [];
@@ -34,7 +33,7 @@ export const createComponentRootStructureRule = (): NamingRule => ({
       p = typeof getParentId === "function" ? getParentId(p) : null;
     }
 
-    const violations = [] as ReturnType<NamingRule["analyzeElement"]>;
+    const violations = [] as any[];
 
     if (!isUnderSection) {
       violations.push({
@@ -42,10 +41,11 @@ export const createComponentRootStructureRule = (): NamingRule => ({
         name: "Component root must live under a section and contain structure",
         message: "Component root is not within a section.",
         severity: "error",
-        className: classes[0]?.name ?? "",
+        elementId,
+        className: classes[0]?.className ?? "",
         isCombo: classes[0]?.isCombo === true,
         metadata: { elementId },
-      } as any);
+      } as const);
     }
 
     const children =
@@ -61,12 +61,13 @@ export const createComponentRootStructureRule = (): NamingRule => ({
         message:
           "Add a layout, content, or childGroup inside this component root.",
         severity: "warning",
-        className: classes[0]?.name ?? "",
+        elementId,
+        className: classes[0]?.className ?? "",
         isCombo: classes[0]?.isCombo === true,
         metadata: { elementId },
-      } as any);
+      } as const);
     }
 
-    return violations as any;
+    return violations;
   },
 });

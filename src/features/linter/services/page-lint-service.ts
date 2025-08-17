@@ -5,7 +5,7 @@ import {
 } from "@/entities/style/model/style.service";
 import { RuleRunner } from "./rule-runner";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
+// Removed unused element context classifier
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type {
   RoleDetector,
@@ -29,13 +29,36 @@ export function createPageLintService(
   styleService: StyleService,
   ruleRunner: RuleRunner
 ) {
-  const presetId = getCurrentPreset();
-  const activePreset = resolvePresetOrFallback(presetId);
-  const elementCtx = createElementContextClassifier(activePreset.contextConfig);
+  // const presetId = getCurrentPreset();
+  // const activePreset = resolvePresetOrFallback(presetId);
 
   // Grammar/roles selection removed; detection layer uses preset grammar directly
 
   // Legacy per-element role computation removed; roles are provided by detection service
+  // Roles cache (signature-based). Graph is rebuilt every scan.
+  let rolesCacheSignature: string | null = null;
+  let cachedRolesByElement: RolesByElement | null = null;
+
+  function computeSignature(
+    elements: Array<{ id: string; classes: string[] }>,
+    parentOf: Map<string, string | null>
+  ): string {
+    const rows = elements
+      .map((e) => `${e.id}:${e.classes.slice().sort().join("|")}`)
+      .sort();
+
+    const tree = Array.from(parentOf.entries())
+      .map(([child, parent]) => `${child}->${parent ?? ""}`)
+      .sort();
+
+    const djb2 = (s: string) => {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = (h << 5) + h + s.charCodeAt(i);
+      return (h >>> 0).toString(36);
+    };
+
+    return `v2:${djb2(rows.join("\n"))}:${djb2(tree.join("\n"))}`;
+  }
 
   async function lintCurrentPage(
     elements: WebflowElement[]
@@ -94,10 +117,8 @@ export function createPageLintService(
       `[PageLintService] Extracted class names for ${elementsWithClassNames.length} elements.`
     );
 
-    // 4. Classify elements into contexts using extracted class names
-    const elementContexts = await elementCtx.classifyPageElements(
-      elementsWithClassNames
-    );
+    // 4. Roles-only: skip context classification
+    const elementContexts: Record<string, any> = {};
 
     // 5. Detect roles once for the page and build parent map helpers
     const activePresetForRoles = resolvePresetOrFallback(getCurrentPreset());
@@ -105,18 +126,8 @@ export function createPageLintService(
       activePresetForRoles.roleDetectors ?? [];
     const roleDetectionConfig: RoleDetectionConfig | undefined =
       activePresetForRoles.roleDetectionConfig;
-    let rolesByElement: RolesByElement = {};
-    try {
-      const roleDetection = createRoleDetectionService({
-        grammar: activePresetForRoles.grammar ?? lumosGrammar,
-        detectors: roleDetectors,
-        config: roleDetectionConfig,
-      });
-      rolesByElement = roleDetection.detectRolesForPage(elementsWithClassNames);
-    } catch (err) {
-      rolesByElement = {} as RolesByElement;
-    }
 
+    // Build parent map (child -> parent) for signature and graph helpers
     const parentIdByChildId: Record<string, string | null> = {};
     try {
       for (const pair of elementStylePairs) {
@@ -142,6 +153,50 @@ export function createPageLintService(
 
     const getParentId = (elementId: string): string | null =>
       parentIdByChildId[elementId] ?? null;
+
+    // Compute signature for roles cache using element IDs + class names + parent edges
+    const elementsForSig = elementStylePairs.map((p) => ({
+      id: p.elementId,
+      classes: Array.from(
+        new Set(
+          p.styles
+            .map((s) => s.name)
+            .filter((n) => typeof n === "string" && n.trim() !== "")
+        )
+      ),
+    }));
+    const parentMapForSig = new Map<string, string | null>(
+      Object.entries(parentIdByChildId)
+    );
+    const signature = computeSignature(elementsForSig, parentMapForSig);
+
+    let rolesByElement: RolesByElement = {} as RolesByElement;
+    if (
+      rolesCacheSignature &&
+      cachedRolesByElement &&
+      signature === rolesCacheSignature
+    ) {
+      rolesByElement = cachedRolesByElement;
+      console.log("[PageLintService] Using cached roles (signature match)");
+    } else {
+      try {
+        const roleDetection = createRoleDetectionService({
+          grammar: activePresetForRoles.grammar ?? lumosGrammar,
+          detectors: roleDetectors,
+          config: roleDetectionConfig,
+        });
+        rolesByElement = roleDetection.detectRolesForPage(
+          elementsWithClassNames
+        );
+        rolesCacheSignature = signature;
+        cachedRolesByElement = rolesByElement;
+        console.log("[PageLintService] Computed roles and refreshed cache");
+      } catch (err) {
+        rolesByElement = {} as RolesByElement;
+        rolesCacheSignature = signature;
+        cachedRolesByElement = rolesByElement;
+      }
+    }
 
     // 6. Page-scope canonical rules
     const graph = createElementGraphService(

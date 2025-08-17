@@ -4,17 +4,15 @@ import type {
   StyleInfo,
   StyleWithElement,
 } from "@/entities/style/model/style.service";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
 
-import { cfNoUtilitiesOnRootRule } from "@/features/linter/rules/context-aware/cf-no-utilities-on-root";
-import { cfInnerWrapperRecommendedRule } from "@/features/linter/rules/context-aware/cf-inner-wrapper-recommended";
-import { cfContainersCleanRule } from "@/features/linter/rules/context-aware/cf-containers-clean";
-import { cfNoPaddingOnInnerRule } from "@/features/linter/rules/context-aware/cf-no-padding-on-inner";
+import { cfNoUtilitiesOnRootRule } from "@/features/linter/rules/role-aware/cf-no-utilities-on-root";
+import { cfContainersCleanRule } from "@/features/linter/rules/role-aware/cf-containers-clean";
+import { cfNoPaddingOnInnerRule } from "@/features/linter/rules/role-aware/cf-no-padding-on-inner";
 
-const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+const COMBO_LIKE_RE = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/;
 
 const toAllStyles = (
   classNames: string[],
@@ -52,12 +50,11 @@ const runRules = (
   opts?: {
     propertiesByClass?: Record<string, any>;
     elementId?: string;
-    contexts?: ElementContext[];
+    rolesByElement?: Record<string, string>;
   }
 ) => {
   const elementId = opts?.elementId ?? "el-1";
   const propertiesByClass = opts?.propertiesByClass ?? {};
-  const contexts = opts?.contexts ?? [];
 
   const allStyles = toAllStyles(classNames, propertiesByClass);
   const stylesWithElement = toStylesWithElement(
@@ -65,8 +62,8 @@ const runRules = (
     classNames,
     propertiesByClass
   );
-  const elementContextsMap: Record<string, ElementContext[]> = {
-    [elementId]: contexts,
+  const elementContextsMap: Record<string, never[]> = {
+    [elementId]: [],
   };
 
   const registry = createRuleRegistry();
@@ -79,7 +76,8 @@ const runRules = (
   return runner.runRulesOnStylesWithContext(
     stylesWithElement,
     elementContextsMap,
-    allStyles
+    allStyles,
+    opts?.rolesByElement as any
   );
 };
 
@@ -90,7 +88,7 @@ describe("Client-First context-aware rules", () => {
       ["card_wrap", "u-padding-md"],
       {
         propertiesByClass: { "u-padding-md": { padding: "16px" } },
-        contexts: ["componentRoot"],
+        rolesByElement: { "el-1": "componentRoot" },
       }
     );
     expect(results.some((r) => r.ruleId === "cf-no-utilities-on-root")).toBe(
@@ -104,7 +102,7 @@ describe("Client-First context-aware rules", () => {
       ["container-large", "u-padding-md"],
       {
         propertiesByClass: { "u-padding-md": { padding: "16px" } },
-        contexts: ["componentRoot"],
+        rolesByElement: { "el-1": "componentRoot" },
       }
     );
     expect(results.some((r) => r.ruleId === "cf-containers-clean")).toBe(true);
@@ -116,7 +114,7 @@ describe("Client-First context-aware rules", () => {
       ["card_content", "u-padding-sm"],
       {
         propertiesByClass: { "u-padding-sm": { padding: "8px" } },
-        contexts: ["childGroup"],
+        rolesByElement: { "el-1": "childGroup" },
       }
     );
     expect(results.some((r) => r.ruleId === "cf-no-padding-on-inner")).toBe(
@@ -124,12 +122,5 @@ describe("Client-First context-aware rules", () => {
     );
   });
 
-  it("cf-inner-wrapper-recommended suggests at componentRoot", () => {
-    const results = runRules([cfInnerWrapperRecommendedRule], ["card_wrap"], {
-      contexts: ["componentRoot"],
-    });
-    expect(
-      results.some((r) => r.ruleId === "cf-inner-wrapper-recommended")
-    ).toBe(true);
-  });
+  // Removed: cf-inner-wrapper-recommended (redundant with canonical structure guidance)
 });

@@ -17,9 +17,10 @@ export const createRuleRegistry = () => {
 
     if (!configurations.has(rule.id)) {
       const defaults: Record<string, unknown> = {};
-      if (rule.config) {
-        for (const key of Object.keys(rule.config)) {
-          defaults[key] = rule.config[key].default;
+      const schema = (rule as any).config as Record<string, { default: unknown }> | undefined;
+      if (schema) {
+        for (const key of Object.keys(schema)) {
+          defaults[key] = schema[key].default;
         }
       }
 

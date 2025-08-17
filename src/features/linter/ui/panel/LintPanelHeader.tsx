@@ -1,8 +1,7 @@
 import React from "react";
 import { Badge } from "@/shared/ui/badge";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
-import { contextToLabel, roleToLabel } from "@/features/linter/lib/labels";
+import { roleToLabel } from "@/features/linter/lib/labels";
 
 interface LintSummaryProps {
   total: number;
@@ -10,7 +9,6 @@ interface LintSummaryProps {
   warnings: number;
   suggestions: number;
   mode?: "strict" | "balanced" | "lenient";
-  contexts?: ElementContext[];
   roles?: ElementRole[];
 }
 
@@ -20,15 +18,10 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
   warnings,
   suggestions,
   mode,
-  contexts = [],
   roles = [],
 }) => {
-  const uniqueContexts: ElementContext[] = Array.from(new Set(contexts));
   const uniqueRoles: ElementRole[] = Array.from(new Set(roles));
-  const contextSet = new Set<ElementContext>(uniqueContexts);
-  const filteredRoles = uniqueRoles.filter(
-    (r) => !contextSet.has(r as ElementContext)
-  );
+  const filteredRoles = uniqueRoles;
 
   return (
     <div className="relative mb-2 rounded-md border bg-card px-2 py-2">
@@ -59,15 +52,6 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            {uniqueContexts.map((c) => (
-              <Badge
-                key={`ctx-${c}`}
-                variant="newProperty"
-                className="text-[10px]"
-              >
-                {contextToLabel(c)}
-              </Badge>
-            ))}
             {filteredRoles.map((r) => (
               <Badge
                 key={`role-${r}`}

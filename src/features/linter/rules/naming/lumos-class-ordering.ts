@@ -19,7 +19,7 @@ export const lumosUtilitiesAfterCustomOrderingRule: NamingRule = {
   // Element-level check is performed in rule-runner; keep test permissive
   test: () => true,
   analyzeElement: (args: ElementAnalysisArgs): RuleResult[] => {
-    const { classes, contexts, getRuleConfig } = args;
+    const { classes, getRuleConfig } = args;
     const cfg = getRuleConfig("lumos-utilities-after-custom-ordering");
     if (!(cfg?.enabled ?? true)) return [];
     const ordered = [...classes].sort((a, b) => a.order - b.order);
@@ -27,7 +27,8 @@ export const lumosUtilitiesAfterCustomOrderingRule: NamingRule = {
     // Use naming, not API combo flag, to decide base vs variant/utility
     let seenVariantOrUtility = false;
     for (const c of ordered) {
-      const isVariantOrUtility = isComboLike(c.name) || c.name.startsWith("u-");
+      const isVariantOrUtility =
+        isComboLike(c.className) || c.className.startsWith("u-");
       if (isVariantOrUtility) {
         seenVariantOrUtility = true;
       } else if (seenVariantOrUtility) {
@@ -38,10 +39,9 @@ export const lumosUtilitiesAfterCustomOrderingRule: NamingRule = {
             message:
               "Base custom/component classes must not appear after variant (is-*) or utility (u-*) classes.",
             severity: cfg?.severity ?? "error",
-            className: c.name,
+            className: c.className,
             isCombo: false,
             example: "base_custom is-* u-*",
-            context: contexts[0],
           },
         ];
       }
@@ -72,17 +72,17 @@ export const lumosComboLimitRule: NamingRule = {
   config: comboLimitConfig,
   test: () => true,
   analyzeElement: (args: ElementAnalysisArgs): RuleResult[] => {
-    const { classes, contexts, getClassType, getRuleConfig } = args;
+    const { classes, getClassType, getRuleConfig } = args;
     const cfg = getRuleConfig("lumos-combo-class-limit");
     if (!(cfg?.enabled ?? true)) return [];
     const ordered = [...classes].sort((a, b) => a.order - b.order);
     const combos = ordered.filter(
-      (c) => getClassType(c.name, c.isCombo) === "combo"
+      (c) => getClassType(c.className, c.isCombo) === "combo"
     );
     const maxCombos = Number(cfg?.customSettings?.["maxCombos"] ?? 2);
     if (combos.length <= maxCombos) return [];
     const baseCustom = ordered.find(
-      (c) => getClassType(c.name, c.isCombo) === "custom"
+      (c) => getClassType(c.className, c.isCombo) === "custom"
     );
     return [
       {
@@ -90,14 +90,16 @@ export const lumosComboLimitRule: NamingRule = {
         name: "Too many combo classes",
         message: `This element has ${combos.length} combo classes; limit is ${maxCombos}. Consider merging or simplifying.`,
         severity: cfg?.severity ?? "warning",
-        className: combos[0]?.name ?? "",
+        className: combos[0]?.className ?? "",
         isCombo: true,
+        // pass through comboIndex of the first offending combo if available
+        comboIndex: combos[0]?.comboIndex,
         example: "base_custom is-large is-active",
-        context: contexts[0],
+
         metadata: {
-          combos: combos.map((c) => c.name),
+          combos: combos.map((c) => c.className),
           maxCombos,
-          baseCustomClass: baseCustom?.name,
+          baseCustomClass: baseCustom?.className,
         },
       },
     ];
@@ -117,13 +119,13 @@ export const lumosVariantRequiresBaseRule: NamingRule = {
   targetClassTypes: ["combo"],
   test: () => true,
   analyzeElement: (args: ElementAnalysisArgs): RuleResult[] => {
-    const { classes, contexts, getClassType, getRuleConfig } = args;
+    const { classes, getClassType, getRuleConfig } = args;
     const cfg = getRuleConfig("lumos-variant-requires-base");
     if (!(cfg?.enabled ?? true)) return [];
     const ordered = [...classes].sort((a, b) => a.order - b.order);
     let baseSeen = false;
     for (const c of ordered) {
-      if (isComboLike(c.name)) {
+      if (isComboLike(c.className)) {
         if (!baseSeen) {
           return [
             {
@@ -132,26 +134,28 @@ export const lumosVariantRequiresBaseRule: NamingRule = {
               message:
                 "Variant classes (is-*) should be used on top of a base custom/component class (not only utilities).",
               severity: cfg?.severity ?? "warning",
-              className: c.name,
+              className: c.className,
               isCombo: true,
               example: "c-card is-active",
-              context: contexts[0],
+
               metadata: {
                 combos: ordered
-                  .filter((x) => getClassType(x.name, x.isCombo) === "combo")
-                  .map((x) => x.name),
+                  .filter(
+                    (x) => getClassType(x.className, x.isCombo) === "combo"
+                  )
+                  .map((x) => x.className),
               },
             },
           ];
         }
         break;
       }
-      if (getClassType(c.name, c.isCombo) !== "utility") baseSeen = true;
+      if (getClassType(c.className, c.isCombo) !== "utility") baseSeen = true;
     }
     return [];
   },
 };
 
 // local helper mirrors runner's heuristic
-const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+const COMBO_LIKE_RE = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/;
 const isComboLike = (name: string): boolean => COMBO_LIKE_RE.test(name);

@@ -7,6 +7,10 @@ import type {
   ClassType,
 } from "@/features/linter/model/rule.types";
 import type { ElementContext } from "@/entities/element/model/element-context.types";
+import type {
+  RolesByElement,
+  ElementRole,
+} from "@/features/linter/model/linter.types";
 import {
   StyleInfo,
   StyleWithElement,
@@ -18,7 +22,8 @@ import {
 import { RuleRegistry } from "./rule-registry";
 
 // Centralized helper to keep combo-like detection consistent across runner logic
-const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+// matches: is-foo, is_bar, isActive, isPrimary2
+const COMBO_LIKE_RE = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/;
 const isComboLike = (name: string): boolean => COMBO_LIKE_RE.test(name);
 
 export const createRuleRunner = (
@@ -47,42 +52,22 @@ export const createRuleRunner = (
     return "custom";
   };
 
-  const isRuleApplicableForContext = (
-    rule: Rule,
-    elementContexts: ElementContext[]
-  ): boolean => {
-    // If rule doesn't specify a context, it applies to all contexts
-    if (!rule.context) return true;
-
-    // If rule specifies a context, element must have that context
-    return elementContexts.includes(rule.context);
-  };
+  // Legacy context gating removed
 
   const executeNamingRule = (
-    rule: Rule & { type: "naming" },
+    rule: Extract<Rule, { type: "naming" }>,
     className: string,
-    severity: Severity,
-    elementContexts: ElementContext[]
+    severity: Severity
   ): RuleResult[] => {
-    // If the rule has an evaluate function, use it
-    if (typeof rule.evaluate === "function") {
+    // Primary: test/evaluate support on naming rules
+    if ("evaluate" in rule && typeof rule.evaluate === "function") {
       const configObj = ruleRegistry.getRuleConfiguration(
         rule.id
       )?.customSettings;
       const result = rule.evaluate(className, { config: configObj });
-      if (result) {
-        return [
-          {
-            ...result,
-            severity: result.severity ?? severity,
-            context:
-              elementContexts.length > 0 ? elementContexts[0] : undefined, // Include primary context
-          },
-        ];
-      }
+      if (result) return [{ ...result, severity: result.severity ?? severity }];
     }
 
-    // Fallback to test logic
     if (!rule.test(className)) {
       // Debug log removed to reduce noise
       return [
@@ -94,7 +79,6 @@ export const createRuleRunner = (
           className,
           isCombo: isComboLike(className),
           example: rule.example,
-          context: elementContexts.length > 0 ? elementContexts[0] : undefined,
         },
       ];
     }
@@ -106,9 +90,8 @@ export const createRuleRunner = (
   const handleUtilityDuplicateRules = (
     rule: Rule,
     className: string,
-    properties: any,
-    severity: Severity,
-    elementContexts: ElementContext[]
+    properties: Record<string, unknown>,
+    severity: Severity
   ): RuleResult[] => {
     const duplicateInfo: UtilityClassDuplicateInfo | null =
       utilityAnalyzer.analyzeDuplicates(className, properties);
@@ -185,7 +168,6 @@ export const createRuleRunner = (
         severity,
         className,
         isCombo: isComboLike(className),
-        context: elementContexts[0],
         // Include structured data in metadata for better UI rendering
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       },
@@ -193,22 +175,16 @@ export const createRuleRunner = (
   };
 
   const executePropertyRule = (
-    rule: Rule & { type: "property" },
+    rule: Extract<Rule, { type: "property" }>,
     className: string,
-    properties: any,
+    properties: Record<string, unknown>,
     severity: Severity,
     elementContexts: ElementContext[],
     allStyles: StyleInfo[]
   ): RuleResult[] => {
     // Handle duplicate rules for any class (utilities, combos, customs)
     if (rule.id.includes("duplicate")) {
-      return handleUtilityDuplicateRules(
-        rule,
-        className,
-        properties,
-        severity,
-        elementContexts
-      );
+      return handleUtilityDuplicateRules(rule, className, properties, severity);
     }
 
     // For custom property rules, use the rule's analyze function
@@ -216,6 +192,7 @@ export const createRuleRunner = (
       allStyles,
       utilityClassPropertiesMap: utilityAnalyzer.getUtilityClassPropertiesMap(),
       propertyToClassesMap: utilityAnalyzer.getPropertyToClassesMap(),
+      elementContexts,
     };
 
     const violations = rule.analyze(className, properties, context);
@@ -227,16 +204,16 @@ export const createRuleRunner = (
       className: violation.className,
       isCombo: violation.isCombo,
       example: rule.example,
-      context: elementContexts.length > 0 ? elementContexts[0] : undefined,
     }));
   };
 
   const executeRule = (
     rule: Rule,
     className: string,
-    properties: any,
+    properties: Record<string, unknown>,
     elementContexts: ElementContext[],
-    allStyles: StyleInfo[]
+    allStyles: StyleInfo[],
+    elementIdForLog?: string
   ): RuleResult[] => {
     try {
       const config = ruleRegistry.getRuleConfiguration(rule.id);
@@ -244,14 +221,13 @@ export const createRuleRunner = (
 
       if (rule.type === "naming") {
         return executeNamingRule(
-          rule,
+          rule as Extract<Rule, { type: "naming" }>,
           className,
-          effectiveSeverity,
-          elementContexts
+          effectiveSeverity
         );
       } else if (rule.type === "property") {
         return executePropertyRule(
-          rule,
+          rule as Extract<Rule, { type: "property" }>,
           className,
           properties,
           effectiveSeverity,
@@ -262,10 +238,11 @@ export const createRuleRunner = (
 
       return [];
     } catch (err) {
-      console.error(
-        `Error executing rule ${rule.id} on class ${className}:`,
-        err
-      );
+      console.error(`Rule ${rule.id} failed`, {
+        className,
+        elementId: elementIdForLog,
+        err,
+      });
       return [];
     }
   };
@@ -275,10 +252,7 @@ export const createRuleRunner = (
     stylesWithElement: StyleWithElement[],
     elementContextsMap: Record<string, ElementContext[]>,
     allStyles: StyleInfo[],
-    rolesByElement?: Record<
-      string,
-      import("@/features/linter/model/linter.types").ElementRole
-    >,
+    rolesByElement?: RolesByElement,
     getParentId?: (elementId: string) => string | null,
     getChildrenIds?: (elementId: string) => string[],
     getAncestorIds?: (elementId: string) => string[],
@@ -296,54 +270,72 @@ export const createRuleRunner = (
       list.push(s);
       byElement.set(s.elementId, list);
       const names = byElementClassNames.get(s.elementId) ?? [];
-      names.push(s.name as any);
+      names.push(s.name);
       byElementClassNames.set(s.elementId, names);
+    }
+
+    // Precompute comboIndex per element for stable ordering and pass-through
+    const comboIndexByElementAndClass = new Map<string, Map<string, number>>();
+    for (const [elId, list] of byElement.entries()) {
+      const sorted = [...list].sort((a, b) => a.order - b.order);
+      let idx = 0;
+      for (const item of sorted) {
+        if (item.isCombo) {
+          const map =
+            comboIndexByElementAndClass.get(elId) ?? new Map<string, number>();
+          if (!comboIndexByElementAndClass.has(elId))
+            comboIndexByElementAndClass.set(elId, map);
+          map.set(item.name, idx);
+          idx += 1;
+        }
+      }
     }
 
     // 1) Element-level phase: call analyzeElement on any rule that provides it
     const allRules = ruleRegistry.getAllRules();
     for (const [elId, list] of byElement.entries()) {
-      const contexts = elementContextsMap[elId] || [];
       for (const rule of allRules) {
         if (typeof rule.analyzeElement === "function") {
           const cfg = ruleRegistry.getRuleConfiguration(rule.id);
           const isEnabled = cfg?.enabled ?? rule.enabled;
           if (!isEnabled) continue;
           const elementResults = rule.analyzeElement({
-            classes: list.map((i: any) => ({
-              name: i.name,
+            elementId: elId,
+            classes: list.map((i) => ({
+              className: i.name,
               order: i.order,
               elementId: i.elementId,
               isCombo: i.isCombo,
+              comboIndex: i.isCombo
+                ? comboIndexByElementAndClass.get(elId)?.get(i.name) ??
+                  undefined
+                : undefined,
               detectionSource: i.detectionSource,
             })),
-            contexts,
             allStyles,
             getClassType,
             getRuleConfig: (id: string) =>
               ruleRegistry.getRuleConfiguration(id),
-            rolesByElement: rolesByElement as any,
-            getRoleForElement: (id: string) =>
-              (rolesByElement ? rolesByElement[id] : undefined) as any,
+            rolesByElement,
+            getRoleForElement: (id: string): ElementRole =>
+              rolesByElement?.[id] ?? "unknown",
             getParentId,
             getChildrenIds,
             getAncestorIds,
             getClassNamesForElement: (id: string) =>
               byElementClassNames.get(id) ?? [],
             parseClass,
+            elementContexts: elementContextsMap[elId] ?? [],
           });
-          elementResults.forEach((r) => {
-            r.context = r.context ?? contexts[0];
+          for (const r of elementResults) {
+            r.elementId = elId;
+            // Ensure severity override is respected
+            r.severity = r.severity ?? cfg?.severity ?? rule.severity;
             const role = rolesByElement ? rolesByElement[elId] : undefined;
             const parentId =
               typeof getParentId === "function" ? getParentId(elId) : undefined;
-            r.metadata = {
-              ...(r.metadata ?? {}),
-              elementId: elId,
-              role,
-              parentId,
-            };
-          });
+            r.metadata = { ...(r.metadata ?? {}), role, parentId };
+          }
           results.push(...elementResults);
         }
       }
@@ -356,44 +348,49 @@ export const createRuleRunner = (
       elementId,
       isCombo,
       detectionSource,
-    } of stylesWithElement as any) {
-      const elementContexts = elementContextsMap[elementId] || [];
+    } of stylesWithElement) {
+      const elementContexts: ElementContext[] =
+        elementContextsMap[elementId] ?? [];
       const classType = getClassType(name, isCombo);
       const applicableRules = ruleRegistry
         .getRulesByClassType(classType)
         .filter((rule) => {
           const config = ruleRegistry.getRuleConfiguration(rule.id);
           const isEnabled = config?.enabled ?? rule.enabled;
-          const isApplicableForContext = isRuleApplicableForContext(
-            rule,
-            elementContexts
-          );
-          return isEnabled && isApplicableForContext;
-        });
+          return isEnabled;
+        })
+        .sort((a, b) => a.id.localeCompare(b.id));
 
       for (const rule of applicableRules) {
         const ruleResults = executeRule(
           rule,
           name,
-          properties,
+          properties as Record<string, unknown>,
           elementContexts,
-          allStyles
+          allStyles,
+          elementId
         );
         ruleResults.forEach((r) => {
+          // Set top-level elementId for canonical consumption
+          r.elementId = elementId;
           const role = rolesByElement ? rolesByElement[elementId] : undefined;
           const parentId =
             typeof getParentId === "function"
               ? getParentId(elementId)
               : undefined;
-          const merged = {
-            ...(r.metadata ?? {}),
-            elementId,
-            role,
-            parentId,
-          } as any;
-          if (detectionSource && !merged.detectionSource)
-            merged.detectionSource = detectionSource;
+          const merged = { ...(r.metadata ?? {}), role, parentId } as Record<
+            string,
+            unknown
+          >;
+          if (detectionSource && !merged["detectionSource"])
+            merged["detectionSource"] = detectionSource;
           r.metadata = merged;
+          // Pass through comboIndex when applicable
+          if (isCombo && r.isCombo && r.comboIndex == null) {
+            r.comboIndex = comboIndexByElementAndClass
+              .get(elementId)
+              ?.get(name);
+          }
         });
         results.push(...ruleResults);
       }

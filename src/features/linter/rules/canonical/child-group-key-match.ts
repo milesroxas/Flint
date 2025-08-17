@@ -1,18 +1,18 @@
-import type { NamingRule } from "@/features/linter/model/rule.types";
+import type { Rule } from "@/features/linter/model/rule.types";
 
-export const createChildGroupKeyMatchRule = (): NamingRule => ({
+export const createChildGroupKeyMatchRule = (): Rule => ({
   id: "canonical:childgroup-key-match",
   name: "Child group key must match nearest component root",
   description:
     "Child group component key must match its nearest component root.",
   example: "hero_wrap → hero_cta_wrap",
-  category: "semantics",
-  type: "naming",
+  category: "structure",
+  type: "structure",
   severity: "error",
   enabled: true,
   targetClassTypes: ["custom", "combo", "utility"],
-  test: () => true,
   analyzeElement: ({
+    elementId,
     classes,
     getRoleForElement,
     getAncestorIds,
@@ -20,7 +20,6 @@ export const createChildGroupKeyMatchRule = (): NamingRule => ({
     getClassType,
     getClassNamesForElement,
   }) => {
-    const elementId = classes[0]?.elementId;
     if (!elementId || typeof getRoleForElement !== "function") return [];
     const role = getRoleForElement(elementId);
     if (role !== "childGroup") return [];
@@ -37,14 +36,17 @@ export const createChildGroupKeyMatchRule = (): NamingRule => ({
           name: "Child group key must match nearest component root",
           message: "Child group has no component root ancestor.",
           severity: "error",
-          className: classes[0]?.name ?? "",
+          elementId,
+          className: classes[0]?.className ?? "",
           isCombo: classes[0]?.isCombo === true,
           metadata: { elementId },
         },
       ];
     }
 
-    const childKey = parseClass?.(classes[0]?.name ?? "")?.componentKey ?? null;
+    const childParsed =
+      (parseClass?.(classes[0]?.className ?? "") as any) ?? null;
+    const childKey = childParsed?.componentKey ?? null;
     const rootClassNames = (
       typeof getClassNamesForElement === "function"
         ? getClassNamesForElement(rootId)
@@ -54,7 +56,8 @@ export const createChildGroupKeyMatchRule = (): NamingRule => ({
       rootClassNames.find(
         (n) => (getClassType?.(n) ?? "custom") === "custom"
       ) ?? "";
-    const rootKey = parseClass?.(rootBaseName)?.componentKey ?? null;
+    const rootParsed = (parseClass?.(rootBaseName) as any) ?? null;
+    const rootKey = rootParsed?.componentKey ?? null;
     if (!childKey || !rootKey || childKey !== rootKey) {
       return [
         {
@@ -63,7 +66,8 @@ export const createChildGroupKeyMatchRule = (): NamingRule => ({
           message:
             "Child group's component key does not match the nearest component root.",
           severity: "error",
-          className: classes[0]?.name ?? "",
+          elementId,
+          className: classes[0]?.className ?? "",
           isCombo: classes[0]?.isCombo === true,
           metadata: { elementId },
         },

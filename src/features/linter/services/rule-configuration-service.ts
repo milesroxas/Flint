@@ -87,15 +87,17 @@ export class RuleConfigurationService {
       const customSettings: Record<string, unknown> = { ...base };
 
       // seed defaults and drop unknown keys
-      if (rule.config) {
-        for (const key of Object.keys(rule.config)) {
+      // If rules expose a config schema, seed defaults and prune unknown keys.
+      // New structure rules may not provide a schema; in that case, leave as-is.
+      const schema = (rule as any).config as RuleConfigSchema | undefined;
+      if (schema) {
+        for (const key of Object.keys(schema)) {
           if (!(key in customSettings)) {
-            customSettings[key] = (rule.config as RuleConfigSchema)[key].default;
+            customSettings[key] = schema[key].default;
           }
         }
-        // remove any keys not in schema
         for (const key of Object.keys(customSettings)) {
-          if (!(key in rule.config)) {
+          if (!(key in schema)) {
             delete customSettings[key];
           }
         }

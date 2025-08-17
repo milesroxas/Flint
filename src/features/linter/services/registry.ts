@@ -1,9 +1,15 @@
 // features/linter/lib/registry.ts
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 import { resolvePresetOrFallback } from "@/presets";
-import { applyOpinionMode, OpinionMode } from "@/features/linter/model/opinion.modes";
+import {
+  applyOpinionMode,
+  OpinionMode,
+} from "@/features/linter/model/opinion.modes";
 import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import type { Rule } from "@/features/linter/model/rule.types";
+import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
+import { createComponentRootStructureRule } from "@/features/linter/rules/canonical/component-root-structure";
+import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
 
 // Global registry instance
 export const ruleRegistry = createRuleRegistry();
@@ -12,13 +18,23 @@ export const ruleRegistry = createRuleRegistry();
 export const ruleConfigService = new RuleConfigurationService(ruleRegistry);
 
 // Initialize with default rules and user configurations
-export function initializeRuleRegistry(mode: OpinionMode = "balanced", presetId?: string): void {
+export function initializeRuleRegistry(
+  mode: OpinionMode = "balanced",
+  presetId?: string
+): void {
   console.log("Initializing rule registry…");
 
   // 1) register preset rules (seeds defaults too)
   ruleRegistry.clear();
   const selected = resolvePresetOrFallback(presetId);
   ruleRegistry.registerRules(selected.rules);
+
+  // 2) register canonical element rules globally (preset-agnostic)
+  ruleRegistry.registerRules([
+    createSectionParentIsMainRule(),
+    createComponentRootStructureRule(),
+    createChildGroupKeyMatchRule(),
+  ]);
 
   // 3) apply opinion mode adjustments
   applyOpinionMode(ruleRegistry, mode);
@@ -33,7 +49,11 @@ export function initializeRuleRegistry(mode: OpinionMode = "balanced", presetId?
     })
   );
 
-  console.log(`Registry initialized with preset '${selected.id}' containing ${selected.rules.length} rules`);
+  console.log(
+    `Registry initialized with preset '${selected.id}' containing ${
+      ruleRegistry.getAllRules().length
+    } rules`
+  );
 }
 
 // Helper for dynamic rules

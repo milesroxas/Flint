@@ -17,14 +17,12 @@ import { lumosUtilityClassExactDuplicateRule } from "@/features/linter/rules/pro
 import { lumosUtilityClassDuplicatePropertiesRule } from "@/features/linter/rules/property/lumos-utility-class-duplicate-properties";
 
 // Context-aware rules (keep only those that do not duplicate canonical role rules)
-import { componentRootSemanticNaming } from "@/features/linter/rules/context-aware/component-root-semantic-naming";
-import { componentRootNoDisplayUtilities } from "@/features/linter/rules/context-aware/component-root-no-display-utilities";
+import { componentRootSemanticNaming } from "@/features/linter/rules/role-aware/component-root-semantic-naming";
+import { componentRootNoDisplayUtilities } from "@/features/linter/rules/role-aware/component-root-no-display-utilities";
 import { lumosVariantRequiresBaseRule } from "@/features/linter/rules/naming/lumos-class-ordering";
 // Removed: lumosChildGroupReferencesParentRule (replaced by canonical child-group-key-match)
 import { lumosRoleDetectors } from "@/features/linter/detectors/lumos.detectors";
-import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
-import { createComponentRootStructureRule } from "@/features/linter/rules/canonical/component-root-structure";
-import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
+// Canonical element rules are registered globally in the registry
 
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
@@ -42,10 +40,6 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     childGroupPrefixJoiner: "_",
   },
   rules: [
-    // canonical structural rules (preset-agnostic)
-    createSectionParentIsMainRule(),
-    createComponentRootStructureRule(),
-    createChildGroupKeyMatchRule(),
     // naming
     lumosCustomClassFormatRule,
     lumosUtilityClassFormatRule,

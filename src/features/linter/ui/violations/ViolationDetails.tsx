@@ -61,10 +61,10 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
           <Badge
             isCombo={false}
             copyable
-            className="truncate max-w-full align-middle"
+            className="whitespace-normal break-words max-w-full align-middle"
           >
             <span className="text-left flex items-center">
-              <code className="font-mono text-[10px]">
+              <code className="font-mono text-[10px] break-words break-all">
                 {violation.metadata.suggestedName}
               </code>
             </span>
@@ -94,9 +94,12 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
           )}
         >
           <div className="mb-2">
-            <Badge className="truncate max-w-full" variant="newProperty">
+            <Badge
+              className="whitespace-normal break-words max-w-full"
+              variant="newProperty"
+            >
               <span className="text-left flex items-center">
-                <code className="font-mono text-xs px-1">
+                <code className="font-mono text-xs px-1 break-all">
                   {(violation.metadata as any)?.baseCustomClass ||
                     violation.className ||
                     "—"}
@@ -109,7 +112,10 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
             {violation.metadata.combos.map((c: string, i: number) => (
               <div className="mb-2">
                 <div className="flex items-center" key={`${c}-${i}`}>
-                  <Badge className="ml-1" isCombo={true}>
+                  <Badge
+                    className="ml-1 whitespace-normal break-words"
+                    isCombo={true}
+                  >
                     {c}
                   </Badge>
                 </div>
@@ -279,10 +285,10 @@ export const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
     <Badge
       isCombo={violation.isCombo}
       variant="newProperty"
-      className="truncate max-w-full "
+      className="whitespace-normal break-words max-w-full"
     >
       <span className="text-left flex items-center">
-        <code className="font-mono text-xs font-normal">
+        <code className="font-mono text-xs font-normal break-all">
           {violation.className || "—"}
         </code>
       </span>

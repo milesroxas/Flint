@@ -1,5 +1,6 @@
 import { StyleInfo } from "@/entities/style/model/style.service";
-import { ElementContext } from "@/entities/element/model/element-context.types";
+import { ElementRole, ParsedClass } from "@/features/linter/model/linter.types";
+import type { ElementContext } from "@/entities/element/model/element-context.types";
 
 // -------------------------
 // Severity & Result Types
@@ -12,11 +13,11 @@ export interface RuleResult {
   message: string;
   severity: Severity;
   className: string;
+  elementId?: string;
   isCombo: boolean;
   comboIndex?: number;
   example?: string;
   metadata?: Record<string, any>;
-  context?: ElementContext;
 }
 
 // -------------------------
@@ -42,14 +43,15 @@ export type RuleConfigSchema = Record<string, RuleConfigField>;
 // -------------------------
 // Core Rule Types
 // -------------------------
-export type ClassType = "custom" | "utility" | "combo";
+export type ClassType = "custom" | "utility" | "combo" | "unknown";
 export type RuleCategory =
+  | "structure"
   | "format"
   | "semantics"
   | "performance"
   | "accessibility"
   | "custom";
-export type RuleType = "naming" | "property";
+export type RuleType = "naming" | "property" | "structure";
 
 export interface BaseRule {
   id: string;
@@ -61,7 +63,6 @@ export interface BaseRule {
   enabled: boolean;
   category: RuleCategory;
   targetClassTypes: ClassType[];
-  context?: ElementContext;
   analyzeElement?: (args: ElementAnalysisArgs) => RuleResult[];
 }
 
@@ -79,13 +80,13 @@ export interface PropertyRule extends BaseRule {
   type: "property";
   analyze: (
     className: string,
-    properties: any,
+    properties: Record<string, unknown>,
     context: RuleContext & { config?: Record<string, unknown> }
   ) => RuleResult[];
   config?: RuleConfigSchema;
 }
 
-export type Rule = NamingRule | PropertyRule;
+export type Rule = NamingRule | PropertyRule | BaseRule;
 
 // -------------------------
 // Execution Context & Save
@@ -94,36 +95,37 @@ export interface RuleContext {
   allStyles: StyleInfo[];
   utilityClassPropertiesMap: Map<string, { name: string; properties: any }[]>;
   propertyToClassesMap: Map<string, Set<string>>;
+  /** Contexts detected for the current element (if available) */
+  elementContexts?: ElementContext[];
 }
 
 // -------------------------
 // Element-level Analysis
 // -------------------------
 export interface ElementClassItem {
-  name: string;
+  className: string;
   order: number;
   elementId: string;
   isCombo?: boolean;
+  comboIndex?: number;
   detectionSource?: string;
 }
 
 export interface ElementAnalysisArgs {
+  elementId: string;
   classes: ElementClassItem[];
-  contexts: ElementContext[];
   allStyles: StyleInfo[];
   getClassType: (className: string, isCombo?: boolean) => ClassType;
   getRuleConfig: (ruleId: string) => RuleConfiguration | undefined;
   rolesByElement?: import("@/features/linter/model/linter.types").RolesByElement;
-  getRoleForElement?: (
-    elementId: string
-  ) => import("@/features/linter/model/linter.types").ElementRole;
+  getRoleForElement?: (elementId: string) => ElementRole;
   getParentId?: (elementId: string) => string | null;
   getChildrenIds?: (elementId: string) => string[];
   getAncestorIds?: (elementId: string) => string[];
   getClassNamesForElement?: (elementId: string) => string[];
-  parseClass?: (
-    name: string
-  ) => import("@/features/linter/model/linter.types").ParsedClass;
+  parseClass?: (name: string) => ParsedClass;
+  /** Contexts detected for this element (if available) */
+  elementContexts?: ElementContext[];
 }
 
 export interface RuleConfiguration {

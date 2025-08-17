@@ -7,12 +7,11 @@ import type {
   StyleWithElement,
 } from "@/entities/style/model/style.service";
 import type { Rule, RuleResult } from "@/features/linter/model/rule.types";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
 
 // Minimal helpers to quickly exercise a rule through the rule runner.
 // Copy this file and replace the commented sections inside tests with your rule/preset.
 
-const COMBO_LIKE_RE = /^(?:is-[A-Za-z0-9]|is_[A-Za-z0-9]|is[A-Z]).*/;
+const COMBO_LIKE_RE = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/;
 
 const toAllStyles = (
   classNames: string[],
@@ -49,12 +48,10 @@ export const runRuleOnClasses = (
   options?: {
     propertiesByClass?: Record<string, any>;
     elementId?: string;
-    contexts?: ElementContext[];
   }
 ): RuleResult[] => {
   const elementId = options?.elementId ?? "el-1";
   const propertiesByClass = options?.propertiesByClass ?? {};
-  const contexts = options?.contexts ?? [];
 
   const allStyles = toAllStyles(classNames, propertiesByClass);
   const stylesWithElement = toStylesWithElement(
@@ -62,8 +59,8 @@ export const runRuleOnClasses = (
     classNames,
     propertiesByClass
   );
-  const elementContextsMap: Record<string, ElementContext[]> = {
-    [elementId]: contexts,
+  const elementContextsMap: Record<string, never[]> = {
+    [elementId]: [],
   };
 
   const registry = createRuleRegistry();

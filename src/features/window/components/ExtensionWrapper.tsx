@@ -53,7 +53,7 @@ export default function ExtensionWrapper({
 
   return (
     <div
-      className="overflow-visible flex flex-col"
+      className="overflow-x-hidden overflow-y-visible flex flex-col"
       style={{ height: `${height}px` }}
     >
       {children}

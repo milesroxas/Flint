@@ -12,7 +12,7 @@ export const lumosComboClassFormatRule: NamingRule = {
   category: "format",
   targetClassTypes: ["combo"],
   test: (className: string): boolean =>
-    /^is-[a-z0-9]+(?:-[a-z0-9]+)*$|^u-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
+    /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*|u-[a-z0-9]+(?:-[a-z0-9]+)*)$/.test(
       className
     ),
 };
