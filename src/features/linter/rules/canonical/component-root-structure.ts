@@ -1,4 +1,5 @@
-import type { Rule } from "@/features/linter/model/rule.types";
+import type { Rule, RuleResult } from "@/features/linter/model/rule.types";
+import type { ElementRole } from "@/features/linter/model/linter.types";
 
 export const createComponentRootStructureRule = (): Rule => ({
   id: "canonical:component-root-structure",
@@ -10,30 +11,49 @@ export const createComponentRootStructureRule = (): Rule => ({
   type: "structure",
   severity: "warning",
   enabled: true,
-  targetClassTypes: ["custom", "combo", "utility"],
+
   analyzeElement: ({
     elementId,
     classes,
     getRoleForElement,
     getParentId,
     getChildrenIds,
+    getAncestorIds,
+    getClassType,
   }) => {
-    if (!elementId || typeof getRoleForElement !== "function") return [];
-    const role = getRoleForElement(elementId);
+    if (!elementId || !getRoleForElement) return [];
+
+    const role: ElementRole = getRoleForElement(elementId) ?? "unknown";
     if (role !== "componentRoot") return [];
 
-    // Check ancestry for section
-    let p = typeof getParentId === "function" ? getParentId(elementId) : null;
+    // Prefer the base custom class for clearer messaging
+    const baseClass =
+      classes.find(
+        (c) =>
+          (getClassType?.(c.className, c.isCombo) ?? "custom") === "custom" &&
+          !c.isCombo
+      ) ?? classes[0];
+
+    // ---- Check ancestry for `section` (prefer getAncestorIds, fallback to parent walk)
+    const ancestorIds = getAncestorIds?.(elementId);
     let isUnderSection = false;
-    while (p) {
-      if (getRoleForElement(p) === "section") {
-        isUnderSection = true;
-        break;
+
+    if (Array.isArray(ancestorIds)) {
+      isUnderSection = ancestorIds.some(
+        (id) => getRoleForElement(id) === "section"
+      );
+    } else if (getParentId) {
+      let p = getParentId(elementId);
+      while (p) {
+        if (getRoleForElement(p) === "section") {
+          isUnderSection = true;
+          break;
+        }
+        p = getParentId(p);
       }
-      p = typeof getParentId === "function" ? getParentId(p) : null;
     }
 
-    const violations = [] as any[];
+    const violations: RuleResult[] = [];
 
     if (!isUnderSection) {
       violations.push({
@@ -42,31 +62,33 @@ export const createComponentRootStructureRule = (): Rule => ({
         message: "Component root is not within a section.",
         severity: "error",
         elementId,
-        className: classes[0]?.className ?? "",
-        isCombo: classes[0]?.isCombo === true,
-        metadata: { elementId },
-      } as const);
+        className: baseClass?.className ?? "",
+        isCombo: !!baseClass?.isCombo,
+      });
     }
 
-    const children =
-      typeof getChildrenIds === "function" ? getChildrenIds(elementId) : [];
-    const hasStructure = children.some((id) => {
-      const r = getRoleForElement(id);
-      return r === "layout" || r === "content" || r === "childGroup";
-    });
-    if (!hasStructure) {
-      violations.push({
-        ruleId: "canonical:component-root-structure",
-        name: "Component root must live under a section and contain structure",
-        message:
-          "Add a layout, content, or childGroup inside this component root.",
-        severity: "warning",
-        elementId,
-        className: classes[0]?.className ?? "",
-        isCombo: classes[0]?.isCombo === true,
-        metadata: { elementId },
-      } as const);
+    // ---- Check required structure children (layout | content | childGroup)
+    if (getChildrenIds) {
+      const children = getChildrenIds(elementId);
+      const hasStructure = children.some((id) => {
+        const r = getRoleForElement(id);
+        return r === "layout" || r === "content" || r === "childGroup";
+      });
+
+      if (!hasStructure) {
+        violations.push({
+          ruleId: "canonical:component-root-structure",
+          name: "Component root must live under a section and contain structure",
+          message:
+            "Add a layout, content, or childGroup inside this component root.",
+          severity: "warning",
+          elementId,
+          className: baseClass?.className ?? "",
+          isCombo: !!baseClass?.isCombo,
+        });
+      }
     }
+    // If getChildrenIds is not provided, skip the structure-child check.
 
     return violations;
   },

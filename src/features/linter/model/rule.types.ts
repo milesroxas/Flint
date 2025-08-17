@@ -1,5 +1,9 @@
 import { StyleInfo } from "@/features/linter/entities/style/model/style.service";
-import { ElementRole, ParsedClass } from "@/features/linter/model/linter.types";
+import {
+  ElementRole,
+  ParsedClass,
+  RolesByElement,
+} from "@/features/linter/model/linter.types";
 
 // -------------------------
 // Severity & Result Types
@@ -61,12 +65,12 @@ export interface BaseRule {
   severity: Severity;
   enabled: boolean;
   category: RuleCategory;
-  targetClassTypes: ClassType[];
   analyzeElement?: (args: ElementAnalysisArgs) => RuleResult[];
 }
 
 export interface NamingRule extends BaseRule {
   type: "naming";
+  targetClassTypes: ClassType[];
   test: (className: string) => boolean;
   evaluate?: (
     className: string,
@@ -77,6 +81,7 @@ export interface NamingRule extends BaseRule {
 
 export interface PropertyRule extends BaseRule {
   type: "property";
+  targetClassTypes: ClassType[];
   analyze: (
     className: string,
     properties: Record<string, unknown>,
@@ -85,7 +90,14 @@ export interface PropertyRule extends BaseRule {
   config?: RuleConfigSchema;
 }
 
-export type Rule = NamingRule | PropertyRule | BaseRule;
+export interface StructureRule extends BaseRule {
+  type: "structure";
+  category: "structure";
+  targetClassTypes?: ClassType[];
+  analyzeElement: (args: ElementAnalysisArgs) => RuleResult[];
+}
+
+export type Rule = NamingRule | PropertyRule | StructureRule;
 
 // -------------------------
 // Execution Context & Save
@@ -112,13 +124,17 @@ export interface ElementAnalysisArgs {
   elementId: string;
   classes: ElementClassItem[];
   allStyles: StyleInfo[];
+
   getClassType: (className: string, isCombo?: boolean) => ClassType;
   getRuleConfig: (ruleId: string) => RuleConfiguration | undefined;
-  rolesByElement?: import("@/features/linter/model/linter.types").RolesByElement;
+
+  rolesByElement?: RolesByElement;
   getRoleForElement?: (elementId: string) => ElementRole;
+
   getParentId?: (elementId: string) => string | null;
   getChildrenIds?: (elementId: string) => string[];
   getAncestorIds?: (elementId: string) => string[];
+
   getClassNamesForElement?: (elementId: string) => string[];
   parseClass?: (name: string) => ParsedClass;
 }

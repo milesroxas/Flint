@@ -1,26 +1,29 @@
-import {
+import type {
   Rule,
-  RuleConfiguration
+  RuleConfiguration,
+  RuleConfigSchema,
+  ClassType,
+  RuleCategory,
 } from "@/features/linter/model/rule.types";
-import type { ClassType } from "@/features/linter/model/rule.types";
 
 export const createRuleRegistry = () => {
   const rules = new Map<string, Rule>();
   const configurations = new Map<string, RuleConfiguration>();
 
-  /**
-   * Register a single rule and seed its default configuration,
-   * including any schema-defined customSettings.
-   */
+  // ---------- type guards ----------
+  const hasConfig = (
+    rule: Rule
+  ): rule is Rule & { config?: RuleConfigSchema } => "config" in rule;
+
+  // ---------- register ----------
   const registerRule = (rule: Rule): void => {
     rules.set(rule.id, rule);
 
     if (!configurations.has(rule.id)) {
       const defaults: Record<string, unknown> = {};
-      const schema = (rule as any).config as Record<string, { default: unknown }> | undefined;
-      if (schema) {
-        for (const key of Object.keys(schema)) {
-          defaults[key] = schema[key].default;
+      if (hasConfig(rule) && rule.config) {
+        for (const [key, field] of Object.entries(rule.config)) {
+          defaults[key] = field.default;
         }
       }
 
@@ -28,103 +31,101 @@ export const createRuleRegistry = () => {
         ruleId: rule.id,
         enabled: rule.enabled,
         severity: rule.severity,
-        customSettings: defaults
+        customSettings: defaults,
       });
     }
   };
 
-  /** Register multiple rules */
   const registerRules = (rulesToRegister: Rule[]): void => {
-    rulesToRegister.forEach(rule => registerRule(rule));
+    for (const r of rulesToRegister) registerRule(r);
   };
 
-  /** Clear all rules and configurations (used when switching presets) */
+  // ---------- clear ----------
   const clear = (): void => {
     rules.clear();
     configurations.clear();
   };
 
-  /** Retrieve a rule by ID */
-  const getRule = (ruleId: string): Rule | undefined => {
-    return rules.get(ruleId);
-  };
+  // ---------- getters ----------
+  const getRule = (ruleId: string): Rule | undefined => rules.get(ruleId);
 
-  /** Get all registered rules */
-  const getAllRules = (): Rule[] => {
-    return Array.from(rules.values());
-  };
+  const getAllRules = (): Rule[] => Array.from(rules.values());
 
-  /** Filter rules by class type */
-  const getRulesByClassType = (classType: ClassType): Rule[] => {
-    return getAllRules().filter(r => r.targetClassTypes.includes(classType));
-  };
+  // Stable order (useful for snapshots, deterministic output)
+  const getAllRulesSorted = (): Rule[] =>
+    Array.from(rules.values()).sort((a, b) => a.id.localeCompare(b.id));
 
-  /** Filter rules by category */
-  const getRulesByCategory = (category: string): Rule[] => {
-    return getAllRules().filter(r => r.category === category);
-  };
+  // Only class-scope (naming/property) rules that apply to a class type
+  const getRulesByClassType = (classType: ClassType): Rule[] =>
+    getAllRules().filter(
+      (r) =>
+        (r.type === "naming" || r.type === "property") &&
+        Array.isArray(r.targetClassTypes) &&
+        r.targetClassTypes.includes(classType)
+    );
 
-  /** Only rules currently enabled */
-  const getEnabledRules = (): Rule[] => {
-    return getAllRules().filter(rule => {
-      const cfg = configurations.get(rule.id);
-      return cfg?.enabled ?? rule.enabled;
-    });
-  };
+  const getRulesByCategory = (category: RuleCategory): Rule[] =>
+    getAllRules().filter((r) => r.category === category);
 
-  /** Update a rule's configuration, merging nested customSettings */
+  const getEnabledRules = (): Rule[] =>
+    getAllRules().filter((r) => configurations.get(r.id)?.enabled ?? r.enabled);
+
+  // Element-scope rules (structure) — used by element-phase in the runner
+  const getElementScopeRules = (): Rule[] =>
+    getAllRules().filter((r) => typeof r.analyzeElement === "function");
+
+  // Class-scope rules (naming/property) — used by class-phase in the runner
+  const getClassScopeRules = (): Rule[] =>
+    getAllRules().filter((r) => r.type === "naming" || r.type === "property");
+
+  // ---------- configuration ----------
   const updateRuleConfiguration = (
     ruleId: string,
-    update: Partial<Omit<RuleConfiguration, 'ruleId'>>
+    update: Partial<Omit<RuleConfiguration, "ruleId">>
   ): void => {
     const existing = configurations.get(ruleId);
     if (!existing) return;
 
     const mergedSettings = {
       ...existing.customSettings,
-      ...update.customSettings
+      ...(update.customSettings ?? {}),
     };
 
     configurations.set(ruleId, {
       ...existing,
       ...update,
-      customSettings: mergedSettings
+      customSettings: mergedSettings,
     });
   };
 
-  /** Get the stored configuration for a rule */
-  const getRuleConfiguration = (ruleId: string): RuleConfiguration | undefined => {
-    return configurations.get(ruleId);
-  };
+  const getRuleConfiguration = (
+    ruleId: string
+  ): RuleConfiguration | undefined => configurations.get(ruleId);
 
-  /** Get all rule configurations */
-  const getAllConfigurations = (): RuleConfiguration[] => {
-    return Array.from(configurations.values());
-  };
+  const getAllConfigurations = (): RuleConfiguration[] =>
+    Array.from(configurations.values());
 
-  /** Export configurations to JSON */
-  const exportConfiguration = (): string => {
-    return JSON.stringify(getAllConfigurations(), null, 2);
-  };
+  const exportConfiguration = (): string =>
+    JSON.stringify(getAllConfigurations(), null, 2);
 
-  /** Import configurations from JSON and merge into existing */
   const importConfiguration = (json: string): void => {
     try {
-      const configs: RuleConfiguration[] = JSON.parse(json);
-      configs.forEach(cfg => {
-        const existing = configurations.get(cfg.ruleId);
-        if (!existing) return;
+      const incoming: RuleConfiguration[] = JSON.parse(json);
+      for (const cfg of incoming) {
+        const current = configurations.get(cfg.ruleId);
+        if (!current) continue; // ignore configs for unregistered rules
         configurations.set(cfg.ruleId, {
-          ...existing,
-          ...cfg,
+          ...current,
+          enabled: cfg.enabled ?? current.enabled,
+          severity: cfg.severity ?? current.severity,
           customSettings: {
-            ...existing.customSettings,
-            ...cfg.customSettings
-          }
+            ...current.customSettings,
+            ...(cfg.customSettings ?? {}),
+          },
         });
-      });
+      }
     } catch (err) {
-      console.error('Failed to import rule configuration:', err);
+      console.error("Failed to import rule configuration:", err);
     }
   };
 
@@ -134,14 +135,17 @@ export const createRuleRegistry = () => {
     clear,
     getRule,
     getAllRules,
+    getAllRulesSorted,
     getRulesByClassType,
     getRulesByCategory,
     getEnabledRules,
+    getElementScopeRules,
+    getClassScopeRules,
     updateRuleConfiguration,
     getRuleConfiguration,
     getAllConfigurations,
     exportConfiguration,
-    importConfiguration
+    importConfiguration,
   } as const;
 };
 
