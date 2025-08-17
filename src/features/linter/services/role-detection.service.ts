@@ -1,5 +1,14 @@
-import type { GrammarAdapter, ParsedClass, RoleDetectionConfig, RoleDetector, RolesByElement } from "@/features/linter/model/linter.types";
-import type { ElementWithClassNames, WebflowElement } from "@/entities/element/model/element-context.types";
+import type {
+  GrammarAdapter,
+  ParsedClass,
+  RoleDetectionConfig,
+  RoleDetector,
+  RolesByElement,
+} from "@/features/linter/model/linter.types";
+import type {
+  ElementWithClassNames,
+  WebflowElement,
+} from "@/features/linter/entities/element/model/element.types";
 
 interface CreateArgs {
   grammar: GrammarAdapter;
@@ -9,30 +18,56 @@ interface CreateArgs {
 
 const DEFAULT_CONFIG: RoleDetectionConfig = { threshold: 0.6 };
 
-function getFirstCustom(grammar: GrammarAdapter, classNames: string[]): ParsedClass | undefined {
+function getFirstCustom(
+  grammar: GrammarAdapter,
+  classNames: string[]
+): ParsedClass | undefined {
   for (const name of classNames) {
     const parsed = grammar.parse(name);
-    if (parsed.kind === "custom" || (parsed as any).kind === "component" || parsed.kind === "unknown") {
+    if (
+      parsed.kind === "custom" ||
+      (parsed as any).kind === "component" ||
+      parsed.kind === "unknown"
+    ) {
       return parsed;
     }
   }
   return undefined;
 }
 
-export function createRoleDetectionService({ grammar, detectors, config }: CreateArgs) {
-  const effectiveConfig: RoleDetectionConfig = { ...DEFAULT_CONFIG, ...(config ?? {}) };
+export function createRoleDetectionService({
+  grammar,
+  detectors,
+  config,
+}: CreateArgs) {
+  const effectiveConfig: RoleDetectionConfig = {
+    ...DEFAULT_CONFIG,
+    ...(config ?? {}),
+  };
 
-  function detectRolesForPage(elements: ElementWithClassNames[]): RolesByElement {
+  function detectRolesForPage(
+    elements: ElementWithClassNames[]
+  ): RolesByElement {
     const threshold = Math.max(0, Math.min(1, effectiveConfig.threshold));
     const result: RolesByElement = {};
 
     // Collect scores per element
-    const scoresByElement: Record<string, { best: number; role: string } & Record<string, number>> = {} as any;
+    const scoresByElement: Record<
+      string,
+      { best: number; role: string } & Record<string, number>
+    > = {} as any;
 
     for (const item of elements) {
       const element = item.element as WebflowElement;
-      const classNames = (item.classNames || []).filter((n) => n && n.trim() !== "");
-      const elementId = String(((element as any)?.id && ((element as any).id as any).element) || (element as any)?.id || (element as any)?.nodeId || "");
+      const classNames = (item.classNames || []).filter(
+        (n) => n && n.trim() !== ""
+      );
+      const elementId = String(
+        ((element as any)?.id && ((element as any).id as any).element) ||
+          (element as any)?.id ||
+          (element as any)?.nodeId ||
+          ""
+      );
       const parsedFirstCustom = getFirstCustom(grammar, classNames);
       const ancestryIds: string[] | undefined = undefined; // Keep for future ancestry signals if needed
 
@@ -41,7 +76,13 @@ export function createRoleDetectionService({ grammar, detectors, config }: Creat
 
       for (const detector of detectors) {
         try {
-          const score = detector({ elementId, element, classNames, parsedFirstCustom, ancestryIds });
+          const score = detector({
+            elementId,
+            element,
+            classNames,
+            parsedFirstCustom,
+            ancestryIds,
+          });
           if (!score) continue;
           if (score.score > bestScore) {
             bestScore = score.score;
@@ -60,7 +101,10 @@ export function createRoleDetectionService({ grammar, detectors, config }: Creat
       }
 
       // Track for singleton enforcement
-      scoresByElement[elementId] = { best: bestScore, role: (bestRole ?? "unknown") as any } as any;
+      scoresByElement[elementId] = {
+        best: bestScore,
+        role: (bestRole ?? "unknown") as any,
+      } as any;
     }
 
     // Enforce singleton main
@@ -86,5 +130,3 @@ export function createRoleDetectionService({ grammar, detectors, config }: Creat
 
   return { detectRolesForPage } as const;
 }
-
-

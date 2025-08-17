@@ -1,4 +1,4 @@
-import { createStyleService } from "@/entities/style/model/style.service";
+import { createStyleService } from "@/features/linter/entities/style/model/style.service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
 import {
@@ -7,12 +7,12 @@ import {
   getCurrentPreset,
 } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-import type { StyleWithElement } from "@/entities/style/model/style.service";
-// import { createElementContextClassifier } from "@/entities/element/model/element-context-classifier";
+import type { StyleWithElement } from "@/features/linter/entities/style/model/style.service";
+// Legacy element-context classifier removed
 import type {
   WebflowElement,
   ElementWithClassNames,
-} from "@/entities/element/model/element-context.types";
+} from "@/features/linter/entities/element/model/element.types";
 import type {
   RoleDetector,
   RoleDetectionConfig,
@@ -20,7 +20,7 @@ import type {
 } from "@/features/linter/model/linter.types";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
 // dynamic presets will supply grammar/roles; keep lumos as safe fallback
-import { resolvePresetOrFallback } from "@/presets";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
 
 // Declare webflow global
 declare const webflow: {
@@ -129,7 +129,7 @@ function createServiceInstance() {
             };
           })
         );
-      const elementContextsMap: Record<string, any> = {};
+      const elementContextsMap: Record<string, never[]> = {};
       cachedContextsMap = elementContextsMap;
       // Build parent map for graph helpers
       const parentIdByChildId: Record<string, string | null> = {};

@@ -1,4 +1,4 @@
-import type { ElementContextConfig } from "@/entities/element/model/element-context.types";
+// Legacy context config removed entirely
 
 // Core contracts per docs/guides/unified-plan.md §5
 
@@ -44,7 +44,7 @@ export type RoleScore = { elementId: string; role: ElementRole; score: number };
 export type RolesByElement = Record<string, ElementRole>;
 export type RoleDetector = (input: {
   elementId: string;
-  element: import("@/entities/element/model/element-context.types").WebflowElement;
+  element: import("@/features/linter/entities/element/model/element.types").WebflowElement;
   classNames: string[];
   parsedFirstCustom?: ParsedClass;
   ancestryIds?: string[];
@@ -79,8 +79,6 @@ export interface Preset {
   roleDetectors?: RoleDetector[];
   roleDetectionConfig?: RoleDetectionConfig;
   rules: import("./rule.types").Rule[];
-  /** Optional element-context classifier configuration for this preset */
-  contextConfig?: Partial<ElementContextConfig>;
   ruleConfig?: Record<
     string,
     {
@@ -107,5 +105,3 @@ export interface ProjectConfig {
     >;
   };
 }
-
-

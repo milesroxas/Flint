@@ -1,4 +1,4 @@
-import { StyleInfo } from "@/entities/style/model/style.service";
+import { StyleInfo } from "@/features/linter/entities/style/model/style.service";
 
 export interface UtilityClassDuplicateInfo {
   className: string;

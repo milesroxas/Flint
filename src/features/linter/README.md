@@ -7,7 +7,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 - **Class type detection**: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to `is-` prefix)
 - **Naming validation**: format rules for each class type
 - **Duplicate detection**: exact duplicate utility detection (full property set). Overlap-only checks are disabled by default.
-- **Context-aware rules**: rules scoped to element contexts (e.g., component roots)
+- **Canonical roles + graph**: rules analyze elements using detected roles and element graph helpers
 - **Role identification**: parses the first custom class using a preset GrammarAdapter and maps it to an ElementRole via a RoleResolver (e.g., title, text, actions, container). Services attach `metadata.role` on violations for UI badges.
 - **Config persistence**: per-rule settings merged from schemas and stored in localStorage
 
@@ -19,28 +19,9 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 
 The rule runner derives `ClassType` from the name/prefix; combo classification piggybacks on the `isCombo` flag from the Style Service.
 
-## Element contexts and roles
+## Roles and element graph
 
-The system assigns element contexts to support context-aware rules.
-
-- Supported context values: `componentRoot`, `childGroup`, `childGroupInvalid`
-- Classification defaults (see `element-context-classifier.ts`):
-  - `wrapSuffix`: `_wrap`
-  - `parentClassPatterns`: `section_contain`, `/^u-section/`, `/^c-/`, `/^page_main/`
-- Behavior:
-  - `componentRoot`: element has a class ending in `_wrap` and its immediate parent matches a configured container pattern (default: `section_contain`, `/^u-section/`, `/^c-/`, `/^page_main/`).
-  - `childGroup`: element has a class ending in `_wrap` and is nested under a root wrap; by default it must share the same type prefix token with the nearest root wrap (configurable in the classifier).
-  - `childGroupInvalid`: nested under a root wrap but fails prefix/group name validation per classifier config.
-
-### Roles
-
-- Roles are computed in `services/element-lint-service.ts` with the active preset’s grammar and role resolver
-- We parse the first custom class using the active preset's grammar (skip `utility` and `combo` kinds)
-- Typical tokens → roles:
-  - `wrap` → `componentRoot` (or `childGroup` when not at the root)
-  - `contain`, `container` → `container`
-  - `layout` (and Client‑first structural wrappers) → `layout`
-  - `content`, `title`, `text`, `actions`, `button`, `link`, `icon`, `list`, `item`
+Roles are computed via `services/role-detection.service.ts` using the active preset's grammar and detectors. Canonical element rules use `getRoleForElement`, `getParentId`, `getChildrenIds`, and `getAncestorIds` from services to analyze structure.
 
 ## Architecture overview
 
@@ -48,7 +29,7 @@ The system assigns element contexts to support context-aware rules.
 
 - `element-lint-service.ts`
 
-  - Orchestrates selected-element scans; reuses cached site styles and page contexts
+  - Orchestrates selected-element scans; reuses cached site styles and detected roles
 
 - `utility-class-analyzer.ts`
 
@@ -76,15 +57,9 @@ The system assigns element contexts to support context-aware rules.
 
 - `rule-runner.ts`
 
-  - Filters rules by class type and context
-  - Executes naming rules (`test`/`evaluate`) and property rules (`analyze`)
+  - Filters rules by class type and executes naming/property rules, and element-level `analyzeElement`
   - Integrates utility duplicate handling and includes formatted metadata in results
   - Entry point: `runRulesOnStylesWithContext(stylesWithElement, contextsMap, allStyles)`
-
-- `element-context-classifier.ts`
-
-  - Builds a parent map via `getChildren()` traversal
-  - Classifies elements with their class names into contexts (batched processing)
 
 - Grammar and role mapping (per preset)
 
@@ -104,11 +79,10 @@ The system assigns element contexts to support context-aware rules.
 ### Types
 
 - `src/features/linter/model/rule.types.ts`
-  - `RuleResult` includes `context` and optional `metadata`
-  - `BaseRule` optionally declares `context` to target specific element contexts
-  - `RuleConfiguration` stores enabled, severity, and `customSettings`
+  - `RuleResult` includes `metadata` (e.g., role, parentId)
+  - `BaseRule` supports `analyzeElement` for element-level role/graph-based checks
 - `src/entities/element/model/element-context.types.ts`
-  - Defines `ElementContext` (`'componentRoot' | 'childGroup' | 'childGroupInvalid'`) and classifier interfaces
+  - Defines legacy context types (deprecated) retained for minimal compatibility
 
 ### View, UI, hooks, and store
 
@@ -122,7 +96,7 @@ The system assigns element contexts to support context-aware rules.
 - `ui/controls/ModeToggle.tsx`: page/element toggle buttons.
 - `ui/controls/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
 - `ui/controls/ActionBar.tsx` and `ui/controls/LintPageButton.tsx`: bottom toolbar and primary actions.
-- `ui/panel/LintPanelHeader.tsx` (LintSummary): shared header for counts, contexts, roles.
+- `ui/panel/LintPanelHeader.tsx` (LintSummary): shared header for counts and roles.
 
 #### Hooks
 
@@ -141,13 +115,11 @@ The system assigns element contexts to support context-aware rules.
   - `createElementLintService()` ensures `initializeRuleRegistry()` runs (preset + persisted configs)
   - Builds utility property maps from cached site styles
   - Retrieves applied styles for the selected element
-  - Builds or reuses page contexts (cached parent map + class names)
-  - Runs `runRulesOnStylesWithContext` with element-context mapping and all styles
+  - Detects roles for the page snapshot and runs `runRulesOnStylesWithContext` with roles and graph helpers
 
 - Full page lint
   - `usePageLintStore.lintPage()` fetches all elements, builds utility maps, then calls `createPageLintService().lintCurrentPage(elements)`
-  - Extracts class names for context classification, produces the contexts map, and runs `runRulesOnStylesWithContext`
-  - Uses the same registry initialization as element lint (parity ensured by `ensureLinterInitialized()`)
+  - Detects roles once for the page, builds an element graph, executes canonical page rules, then runs class-level rules with roles/graph
 
 ## Configuration
 
@@ -159,10 +131,9 @@ The system assigns element contexts to support context-aware rules.
 ## Rule execution details
 
 - Class type detection: resolved by the active grammar via a resolver passed into the rule runner (`utility`, `combo`, else `custom`); when the resolver is unavailable the runner falls back to the previous `u-`/`is-` heuristic
-- Context filtering: rules with a `context` apply only when the element’s contexts include that value
 - Naming rule execution order: `evaluate` (if present) else `test`
 - Utility duplicate handling: single-property exact matches include formatted metadata consumed by the UI
-- Results include: rule identifiers, severity (effective from configuration), class name, optional `context`, and optional `metadata`
+- Results include: rule identifiers, severity (effective from configuration), class name, optional `metadata`
 
 ## UI behavior specifics
 
@@ -181,7 +152,7 @@ The system assigns element contexts to support context-aware rules.
 
 - `services/element-lint-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`
 - `services/rule-registry.ts`, `services/rule-configuration-service.ts`, `services/registry.ts`
-- `entities/style/model/style.service.ts`, `entities/element/model/element-context-classifier.ts`
+- `entities/style/model/style.service.ts`
 - `rules/*` (naming, property, context-aware)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
 - `store/usePageLintStore.ts`, `store/elementLint.store.ts`

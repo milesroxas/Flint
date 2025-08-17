@@ -5,7 +5,7 @@ import { createRuleRunner } from "@/features/linter/services/rule-runner";
 import type {
   StyleInfo,
   StyleWithElement,
-} from "@/entities/style/model/style.service";
+} from "@/features/linter/entities/style/model/style.service";
 import type { Rule, RuleResult } from "@/features/linter/model/rule.types";
 
 // Minimal helpers to quickly exercise a rule through the rule runner.

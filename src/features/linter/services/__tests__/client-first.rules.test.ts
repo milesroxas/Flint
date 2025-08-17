@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import type {
   StyleInfo,
   StyleWithElement,
-} from "@/entities/style/model/style.service";
+} from "@/features/linter/entities/style/model/style.service";
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";

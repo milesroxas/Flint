@@ -6,7 +6,7 @@ import type {
   Rule,
   ClassType,
 } from "@/features/linter/model/rule.types";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
+// Legacy ElementContext removed; keep loose typing for compatibility with tests
 import type {
   RolesByElement,
   ElementRole,
@@ -14,7 +14,7 @@ import type {
 import {
   StyleInfo,
   StyleWithElement,
-} from "@/entities/style/model/style.service";
+} from "@/features/linter/entities/style/model/style.service";
 import {
   UtilityClassAnalyzer,
   UtilityClassDuplicateInfo,
@@ -179,7 +179,6 @@ export const createRuleRunner = (
     className: string,
     properties: Record<string, unknown>,
     severity: Severity,
-    elementContexts: ElementContext[],
     allStyles: StyleInfo[]
   ): RuleResult[] => {
     // Handle duplicate rules for any class (utilities, combos, customs)
@@ -192,7 +191,6 @@ export const createRuleRunner = (
       allStyles,
       utilityClassPropertiesMap: utilityAnalyzer.getUtilityClassPropertiesMap(),
       propertyToClassesMap: utilityAnalyzer.getPropertyToClassesMap(),
-      elementContexts,
     };
 
     const violations = rule.analyze(className, properties, context);
@@ -211,7 +209,6 @@ export const createRuleRunner = (
     rule: Rule,
     className: string,
     properties: Record<string, unknown>,
-    elementContexts: ElementContext[],
     allStyles: StyleInfo[],
     elementIdForLog?: string
   ): RuleResult[] => {
@@ -231,7 +228,6 @@ export const createRuleRunner = (
           className,
           properties,
           effectiveSeverity,
-          elementContexts,
           allStyles
         );
       }
@@ -250,7 +246,7 @@ export const createRuleRunner = (
   // New method that properly handles context
   const runRulesOnStylesWithContext = (
     stylesWithElement: StyleWithElement[],
-    elementContextsMap: Record<string, ElementContext[]>,
+    _elementContextsMap: Record<string, never[]>,
     allStyles: StyleInfo[],
     rolesByElement?: RolesByElement,
     getParentId?: (elementId: string) => string | null,
@@ -325,7 +321,6 @@ export const createRuleRunner = (
             getClassNamesForElement: (id: string) =>
               byElementClassNames.get(id) ?? [],
             parseClass,
-            elementContexts: elementContextsMap[elId] ?? [],
           });
           for (const r of elementResults) {
             r.elementId = elId;
@@ -349,8 +344,6 @@ export const createRuleRunner = (
       isCombo,
       detectionSource,
     } of stylesWithElement) {
-      const elementContexts: ElementContext[] =
-        elementContextsMap[elementId] ?? [];
       const classType = getClassType(name, isCombo);
       const applicableRules = ruleRegistry
         .getRulesByClassType(classType)
@@ -366,7 +359,6 @@ export const createRuleRunner = (
           rule,
           name,
           properties as Record<string, unknown>,
-          elementContexts,
           allStyles,
           elementId
         );

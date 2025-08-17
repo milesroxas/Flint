@@ -4,10 +4,10 @@ import {
   getRuleRegistry,
   getCurrentPreset,
 } from "@/features/linter/model/linter.factory";
-import { createStyleService } from "@/entities/style/model/style.service";
+import { createStyleService } from "@/features/linter/entities/style/model/style.service";
 import { createUtilityClassAnalyzer } from "@/features/linter/services/utility-class-analyzer";
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
-import { resolvePresetOrFallback } from "@/presets";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
 import { createPageLintService } from "@/features/linter/services/page-lint-service";
 
 export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {

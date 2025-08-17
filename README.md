@@ -81,7 +81,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
   - Linter role resolvers: `src/features/linter/roles/README.md`
   - Linter store: `src/features/linter/store/README.md`
   - Presets: `src/presets/README.md`
-  - Element context classifier: `src/entities/element/model/README.md`
+  - Element types: `src/entities/element/model/element.types.ts`
   - Style service: `src/entities/style/model/README.md`
 
 - ADRs (Architecture Decision Records)

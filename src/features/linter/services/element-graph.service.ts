@@ -1,4 +1,4 @@
-import type { WebflowElement } from "@/entities/element/model/element-context.types";
+import type { WebflowElement } from "@/features/linter/entities/element/model/element.types";
 
 export type ElementGraph = {
   getParentId: (id: string) => string | null;

@@ -53,7 +53,6 @@ Notes:
 - Rules are executed by the rule runner: `src/features/linter/services/rule-runner.ts`.
 - The runner provides element‑level analysis inputs (`analyzeElement(args)`) to rules with:
   - `classes: { name, order, elementId, isCombo, detectionSource }[]`
-  - `contexts: ElementContext[]` (legacy classifier contexts)
   - `allStyles: StyleInfo[]`
   - `getClassType(name, isCombo?)`
   - `getRuleConfig(ruleId)`

@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { lumosPreset } from '@/presets/lumos.preset';
+import { describe, it, expect } from "vitest";
+import { lumosPreset } from "@/features/linter/presets/lumos.preset";
 
-describe('Rule messages snapshot (shape only)', () => {
-  it('rules have stable ids and names', () => {
-    const snapshot = lumosPreset.rules.map((r: any) => ({ id: r.id, name: r.name }));
+describe("Rule messages snapshot (shape only)", () => {
+  it("rules have stable ids and names", () => {
+    const snapshot = lumosPreset.rules.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+    }));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -70,5 +73,3 @@ describe('Rule messages snapshot (shape only)', () => {
     `);
   });
 });
-
-

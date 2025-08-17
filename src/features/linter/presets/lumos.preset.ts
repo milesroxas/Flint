@@ -29,16 +29,7 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
   grammar: lumosGrammar,
   roleDetectors: lumosRoleDetectors,
   roleDetectionConfig: { threshold: 0.6 },
-  contextConfig: {
-    wrapSuffix: "_wrap",
-    parentClassPatterns: ["section_contain", /^u-section/, /^c-/, /^page_main/],
-    requireDirectParentContainerForRoot: true,
-    childGroupRequiresSharedTypePrefix: true,
-    typePrefixSeparator: "_",
-    typePrefixSegmentIndex: 0,
-    groupNamePattern: /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
-    childGroupPrefixJoiner: "_",
-  },
+  // contextConfig removed from runtime; roles/graph supersede it
   rules: [
     // naming
     lumosCustomClassFormatRule,

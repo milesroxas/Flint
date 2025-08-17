@@ -2,7 +2,7 @@
 import {
   StyleService,
   StyleWithElement,
-} from "@/entities/style/model/style.service";
+} from "@/features/linter/entities/style/model/style.service";
 import { RuleRunner } from "./rule-runner";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 // Removed unused element context classifier
@@ -14,11 +14,11 @@ import type {
 } from "@/features/linter/model/linter.types";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
 // dynamic presets will supply grammar/roles; keep lumos as safe fallback
-import { resolvePresetOrFallback } from "@/presets";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
 import type {
   WebflowElement,
   ElementWithClassNames,
-} from "@/entities/element/model/element-context.types";
+} from "@/features/linter/entities/element/model/element.types";
 import { createRoleDetectionService } from "@/features/linter/services/role-detection.service";
 import { createElementGraphService } from "@/features/linter/services/element-graph.service";
 import { createPageRuleRunner } from "@/features/linter/services/page-rule-runner";
@@ -117,8 +117,8 @@ export function createPageLintService(
       `[PageLintService] Extracted class names for ${elementsWithClassNames.length} elements.`
     );
 
-    // 4. Roles-only: skip context classification
-    const elementContexts: Record<string, any> = {};
+    // 4. Roles-only: no legacy contexts
+    const elementContexts: Record<string, never[]> = {};
 
     // 5. Detect roles once for the page and build parent map helpers
     const activePresetForRoles = resolvePresetOrFallback(getCurrentPreset());

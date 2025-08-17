@@ -1,6 +1,6 @@
 // features/linter/lib/registry.ts
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
-import { resolvePresetOrFallback } from "@/presets";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
 import {
   applyOpinionMode,
   OpinionMode,

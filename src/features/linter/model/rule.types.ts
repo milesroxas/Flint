@@ -1,6 +1,5 @@
-import { StyleInfo } from "@/entities/style/model/style.service";
+import { StyleInfo } from "@/features/linter/entities/style/model/style.service";
 import { ElementRole, ParsedClass } from "@/features/linter/model/linter.types";
-import type { ElementContext } from "@/entities/element/model/element-context.types";
 
 // -------------------------
 // Severity & Result Types
@@ -95,8 +94,6 @@ export interface RuleContext {
   allStyles: StyleInfo[];
   utilityClassPropertiesMap: Map<string, { name: string; properties: any }[]>;
   propertyToClassesMap: Map<string, Set<string>>;
-  /** Contexts detected for the current element (if available) */
-  elementContexts?: ElementContext[];
 }
 
 // -------------------------
@@ -124,8 +121,6 @@ export interface ElementAnalysisArgs {
   getAncestorIds?: (elementId: string) => string[];
   getClassNamesForElement?: (elementId: string) => string[];
   parseClass?: (name: string) => ParsedClass;
-  /** Contexts detected for this element (if available) */
-  elementContexts?: ElementContext[];
 }
 
 export interface RuleConfiguration {

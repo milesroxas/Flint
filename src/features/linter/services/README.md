@@ -2,17 +2,15 @@
 
 - `element-lint-service.ts`
 
-  - Orchestrates element scans; builds property maps, classifies element context, and runs rules
+  - Orchestrates element scans; builds property maps and runs rules
   - Selects grammar and provides a class kind resolver from the active preset (see `linter.factory.ts`)
-  - Creates the element‑context classifier using the active preset’s `contextConfig`
-  - Caches page context and detected roles to avoid recomputation during a session
-  - Uses `role-detection.service.ts` (via active preset detectors) to compute roles; passes `rolesByElement` into the rule runner
-  - Exposes `lintElement(element)` and `lintElementWithMeta(element)` (includes `appliedClassNames`, `elementContextsMap`, and `roles`)
+  - Detects roles using active preset detectors; passes `rolesByElement` into the rule runner
+  - Exposes `lintElement(element)` and `lintElementWithMeta(element)` (includes `appliedClassNames` and `roles`)
   - Does not manually stamp role metadata; the rule runner attaches `metadata.role` when `rolesByElement` is provided
 
 - `page-lint-service.ts`
 
-  - Orchestrates full page scans; gathers styles per element, classifies element context, and runs rules across all elements
+  - Orchestrates full page scans; gathers styles per element and runs rules across all elements
   - Detects roles once per page using `role-detection.service.ts` with active preset grammar and detectors
   - Builds a lightweight element graph (`element-graph.service.ts`) and executes page‑scope canonical rules via `page-rule-runner.ts` (e.g., main singleton/content rules)
   - Invokes the rule runner with `rolesByElement` and parent/children/ancestor helpers; role metadata is not post‑stamped here
@@ -20,7 +18,7 @@
 - `rule-runner.ts`
 
   - Primary API: `runRulesOnStylesWithContext(styles, elementContextsMap, allStyles, rolesByElement?, getParentId?, getChildrenIds?, getAncestorIds?, parseClass?)`
-  - Filters by resolved class type and by rule `context`; executes naming and property rules
+  - Filters by resolved class type; executes naming/property rules and element-level analysis
   - Accepts an optional class kind resolver (from active grammar); falls back to heuristics and combo‑like detection when not provided
   - Supports element‑level analysis via per‑rule `analyzeElement` hook before class‑level checks
   - Handles duplicate detection for any class type using `utility-class-analyzer`
