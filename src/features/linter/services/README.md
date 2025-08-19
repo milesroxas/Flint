@@ -8,47 +8,40 @@ This directory contains the core services that power the Webflow linter function
 
 #### `element-lint-service.ts`
 
-- **Purpose**: Orchestrates individual element scans
+- **Purpose**: Orchestrates individual element scans with role detection and graph context
 - **Key Functions**:
-  - `lintElement(element)`: Lints a single Webflow element
-  - `lintElementWithMeta(element)`: Returns lint results with applied class names and detected roles
-- **Responsibilities**:
-  - Ensures linter initialization
-  - Builds property maps from all site styles
-  - Retrieves and validates applied styles on the element
-  - Runs rules with element context and role information
-  - Provides fallback for elements without styles
+  - `lintElement(element: WebflowElement): Promise<RuleResult[]>`: Lints a single Webflow element
+- **Dependencies**:
+  - `StyleService`: For retrieving style information
+  - `RuleRunner`: For executing linting rules
+- **File Reference**: [`src/features/linter/services/element-lint-service.ts`](./element-lint-service.ts)
 
-**Detailed Description**: This service is the primary entry point for linting individual Webflow elements. It orchestrates the entire element scanning process by first ensuring the linter is properly initialized, then building comprehensive property maps from all site styles to provide context for rule execution. The service retrieves and validates the styles applied to the target element, maintaining the association between styles and elements. It then runs the appropriate rules with full element context and role information, allowing for comprehensive analysis. The service also handles edge cases, such as elements without any assigned styles, by providing appropriate fallback behavior and error handling. The service includes role detection for the current element and caches role information for performance.
+**Detailed Description**: This service is the primary entry point for linting individual Webflow elements. It resolves the active preset with fallback to Lumos grammar, ensuring consistent rule execution context. The service loads all site-wide style information for comprehensive property analysis, then retrieves and maps applied styles to the target element. It builds a minimal element graph around the target element to support relationship-aware rules, and performs role detection using the same service as page-level scans for consistency. Finally, it executes rules via the shared rule runner API, maintaining parity with page-level linting. The service handles errors gracefully and provides role context for more sophisticated rule analysis.
 
 #### `page-lint-service.ts`
 
-- **Purpose**: Orchestrates full page scans across all elements
+- **Purpose**: Orchestrates full page scans across all elements with intelligent caching
 - **Key Functions**:
-  - `lintCurrentPage(elements)`: Lints all elements on the current page
-- **Responsibilities**:
-  - Loads all style definitions for rule context
-  - Gathers styles for each element while maintaining element association
-  - Detects roles using the role detection service
-  - Builds element graph for relationship analysis
-  - Executes page-scope canonical rules
-  - Provides comprehensive page-level linting results
+  - `lintCurrentPage(elements: WebflowElement[]): Promise<RuleResult[]>`: Lints all elements on the current page
+- **Dependencies**:
+  - `StyleService`: For retrieving style information
+  - `RuleRunner`: For executing linting rules
+- **File Reference**: [`src/features/linter/services/page-lint-service.ts`](./page-lint-service.ts)
 
-**Detailed Description**: The page lint service provides comprehensive linting across entire pages by orchestrating scans of all elements simultaneously. It begins by loading every style definition from the site to provide complete context for rule execution. The service then processes each element individually, gathering all applied styles while maintaining the crucial association between styles and their target elements. It leverages the role detection service to identify semantic roles for elements, which enables more sophisticated rule analysis. The service builds an element graph that captures parent-child relationships and ancestry information, supporting page-scope rules that need to analyze element relationships. Finally, it executes both page-level canonical rules (such as main singleton validation) and element-level rules, combining the results into a comprehensive page analysis. The service includes intelligent caching of role detection results based on page signature changes.
+**Detailed Description**: The page lint service provides comprehensive linting across entire pages by orchestrating scans of all elements simultaneously. It filters elements to only those supporting the `getStyles()` method, then loads all site-wide style definitions to provide complete context for rule execution. The service collects applied styles for each element while maintaining element-to-style associations, and builds a parent mapping for graph helpers and role scoring. It implements intelligent role detection caching using a DJB2-based page signature that includes element IDs, class names, and parent relationships to avoid redundant role computation. The service creates an element graph for relationship analysis and executes rules via the shared rule runner, which handles both page-scope canonical rules and element-level rules. The entire process is optimized for performance with signature-based caching and efficient data structures.
 
 #### `rule-runner.ts`
 
-- **Purpose**: Core rule execution engine
+- **Purpose**: Core rule execution engine with support for page-scope and element-scope rules
 - **Key Functions**:
-  - `runRulesOnStylesWithContext(stylesWithElement, elementContextsMap, allStyles, rolesByElement?, getParentId?, getChildrenIds?, getAncestorIds?, parseClass?)`: Main API for running rules with full context
-- **Responsibilities**:
-  - Filters rules by resolved class type (utility, combo, custom)
-  - Executes naming, property, and element-level analysis rules
-  - Handles duplicate detection using utility class analyzer
-  - Provides class kind resolution with fallback heuristics
-  - Emits structured metadata including role, element context, and detection source
+  - `runRulesOnStylesWithContext()`: Main API for running rules with full context
+- **Dependencies**:
+  - `RuleRegistry`: For rule retrieval and configuration
+  - `UtilityClassAnalyzer`: For duplicate detection
+  - `ClassTypeResolver`: For class type determination
+- **File Reference**: [`src/features/linter/services/rule-runner.ts`](./rule-runner.ts)
 
-**Detailed Description**: The rule runner is the heart of the linting system, responsible for executing all rules with comprehensive context. It provides a sophisticated rule filtering system that categorizes rules by class type (utility, combo, or custom) and ensures only relevant rules are executed for each class. The service supports multiple rule types including naming validation, property analysis, and element-level analysis, with each rule type receiving appropriate context and data. It integrates with the utility class analyzer to detect duplicates across any class type, providing detailed information about property overlaps and exact matches. The runner includes intelligent class kind resolution that can fall back to heuristics when preset grammar is unavailable, ensuring robust operation. All rule execution results include rich metadata such as element IDs, detected roles, parent relationships, and detection source information, enabling comprehensive reporting and debugging. The runner processes rules in two phases: element-level analysis followed by class-level analysis, ensuring comprehensive coverage. It also handles combo class indexing for stable ordering and provides comprehensive context to rules including element relationships and role information.
+**Detailed Description**: The rule runner is the heart of the linting system, orchestrating execution of page-scope, element-scope, and class-scope rules. It implements a sophisticated three-phase execution model: first executing page rules that analyze cross-element relationships, then element-level rules for individual element analysis, and finally class-level rules for naming and property validation. The service includes intelligent class type resolution with fallback heuristics when preset grammar is unavailable. It pre-computes combo class indexes per element for stable ordering and integrates with the utility class analyzer for duplicate detection. All rule execution results include rich metadata such as element IDs, detected roles, parent relationships, and detection source information. The runner handles rule configuration overrides, severity resolution, and provides comprehensive error handling with detailed logging for debugging failed rule execution.
 
 ### Role Detection & Analysis
 
@@ -56,104 +49,148 @@ This directory contains the core services that power the Webflow linter function
 
 - **Purpose**: Identifies semantic roles for elements using preset grammar and detectors
 - **Key Functions**:
-  - `detectRolesForPage(elements)`: Returns role mapping for all elements
-- **Features**:
+  - `detectRolesForPage(elements: ElementWithClassNames[]): RolesByElement`: Returns role mapping for all elements
+- **Configuration**:
   - Configurable confidence threshold (default: 0.6)
   - Enforces singleton `main` role by keeping highest-scoring candidate
   - Uses active preset grammar and detectors
-  - Returns `RolesByElement` mapping
+- **File Reference**: [`src/features/linter/services/role-detection.service.ts`](./role-detection.service.ts)
 
-**Detailed Description**: This service provides intelligent semantic role detection for elements by analyzing their class names and characteristics using the active preset's grammar and role detectors. It implements a sophisticated scoring system where each detector evaluates elements and assigns confidence scores for different roles. The service enforces important semantic constraints, such as ensuring only one element can have the `main` role on a page by keeping the highest-scoring candidate and marking others as `unknown`. The configurable confidence threshold allows for fine-tuning the balance between precision and recall in role detection. The service processes all elements on a page simultaneously, building a comprehensive role mapping that can be used by other services and rules to provide context-aware analysis. This role information is crucial for enforcing page-level structural rules and providing meaningful feedback to users about element semantics.
+**Detailed Description**: This service provides intelligent semantic role detection for elements by analyzing their class names and characteristics using the active preset's grammar and role detectors. It implements a sophisticated scoring system where each detector evaluates elements and assigns confidence scores for different roles. The service builds parent maps to compute ancestry information for context-aware role detection, and extracts the first custom class parsed by the active grammar for role analysis. It enforces the singleton main constraint by tracking scores for all main candidates and keeping only the highest-scoring one, demoting others to unknown. The service includes robust error handling for detector failures and element ID extraction, with configurable thresholding to balance precision and recall. Role detection results are used throughout the system for context-aware rule execution and structural validation.
 
-#### `element-graph.service.ts`
+#### `element-graph.service.ts` _(External Dependency)_
 
-- **Purpose**: Builds and provides element relationship data
+- **Purpose**: Builds and provides element relationship data for traversal analysis
 - **Key Functions**:
-  - `getParentId(id)`: Returns parent element ID
-  - `getChildrenIds(id)`: Returns array of child element IDs
-  - `getAncestorIds(id)`: Returns array of ancestor element IDs
-- **Use Cases**: Supports page-scope rules that need to analyze element relationships
+  - `getParentId(id: string): string | null`: Returns parent element ID
+  - `getChildrenIds(id: string): string[]`: Returns array of child element IDs
+  - `getAncestorIds(id: string): string[]`: Returns array of ancestor element IDs
+- **Location**: [`src/entities/element/services/element-graph.service.ts`](../../entities/element/services/element-graph.service.ts)
 
-**Detailed Description**: The element graph service constructs and maintains a comprehensive representation of element relationships within a page. It builds a graph structure that captures the hierarchical relationships between elements, enabling efficient traversal and analysis of element ancestry and descendants. The service provides three key relationship queries: parent identification, child enumeration, and ancestor resolution. The parent and child relationships are directly mapped from the DOM structure, while ancestor resolution involves traversing up the hierarchy to identify all elements in the ancestry chain. This relationship data is essential for page-scope rules that need to validate structural constraints, such as ensuring sections are properly nested within main content areas or that component hierarchies follow expected patterns. The service is designed for performance, rebuilding the graph efficiently when page structure changes and providing fast lookup access for relationship queries.
-
-#### `page-rule-runner.ts`
-
-- **Purpose**: Executes page-scope rules that analyze multiple elements and relationships
-- **Key Functions**:
-  - `run(rules, context)`: Executes page rules with full context
-- **Supported Rules**: Canonical page rules (e.g., main singleton, main content validation)
-
-**Detailed Description**: The page rule runner specializes in executing rules that require analysis across multiple elements and their relationships. Unlike element-level rules that focus on individual elements, page rules can examine the broader page structure, element hierarchies, and cross-element relationships. The service provides a consistent execution environment for page rules, passing comprehensive context including role mappings, element relationships, and structural information. It supports canonical page rules that enforce fundamental page structure requirements, such as ensuring there's exactly one main content area or validating that main content contains appropriate child elements. The runner is designed to work seamlessly with the element graph service and role detection service, providing page rules with all the context they need to perform comprehensive structural analysis. This enables sophisticated validation of page architecture and helps maintain consistent, well-structured layouts.
+**Detailed Description**: The element graph service constructs a comprehensive representation of element relationships within a page by building maps of parent-child relationships and children-by-parent indexes. It provides stable element ID extraction handling multiple Webflow element formats and implements efficient ancestor traversal with cycle detection. The service creates bidirectional relationship mappings from a parent lookup table and element list, enabling fast queries for relationship analysis. This relationship data is essential for page-scope rules that validate structural constraints and for role detection that considers element context within the page hierarchy.
 
 ### Utility Analysis
 
-#### `utility-class-analyzer.ts`
+#### `analyzers/utility-class-analyzer.ts`
 
-- **Purpose**: Analyzes all classes for duplicate properties and exact matches
+- **Purpose**: Analyzes all classes for duplicate properties and exact matches with intelligent caching
 - **Key Functions**:
-  - `buildPropertyMaps(allStyles)`: Builds property analysis maps
-  - `analyzeDuplicates(className, properties)`: Detects duplicates for a class
+  - `buildPropertyMaps(allStyles: StyleInfo[]): void`: Builds property analysis maps
+  - `analyzeDuplicates(className: string, properties: CSSPropertiesDict): UtilityClassDuplicateInfo | null`: Detects duplicates for a class
   - `getUtilityClassPropertiesMap()`: Returns the class properties mapping
   - `getPropertyToClassesMap()`: Returns property-to-classes mapping
   - `getExactPropertiesToClassesMap()`: Returns exact properties mapping
-- **Features**:
-  - Indexes all classes (not just utility classes)
-  - Ignores classes with zero unique properties
-  - Detects per-property duplicates via `propertyToClassesMap`
-  - Identifies exact property matches via class fingerprinting
-  - Provides formatted property information for display
+  - `ensureBuilt(allStyles: StyleInfo[]): void`: Ensures maps are built with cache validation
+- **Configuration**:
+  - Optional `isUtilityName` classifier for filtering classes to analyze
+  - Debug mode for detailed duplicate logging
+- **File Reference**: [`src/features/linter/services/analyzers/utility-class-analyzer.ts`](./analyzers/utility-class-analyzer.ts)
 
-**Detailed Description**: The utility class analyzer provides comprehensive analysis of CSS classes to identify duplicates, overlaps, and inefficiencies. Despite its name, it analyzes all classes in the system, not just utility classes, providing a complete picture of property usage across the entire stylesheet. The service builds sophisticated property maps that track which classes use specific CSS properties, enabling detection of both partial and complete property overlaps. It implements intelligent filtering to ignore classes with no unique properties, focusing analysis on classes that actually contribute to the styling. The analyzer provides two levels of duplicate detection: per-property duplicates that show which classes share individual properties, and exact matches that identify classes with identical property sets. It includes sophisticated property normalization to handle CSS property variations and provides formatted output that makes duplicate information easily digestible for users. The service exposes getter methods for accessing the internal property maps, enabling external services to perform custom analysis. This analysis is crucial for identifying redundant CSS, optimizing stylesheets, and maintaining clean, efficient styling systems.
+**Detailed Description**: The utility class analyzer provides comprehensive analysis of CSS classes to identify duplicates, overlaps, and inefficiencies with intelligent hash-based caching. It builds sophisticated property maps that track which classes use specific CSS properties and implements stable JSON serialization for consistent cache keys. The analyzer provides two levels of duplicate detection: per-property duplicates that show which classes share individual properties, and exact matches that identify classes with identical property sets via fingerprinting. It includes optional grammar-aware filtering to analyze only utility classes when configured, and provides formatted property information for single-property classes. The service implements intelligent cache invalidation based on style content hashing to avoid unnecessary rebuilds, and includes comprehensive debugging capabilities for analyzing duplicate patterns across the stylesheet.
 
 ### Registry & Configuration
 
 #### `rule-registry.ts`
 
-- **Purpose**: Manages rule registration, retrieval, and filtering
+- **Purpose**: Manages rule registration, retrieval, and filtering for both element-scope and page-scope rules
 - **Key Functions**:
-  - `registerRule(rule)`: Registers a single rule
-  - `registerRules(rules)`: Registers multiple rules
-  - `getRulesByClassType(type)`: Filters rules by class type
-  - `getRulesByCategory(category)`: Filters rules by category
-  - `getEnabledRules()`: Returns only enabled rules
+  - `registerRule(rule: Rule): void`: Registers a single element-scope rule
+  - `registerRules(rules: Rule[]): void`: Registers multiple element-scope rules
+  - `registerPageRule(rule: PageRule): void`: Registers a single page-scope rule
+  - `registerPageRules(rules: PageRule[]): void`: Registers multiple page-scope rules
+  - `getRulesByClassType(type: ClassType): Rule[]`: Filters rules by class type
+  - `getRulesByCategory(category: RuleCategory): Rule[]`: Filters rules by category
+  - `getEnabledRules()`: Returns only enabled element-scope rules
+  - `getPageRules()`: Returns all page-scope rules
   - `getAllConfigurations()`: Returns all rule configurations
   - `exportConfiguration()`: Exports configurations to JSON
   - `importConfiguration(json)`: Imports configurations from JSON
-- **Features**:
-  - Automatic default configuration seeding
-  - Rule filtering by various criteria
-  - Configuration management integration
-  - Import/export capabilities for configuration sharing
+- **File Reference**: [`src/features/linter/services/rule-registry.ts`](./rule-registry.ts)
 
-**Detailed Description**: The rule registry serves as the central repository for all linting rules in the system, providing comprehensive rule management capabilities. It handles the complete lifecycle of rules from registration through execution, including automatic configuration seeding based on rule schemas. The registry implements sophisticated filtering capabilities that allow rules to be retrieved by class type (utility, combo, custom), category (naming, property, structure), or enabled status. It maintains rule configurations alongside rule definitions, ensuring that settings are properly associated and persisted. The registry integrates closely with the configuration service to provide seamless rule customization and persistence. It supports dynamic rule addition, allowing custom rules to be registered at runtime, and provides efficient rule lookup for the rule runner. The registry includes import/export functionality for configuration sharing and backup, with robust error handling for malformed configurations. It's designed to handle large numbers of rules efficiently while maintaining fast access patterns for rule execution and configuration management.
+**Detailed Description**: The rule registry serves as the central repository for all linting rules in the system, supporting both element-scope and page-scope rules with unified configuration management. It handles automatic default configuration seeding based on rule schemas, creating configuration entries with default values from rule config schemas. The registry implements sophisticated filtering capabilities by class type, category, and enabled status, and provides separate management for page rules that analyze cross-element relationships. It maintains a unified configuration store for both rule types, enabling consistent settings management across all rule categories. The registry supports rule lifecycle management including registration, retrieval, clearing, and dynamic rule addition, and includes comprehensive import/export functionality for configuration sharing and backup with robust error handling for malformed configurations.
 
 #### `rule-configuration-service.ts`
 
-- **Purpose**: Manages rule configuration persistence and user customizations
+- **Purpose**: Manages rule configuration persistence and user customizations with versioned storage
 - **Key Functions**:
-  - `saveConfiguration(configs)`: Persists rule configurations
-  - `loadConfiguration()`: Loads and merges stored configurations
+  - `load(): RuleConfiguration[]`: Loads and merges stored configurations with registry defaults
+  - `save(configs: RuleConfiguration[], presetId?: string): void`: Persists rule configurations
+  - `exportConfiguration(configs: RuleConfiguration[], presetId?: string): string`: Exports configurations to JSON
+  - `importConfiguration(json: string): RuleConfiguration[]`: Imports configurations from JSON
+  - `resetToDefaults(presetId?: string): RuleConfiguration[]`: Reset to registry defaults
+  - `upsertRuleCustomSettings(ruleId: string, partial: Record<string, unknown>): RuleConfiguration[]`: Update single rule settings
+  - `setRuleEnabled(ruleId: string, enabled: boolean): RuleConfiguration[]`: Enable/disable single rule
 - **Features**:
-  - Local storage persistence
-  - User configuration merging with defaults
-  - Schema validation for custom settings
-  - Configuration versioning
+  - V1 file format with backward compatibility
+  - Configurable storage adapters (localStorage, memory)
+  - Schema-driven default seeding and validation
+  - Preset-scoped configuration support
+- **File Reference**: [`src/features/linter/services/rule-configuration-service.ts`](./rule-configuration-service.ts)
 
-**Detailed Description**: The rule configuration service provides sophisticated configuration management that balances user customization with system stability. It implements a robust persistence layer using local storage, ensuring that user preferences survive browser sessions and page reloads. The service includes intelligent configuration merging that combines user customizations with system defaults, preventing configuration drift while respecting user preferences. It implements schema validation for custom settings, ensuring that configuration changes are valid and won't cause system instability. The service handles configuration versioning, allowing for graceful upgrades when rule schemas change. It provides comprehensive error handling for malformed configurations, falling back to defaults when necessary. The service integrates closely with the rule registry to ensure that configuration changes are immediately reflected in rule execution, providing real-time customization capabilities. This enables users to tailor the linting system to their specific needs while maintaining system reliability.
+**Detailed Description**: The rule configuration service provides sophisticated configuration management with versioned storage format and pluggable storage adapters. It implements intelligent configuration merging that combines user customizations with registry defaults, applying schema-driven default seeding and validation for custom settings. The service supports both v0 legacy format and v1 format with transparent upgrades, and includes preset-scoped configuration for multi-preset workflows. It provides comprehensive import/export functionality with stable JSON serialization, and includes convenience methods for single-rule modifications that persist immediately. The service handles malformed configurations gracefully with fallback to defaults and integrates with configurable storage adapters for different environments (localStorage for production, memory for testing).
 
 #### `registry.ts`
 
-- **Purpose**: Global registry initialization and management
+- **Purpose**: Global registry initialization and management with canonical rule bootstrapping
 - **Key Functions**:
-  - `initializeRuleRegistry(mode, presetId)`: Sets up the global rule registry
-  - `addCustomRule(rule)`: Adds custom rules dynamically
-- **Features**:
-  - Preset rule registration
-  - Canonical rule registration (preset-agnostic)
-  - Opinion mode application
-  - User configuration loading and application
+  - `initializeRuleRegistry(mode: OpinionMode = "balanced", presetId?: string): void`: Sets up the global rule registry
+  - `addCustomRule(rule: Rule): void`: Adds custom rules dynamically
+- **Dependencies**:
+  - Global `ruleRegistry` and `ruleConfigService` instances
+  - Preset resolution and canonical rule imports
+- **File Reference**: [`src/features/linter/services/registry.ts`](./registry.ts)
 
-**Detailed Description**: The global registry service orchestrates the complete initialization and setup of the linting system. It manages the complex process of bringing the system online, including loading preset rules, registering canonical rules that apply across all presets, and applying opinion mode adjustments that modify rule behavior based on user preferences. The service handles preset resolution and fallback, ensuring that the system always has a valid rule set even when preset loading fails. It implements opinion mode application that can adjust rule severity and behavior based on user preferences for strictness or leniency. The service coordinates with the configuration service to load and apply user customizations, ensuring that the system reflects user preferences while maintaining system integrity. It supports dynamic rule addition, allowing custom rules to be registered at runtime for specialized use cases. The service provides comprehensive logging and error handling during initialization, making it easier to diagnose and resolve startup issues.
+**Detailed Description**: The global registry service orchestrates the complete initialization and setup of the linting system with a four-phase process: preset rule registration, canonical page rule registration, canonical element rule registration, and opinion mode application. It clears the registry and registers rules from the resolved preset (with fallback), then adds preset-agnostic canonical rules including main singleton validation and main content validation. The service applies opinion mode adjustments to modify rule behavior based on user preferences, and loads persisted user configurations to apply custom settings. It provides comprehensive logging during initialization and supports dynamic rule addition for runtime customization. The service ensures the system always has a valid rule set with proper configuration seeding and user preference integration.
+
+### Rule Execution
+
+#### `executors/naming-rule-executor.ts`
+
+- **Purpose**: Executes naming rules with role context and class type resolution
+- **Key Functions**:
+  - `createNamingRuleExecutor(): NamingRuleExecutor`: Factory for naming rule executor
+- **Features**:
+  - Supports both modern `evaluate` API and legacy `test` API
+  - Automatic utility class filtering (utilities typically skip naming rules)
+  - Role-aware execution with element context
+  - Auto-fix suggestions via dependency injection
+- **File Reference**: [`src/features/linter/services/executors/naming-rule-executor.ts`](./executors/naming-rule-executor.ts)
+
+#### `executors/property-rule-executor.ts`
+
+- **Purpose**: Executes property rules with utility analysis context
+- **Key Functions**:
+  - `createPropertyRuleExecutor(registry, utilityAnalyzer): ExecutePropertyRule`: Factory for property rule executor
+- **Features**:
+  - Ensures utility class analyzer maps are built before execution
+  - Provides comprehensive context including property maps and configurations
+  - Applies rule-specific configuration from registry
+- **File Reference**: [`src/features/linter/services/executors/property-rule-executor.ts`](./executors/property-rule-executor.ts)
+
+### Service Factories & Lifecycle
+
+#### `linter-service-factory.ts`
+
+- **Purpose**: Centralized factory for creating linter services with shared dependencies
+- **Key Functions**:
+  - `createLinterServices(): LinterServices`: Creates complete service dependency graph
+- **Features**:
+  - Creates shared service instances to reduce redundancy
+  - Grammar-aware rule runner configuration
+  - Consistent preset resolution across services
+- **File Reference**: [`src/features/linter/services/linter-service-factory.ts`](./linter-service-factory.ts)
+
+#### `linter-service-singleton.ts`
+
+- **Purpose**: Singleton pattern for better performance and consistency
+- **Key Functions**:
+  - `getLinterServices(): LinterServices`: Get shared linter services instance
+  - `resetLinterServices(): void`: Reset services singleton (for preset changes/testing)
+- **Features**:
+  - Lazy initialization on first access
+  - Consistent service instances across the app
+  - Reset capability for dynamic preset switching
+- **File Reference**: [`src/features/linter/services/linter-service-singleton.ts`](./linter-service-singleton.ts)
 
 ## Data Flow Diagrams
 
@@ -161,27 +198,29 @@ This directory contains the core services that power the Webflow linter function
 
 ```mermaid
 flowchart TD
-    A[Element Input] --> B[ElementLintService]
-    B --> C[Ensure Linter Initialized]
-    C --> D[Load All Styles & Build Property Maps]
+    A[WebflowElement Input] --> B[ElementLintService.lintElement]
+    B --> C[Resolve Active Preset with Fallback]
+    C --> D[Load All Site Styles for Context]
     D --> E[Get Applied Styles for Element]
-    E --> F[Run Rules with Context]
-    F --> G[Return Rule Results]
+    E --> F[Build Minimal Element Graph]
+    F --> G[Detect Roles for Element]
+    G --> H[Execute Rules via RuleRunner]
+    H --> I[Return RuleResult Array]
 
-    subgraph "Rule Execution"
-        F --> H[Filter Rules by Class Type]
-        H --> I[Execute Naming Rules]
-        H --> J[Execute Property Rules]
-        H --> K[Execute Element Analysis]
-        I --> L[Utility Class Analyzer]
-        J --> L
-        K --> L
+    subgraph "Role Detection Context"
+        G --> J[Role Detection Service]
+        J --> K[Preset Grammar & Detectors]
+        K --> L[Role Scoring & Threshold]
+        L --> M[Element Role Assignment]
     end
 
-    subgraph "Context Building"
-        D --> M[Utility Class Analyzer]
-        M --> N[Property Maps]
-        M --> O[Duplicate Detection]
+    subgraph "Rule Execution Context"
+        H --> N[Page Rules First]
+        H --> O[Element Rules Second]
+        H --> P[Class Rules Third]
+        N --> Q[Three-Phase Execution]
+        O --> Q
+        P --> Q
     end
 ```
 
@@ -189,30 +228,31 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Page Elements Input] --> B[PageLintService]
-    B --> C[Load All Style Definitions]
-    C --> D[Get Styles for Each Element]
-    D --> E[Detect Roles for Page]
-    E --> F[Build Element Graph]
-    F --> G[Execute Page Rules]
-    G --> H[Execute Element Rules]
-    H --> I[Return Combined Results]
+    A[WebflowElement Array] --> B[PageLintService.lintCurrentPage]
+    B --> C[Filter Valid Elements with getStyles]
+    C --> D[Load All Site Styles]
+    D --> E[Collect Applied Styles per Element]
+    E --> F[Build Parent ID Mapping]
+    F --> G[Generate Page Signature for Cache]
+    G --> H[Role Detection with Caching]
+    H --> I[Create Element Graph]
+    I --> J[Execute Rules via RuleRunner]
+    J --> K[Return Combined Results]
 
-    subgraph "Role Detection"
-        E --> J[Role Detection Service]
-        J --> K[Active Preset Grammar]
-        J --> L[Active Preset Detectors]
-        K --> M[Role Scoring]
-        L --> M
-        M --> N[Threshold Filtering]
-        N --> O[Singleton Enforcement]
+    subgraph "Intelligent Caching"
+        G --> L[DJB2 Hash of Element+Style+Tree]
+        H --> M[Cache Hit Check]
+        M --> N[Use Cached Roles]
+        M --> O[Compute New Roles]
+        O --> P[Update Cache]
     end
 
-    subgraph "Element Graph"
-        F --> P[Parent-Child Mapping]
-        F --> Q[Ancestor Resolution]
-        P --> R[Relationship Helpers]
-        Q --> R
+    subgraph "Role Detection Pipeline"
+        H --> Q[ElementWithClassNames Array]
+        Q --> R[Grammar Parse First Custom]
+        R --> S[Detector Scoring Loop]
+        S --> T[Main Singleton Enforcement]
+        T --> U[RolesByElement Map]
     end
 ```
 
@@ -220,65 +260,71 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Rule Input] --> B[Rule Runner]
-    B --> C[Class Type Resolution]
-    C --> D[Filter Rules by Type]
-    D --> E[Execute Naming Rules]
-    D --> F[Execute Property Rules]
-    D --> G[Execute Element Rules]
+    A[StylesWithElement + Context] --> B[RuleRunner.runRulesOnStylesWithContext]
+    B --> C[Group Elements and Precompute Combo Indexes]
+    C --> D[Phase 1: Page Rules]
+    D --> E[Phase 2: Element Rules]
+    E --> F[Phase 3: Class Rules]
+    F --> G[Return Aggregated Results]
 
-    subgraph "Class Type Detection"
-        C --> H[Preset Grammar Parser]
-        H --> I[Fallback Heuristics]
-        I --> J[Combo Detection]
-        J --> K[Final Class Type]
+    subgraph "Page Rules Phase"
+        D --> H[Get Enabled Page Rules]
+        H --> I[Execute analyzeePage Method]
+        I --> J[Apply Configuration Severity]
+        J --> K[Add to Results]
     end
 
-    subgraph "Rule Execution"
-        E --> L[Test/Evaluate Naming]
-        F --> M[Property Analysis]
-        G --> N[Element Context Analysis]
-        L --> O[Utility Class Analyzer]
-        M --> O
-        N --> O
-        O --> P[Duplicate Detection]
+    subgraph "Element Rules Phase"
+        E --> L[For Each Element ID]
+        L --> M[Get Element's Classes]
+        M --> N[Execute analyzeElement Method]
+        N --> O[Add Element Context Metadata]
+        O --> P[Add to Results]
     end
 
-    P --> Q[Structured Metadata]
-    Q --> R[Rule Results]
+    subgraph "Class Rules Phase"
+        F --> Q[For Each Style Class]
+        Q --> R[Resolve Class Type]
+        R --> S[Filter Rules by Type & Enabled]
+        S --> T[Execute Naming/Property Rules]
+        T --> U[Apply Metadata & Combo Index]
+        U --> V[Add to Results]
+    end
 ```
 
 ### Configuration Management Flow
 
 ```mermaid
 flowchart TD
-    A[Initialization] --> B[Registry Setup]
-    B --> C[Load Preset Rules]
-    C --> D[Register Canonical Rules]
-    D --> E[Apply Opinion Mode]
-    E --> F[Load User Configurations]
-    F --> G[Merge with Defaults]
-    G --> H[Apply to Registry]
+    A[System Initialization] --> B[initializeRuleRegistry]
+    B --> C[Clear Registry]
+    C --> D[Resolve Preset with Fallback]
+    D --> E[Register Preset Rules]
+    E --> F[Register Canonical Page Rules]
+    F --> G[Register Canonical Element Rules]
+    G --> H[Apply Opinion Mode Adjustments]
+    H --> I[Load User Configurations]
+    I --> J[Apply User Settings to Registry]
 
-    subgraph "Configuration Sources"
-        I[Preset Defaults]
-        J[Opinion Mode Adjustments]
-        K[User Customizations]
-        L[Schema Validation]
+    subgraph "Rule Configuration Service"
+        I --> K[Load from Storage]
+        K --> L[Merge with Registry Defaults]
+        L --> M[Apply Schema Validation]
+        M --> N[Return RuleConfiguration Array]
     end
 
-    subgraph "Persistence"
-        M[Local Storage]
-        N[Configuration Service]
-        O[Rule Registry]
+    subgraph "Storage Layer"
+        K --> O[Storage Adapter]
+        O --> P[localStorage / Memory]
+        P --> Q[V1 File Format with Fallback]
     end
 
-    I --> C
-    J --> E
-    K --> F
-    L --> G
-    M --> N
-    N --> O
+    subgraph "Registry Updates"
+        J --> R[updateRuleConfiguration]
+        R --> S[Enabled Status]
+        R --> T[Severity Overrides]
+        R --> U[Custom Settings]
+    end
 ```
 
 ## Service Dependencies
@@ -286,61 +332,92 @@ flowchart TD
 ```mermaid
 graph TD
     A[ElementLintService] --> B[StyleService]
-    A --> C[UtilityClassAnalyzer]
-    A --> D[RuleRunner]
-    A --> E[RuleRegistry]
+    A --> C[RuleRunner]
 
-    F[PageLintService] --> B
-    F --> D
-    F --> G[RoleDetectionService]
-    F --> H[ElementGraphService]
-    F --> I[PageRuleRunner]
-
-    D --> E
+    D[PageLintService] --> B
     D --> C
 
-    J[Registry] --> K[RuleRegistry]
-    J --> L[RuleConfigurationService]
-    J --> M[Preset Resolution]
+    C[RuleRunner] --> E[RuleRegistry]
+    C --> F[UtilityClassAnalyzer]
+    C --> G[NamingRuleExecutor]
+    C --> H[PropertyRuleExecutor]
 
-    G --> N[Preset Grammar]
-    G --> O[Preset Detectors]
+    I[LinterServiceFactory] --> A
+    I --> D
+    I --> C
+    I --> F
+    I --> B
 
-    H --> P[Element Relationships]
+    J[LinterServiceSingleton] --> I
 
-    I --> Q[Page Rules]
-    I --> G
-    I --> H
+    K[Registry Global] --> E
+    K --> L[RuleConfigurationService]
+
+    M[RoleDetectionService] --> N[Preset Grammar]
+    M --> O[Preset Detectors]
+
+    A --> M
+    D --> M
+    A --> P[ElementGraphService]
+    D --> P
+
+    L --> Q[Storage Adapter]
+    Q --> R[localStorage/Memory]
+
+    H --> E
+    H --> F
 ```
 
 ## Key Interfaces
 
-### Rule Execution Context
+### Service Factory Types
 
 ```typescript
-interface RuleExecutionContext {
-  styles: StyleWithElement[];
-  elementContextsMap: Record<string, ElementContext>;
-  allStyles: StyleInfo[];
-  rolesByElement?: RolesByElement;
-  getParentId?: (id: string) => string | null;
-  getChildrenIds?: (id: string) => string[];
-  getAncestorIds?: (id: string) => string[];
-  parseClass?: (name: string) => ParsedClass;
-}
+// From linter-service-factory.ts
+type LinterServices = {
+  styleService: StyleService;
+  analyzer: UtilityClassAnalyzer;
+  ruleRunner: RuleRunner;
+  elementLintService: ElementLintService;
+  pageLintService: PageLintService;
+  activePreset: PresetDefinition;
+  activeGrammar: GrammarAdapter;
+};
 ```
 
-### Role Detection Result
+### Rule Runner Context
 
 ```typescript
+// Main rule execution method signature
+runRulesOnStylesWithContext(
+  stylesWithElement: StyleWithElement[],
+  elementContextsMap: Record<string, never[]>,
+  allStyles: StyleInfo[],
+  rolesByElement?: RolesByElement,
+  getParentId?: (elementId: string) => string | null,
+  getChildrenIds?: (elementId: string) => string[],
+  getAncestorIds?: (elementId: string) => string[],
+  parseClass?: (name: string) => ParsedClass
+): RuleResult[]
+```
+
+### Role Detection Types
+
+```typescript
+// From role-detection.service.ts
 interface RolesByElement {
   [elementId: string]: ElementRole;
+}
+
+interface RoleDetectionConfig {
+  threshold: number; // default: 0.6
 }
 ```
 
 ### Element Graph Interface
 
 ```typescript
+// From element-graph.service.ts
 interface ElementGraph {
   getParentId: (id: string) => string | null;
   getChildrenIds: (id: string) => string[];
@@ -348,55 +425,144 @@ interface ElementGraph {
 }
 ```
 
+### Utility Analyzer Types
+
+```typescript
+// From utility-class-analyzer.ts
+interface UtilityClassDuplicateInfo {
+  className: string;
+  duplicateProperties: Map<string, string[]>;
+  isExactMatch: boolean;
+  exactMatches?: string[];
+  formattedProperty?: {
+    property: string;
+    value: string;
+    classes: string[];
+  };
+}
+```
+
 ## Usage Patterns
 
-### Element-Level Linting
+### Using the Service Singleton (Recommended)
 
 ```typescript
-const elementService = createElementLintService();
-const results = await elementService.lintElement(webflowElement);
-```
+import { getLinterServices } from "@/features/linter/services/linter-service-singleton";
 
-### Page-Level Linting
+// Get shared services instance
+const services = getLinterServices();
 
-```typescript
-const pageService = createPageLintService(styleService, ruleRunner);
-const results = await pageService.lintCurrentPage(elements);
-```
-
-### Role Detection
-
-```typescript
-const roleService = createRoleDetectionService({
-  grammar: activePreset.grammar,
-  detectors: activePreset.detectors,
-  config: { threshold: 0.7 },
-});
-const roles = roleService.detectRolesForPage(elements);
-```
-
-### Rule Execution
-
-```typescript
-const runner = createRuleRunner(registry, utilityAnalyzer, classKindResolver);
-const results = runner.runRulesOnStylesWithContext(
-  styles,
-  elementContexts,
-  allStyles,
-  rolesByElement,
-  getParentId,
-  getChildrenIds,
-  getAncestorIds
+// Element linting
+const elementResults = await services.elementLintService.lintElement(
+  webflowElement
 );
+
+// Page linting
+const pageResults = await services.pageLintService.lintCurrentPage(elements);
 ```
 
-## Testing
+### Using the Service Factory Directly
 
-The services include comprehensive test coverage in the `__tests__/` directory, covering:
+```typescript
+import { createLinterServices } from "@/features/linter/services/linter-service-factory";
 
-- Rule execution logic
-- Grammar parsing
-- Rule message formatting
-- Rule template functionality
+// Create new services instance
+const services = createLinterServices();
+const results = await services.elementLintService.lintElement(element);
+```
 
-Run tests with: `pnpm test`
+### Registry Initialization
+
+```typescript
+import { initializeRuleRegistry } from "@/features/linter/services/registry";
+
+// Initialize with default settings
+initializeRuleRegistry("balanced");
+
+// Initialize with specific preset
+initializeRuleRegistry("strict", "client-first");
+```
+
+### Custom Rule Registration
+
+```typescript
+import { addCustomRule } from "@/features/linter/services/registry";
+
+// Add custom rule at runtime
+addCustomRule({
+  id: "custom-rule",
+  name: "Custom Validation",
+  description: "Custom rule description",
+  type: "naming",
+  targetClassTypes: ["custom"],
+  severity: "warning",
+  enabled: true,
+  test: (className) => /^custom-/.test(className),
+});
+```
+
+### Configuration Management
+
+```typescript
+import { ruleConfigService } from "@/features/linter/services/registry";
+
+// Load current configurations
+const configs = ruleConfigService.load();
+
+// Save modified configurations
+ruleConfigService.save(configs, "client-first");
+
+// Enable/disable single rule
+ruleConfigService.setRuleEnabled("rule-id", false);
+
+// Update rule custom settings
+ruleConfigService.upsertRuleCustomSettings("rule-id", {
+  customSetting: "value",
+});
+```
+
+## Related Documentation
+
+### Related Components
+
+- **Style Entity**: [`src/entities/style/`](../../entities/style/) - CSS style management
+- **Element Entity**: [`src/entities/element/`](../../entities/element/) - Element graph and ID management
+- **Linter Rules**: [`src/features/linter/rules/`](../rules/) - Rule definitions and implementations
+- **Linter UI**: [`src/features/linter/ui/`](../ui/) - UI components consuming these services
+
+### Testing
+
+The services include comprehensive test coverage focusing on:
+
+- Rule execution logic and metadata generation
+- Role detection accuracy and singleton enforcement
+- Configuration persistence and schema validation
+- Cache invalidation and performance optimization
+- Error handling and fallback behavior
+
+**Run tests**: `pnpm test`
+**Build development bundle**: `pnpm run build:dev`
+
+## Performance Considerations
+
+- **Caching**: Page-level role detection uses DJB2 hashing for intelligent cache invalidation
+- **Lazy Loading**: Service singleton pattern ensures services are created only when needed
+- **Batch Processing**: Rule execution processes all elements/classes in optimized batches
+- **Memory Management**: Utility analyzer uses content-based cache validation to avoid memory leaks
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Rules not executing**: Ensure registry is initialized with `initializeRuleRegistry()`
+2. **Role detection failing**: Check preset grammar and detector configuration
+3. **Configuration not persisting**: Verify localStorage permissions and storage adapter setup
+4. **Performance issues**: Monitor cache hit rates and consider resetting services singleton
+
+### Debug Mode
+
+Enable debug logging in utility class analyzer:
+
+```typescript
+const analyzer = createUtilityClassAnalyzer({ debug: true });
+```

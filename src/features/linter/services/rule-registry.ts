@@ -5,9 +5,11 @@ import type {
   ClassType,
   RuleCategory,
 } from "@/features/linter/model/rule.types";
+import type { PageRule, Severity } from "@/features/linter/model/rule.types";
 
 export const createRuleRegistry = () => {
   const rules = new Map<string, Rule>();
+  const pageRules = new Map<string, PageRule>();
   const configurations = new Map<string, RuleConfiguration>();
 
   // ---------- type guards ----------
@@ -15,7 +17,7 @@ export const createRuleRegistry = () => {
     rule: Rule
   ): rule is Rule & { config?: RuleConfigSchema } => "config" in rule;
 
-  // ---------- register ----------
+  // ---------- register (element/class-scope) ----------
   const registerRule = (rule: Rule): void => {
     rules.set(rule.id, rule);
 
@@ -40,22 +42,40 @@ export const createRuleRegistry = () => {
     for (const r of rulesToRegister) registerRule(r);
   };
 
+  // ---------- register (page-scope) ----------
+  const registerPageRule = (rule: PageRule): void => {
+    pageRules.set(rule.id, rule);
+
+    // share the same configuration store and shape
+    if (!configurations.has(rule.id)) {
+      configurations.set(rule.id, {
+        ruleId: rule.id,
+        enabled: rule.enabled,
+        severity: rule.severity as Severity,
+        customSettings: {}, // page rules typically have no schema yet
+      });
+    }
+  };
+
+  const registerPageRules = (list: PageRule[]): void => {
+    for (const r of list) registerPageRule(r);
+  };
+
   // ---------- clear ----------
   const clear = (): void => {
     rules.clear();
+    pageRules.clear(); // NEW
     configurations.clear();
   };
 
-  // ---------- getters ----------
+  // ---------- getters (element/class-scope) ----------
   const getRule = (ruleId: string): Rule | undefined => rules.get(ruleId);
 
   const getAllRules = (): Rule[] => Array.from(rules.values());
 
-  // Stable order (useful for snapshots, deterministic output)
   const getAllRulesSorted = (): Rule[] =>
     Array.from(rules.values()).sort((a, b) => a.id.localeCompare(b.id));
 
-  // Only class-scope (naming/property) rules that apply to a class type
   const getRulesByClassType = (classType: ClassType): Rule[] =>
     getAllRules().filter(
       (r) =>
@@ -70,13 +90,22 @@ export const createRuleRegistry = () => {
   const getEnabledRules = (): Rule[] =>
     getAllRules().filter((r) => configurations.get(r.id)?.enabled ?? r.enabled);
 
-  // Element-scope rules (structure) — used by element-phase in the runner
   const getElementScopeRules = (): Rule[] =>
     getAllRules().filter((r) => typeof r.analyzeElement === "function");
 
-  // Class-scope rules (naming/property) — used by class-phase in the runner
   const getClassScopeRules = (): Rule[] =>
     getAllRules().filter((r) => r.type === "naming" || r.type === "property");
+
+  // ---------- getters (page-scope) ----------
+  const getPageRules = (): PageRule[] => Array.from(pageRules.values()); // NEW
+
+  const getEnabledPageRules = (): PageRule[] => // NEW
+    getPageRules().filter(
+      (r) => configurations.get(r.id)?.enabled ?? r.enabled
+    );
+
+  const getPageRulesSorted = (): PageRule[] => // NEW
+    Array.from(pageRules.values()).sort((a, b) => a.id.localeCompare(b.id));
 
   // ---------- configuration ----------
   const updateRuleConfiguration = (
@@ -113,7 +142,7 @@ export const createRuleRegistry = () => {
       const incoming: RuleConfiguration[] = JSON.parse(json);
       for (const cfg of incoming) {
         const current = configurations.get(cfg.ruleId);
-        if (!current) continue; // ignore configs for unregistered rules
+        if (!current) continue;
         configurations.set(cfg.ruleId, {
           ...current,
           enabled: cfg.enabled ?? current.enabled,
@@ -130,9 +159,16 @@ export const createRuleRegistry = () => {
   };
 
   return {
+    // register
     registerRule,
     registerRules,
+    registerPageRule, // NEW
+    registerPageRules, // NEW
+
+    // lifecycle
     clear,
+
+    // getters (element/class)
     getRule,
     getAllRules,
     getAllRulesSorted,
@@ -141,6 +177,13 @@ export const createRuleRegistry = () => {
     getEnabledRules,
     getElementScopeRules,
     getClassScopeRules,
+
+    // getters (page)
+    getPageRules, // NEW
+    getEnabledPageRules, // NEW
+    getPageRulesSorted, // NEW
+
+    // configuration
     updateRuleConfiguration,
     getRuleConfiguration,
     getAllConfigurations,

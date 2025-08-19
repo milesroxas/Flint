@@ -1,12 +1,12 @@
 import type {
   GrammarAdapter,
   ParsedClass,
-  ClassKind,
 } from "@/features/linter/model/linter.types";
+import type { ClassType } from "@/features/linter/model/rule.types";
 
-function getClassKind(name: string): ClassKind {
+function getClassType(name: string): ClassType {
   if (name.startsWith("u-")) return "utility";
-  if (name.startsWith("c-")) return "component" as ClassKind; // tolerated by ClassKind union via assignment narrowing
+  if (name.startsWith("c-")) return "component" as ClassType; // tolerated by ClassKind union via assignment narrowing
   // Treat variant-like classes as combos even when incorrectly formatted
   // Matches: is-foo, is_bar, isActive
   const comboLike = /^(?:is[-_][A-Za-z0-9_]+|is[A-Z][A-Za-z0-9_]*)$/;
@@ -42,7 +42,7 @@ export const lumosGrammar: GrammarAdapter = {
   componentPrefix: "c-",
   comboPrefix: "is-",
   parse(name: string): ParsedClass {
-    const kind = getClassKind(name);
+    const kind = getClassType(name);
     if (kind !== "custom") {
       return { raw: name, kind } as ParsedClass;
     }

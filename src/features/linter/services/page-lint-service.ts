@@ -1,53 +1,65 @@
 // src/features/linter/services/page-lint-service.ts
-import {
-  StyleService,
-  StyleWithElement,
-} from "@/features/linter/entities/style/model/style.service";
-import { RuleRunner } from "./rule-runner";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-// Removed unused element context classifier
-import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type {
-  RoleDetector,
   RoleDetectionConfig,
   RolesByElement,
 } from "@/features/linter/model/linter.types";
-import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
-// dynamic presets will supply grammar/roles; keep lumos as safe fallback
-import { resolvePresetOrFallback } from "@/features/linter/presets";
+import type { RoleDetector } from "@/features/linter/model/preset.types";
+
 import type {
   WebflowElement,
   ElementWithClassNames,
-} from "@/features/linter/entities/element/model/element.types";
+} from "@/entities/element/model/element.types";
+
+import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+
 import { createRoleDetectionService } from "@/features/linter/services/role-detection.service";
-import { createElementGraphService } from "@/features/linter/services/element-graph.service";
-import { createPageRuleRunner } from "@/features/linter/services/page-rule-runner";
-import { createMainSingletonPageRule } from "@/features/linter/rules/canonical/main-singleton.page";
-import { createMainHasContentPageRule } from "@/features/linter/rules/canonical/main-children.page";
+import { createElementGraphService } from "@/entities/element/services/element-graph.service";
 
-export function createPageLintService(
-  styleService: StyleService,
-  ruleRunner: RuleRunner
-) {
-  // const presetId = getCurrentPreset();
-  // const activePreset = resolvePresetOrFallback(presetId);
+import type {
+  StyleInfo,
+  StyleWithElement,
+} from "@/entities/style/model/style.types";
+import { StyleService } from "@/entities/style/services/style.service";
 
-  // Grammar/roles selection removed; detection layer uses preset grammar directly
+import type { RuleRunner } from "@/features/linter/services/rule-runner";
 
-  // Legacy per-element role computation removed; roles are provided by detection service
-  // Roles cache (signature-based). Graph is rebuilt every scan.
+const DEBUG = false;
+
+export type PageLintService = ReturnType<typeof createPageLintService>;
+
+export function createPageLintService(deps: {
+  styleService: StyleService;
+  ruleRunner: RuleRunner;
+}) {
+  const { styleService, ruleRunner } = deps;
+
+  // Cache roles for the current DOM signature to avoid re-detecting
   let rolesCacheSignature: string | null = null;
   let cachedRolesByElement: RolesByElement | null = null;
 
-  function computeSignature(
-    elements: Array<{ id: string; classes: string[] }>,
-    parentOf: Map<string, string | null>
+  function toElementKey(el: any): string {
+    return String((el?.id && el.id.element) ?? el?.id ?? el?.nodeId ?? "");
+  }
+
+  function signatureFor(
+    pairs: { element: WebflowElement; styles: StyleWithElement[] }[],
+    parentOf: Record<string, string | null>
   ): string {
-    const rows = elements
-      .map((e) => `${e.id}:${e.classes.slice().sort().join("|")}`)
+    const rows = pairs
+      .map((p) => {
+        const id = toElementKey(p.element);
+        const names = p.styles
+          .map((s) => s.name)
+          .filter(Boolean)
+          .sort();
+        return `${id}:${names.join("|")}`;
+      })
       .sort();
 
-    const tree = Array.from(parentOf.entries())
+    const tree = Object.entries(parentOf)
       .map(([child, parent]) => `${child}->${parent ?? ""}`)
       .sort();
 
@@ -63,193 +75,118 @@ export function createPageLintService(
   async function lintCurrentPage(
     elements: WebflowElement[]
   ): Promise<RuleResult[]> {
-    console.log("[PageLintService] Starting lint for current page…");
+    if (!Array.isArray(elements)) return [];
 
-    // Filter to Designer elements that support getStyles()
-    const validElements: WebflowElement[] = (elements || []).filter(
+    // Only elements that support getStyles()
+    const validElements = elements.filter(
       (el: any) => el && typeof el.getStyles === "function"
     );
 
-    // 1. Load every style definition (for rule context)
-    const allStyles = await styleService.getAllStylesWithProperties();
-    console.log(
-      `[PageLintService] Loaded ${allStyles.length} style definitions for context.`
-    );
+    // 1) Site-wide style context
+    const allStyles: StyleInfo[] =
+      await styleService.getAllStylesWithProperties();
+    if (DEBUG)
+      console.log(
+        `[PageLintService] Loaded ${allStyles.length} styles site-wide`
+      );
 
-    // 2. Get styles for each element, maintaining element association
+    // 2) Collect applied styles with normalized element ids
     const elementStylePairs = await Promise.all(
       validElements.map(async (element) => {
-        const styles = await styleService.getAppliedStyles(element);
-        const elementKey =
-          ((element as any)?.id && ((element as any).id as any).element) ??
-          (element as any)?.id ??
-          (element as any)?.nodeId ??
-          "";
-        return {
-          elementId: String(elementKey),
-          element,
-          styles: styles.map((style) => ({
-            ...style,
-            elementId: String(elementKey),
-          })) as StyleWithElement[],
-        };
+        const applied = await styleService.getAppliedStyles(element);
+        const elementId = toElementKey(element);
+        const styles: StyleWithElement[] = applied.map((s) => ({
+          ...s,
+          elementId,
+        }));
+        return { element, styles };
       })
     );
 
     const allAppliedStyles: StyleWithElement[] = elementStylePairs.flatMap(
-      (pair) => pair.styles
+      (p) => p.styles
     );
+    if (DEBUG)
+      console.log(
+        `[PageLintService] Collected ${allAppliedStyles.length} applied style instances`
+      );
 
-    console.log(
-      `[PageLintService] Collected ${allAppliedStyles.length} applied style instances on this page.`
-    );
-
-    // 3. Extract class names for each element (needed for context classification)
+    // 3) Build ElementWithClassNames for role detection
     const elementsWithClassNames: ElementWithClassNames[] =
       elementStylePairs.map((pair) => ({
         element: pair.element,
         classNames: pair.styles
-          .map((style) => style.name)
-          .filter((name) => name.trim() !== ""),
+          .map((s) => s.name)
+          .filter((n) => n.trim() !== ""),
       }));
 
-    console.log(
-      `[PageLintService] Extracted class names for ${elementsWithClassNames.length} elements.`
-    );
-
-    // 4. Roles-only: no legacy contexts
-    const elementContexts: Record<string, never[]> = {};
-
-    // 5. Detect roles once for the page and build parent map helpers
-    const activePresetForRoles = resolvePresetOrFallback(getCurrentPreset());
-    const roleDetectors: RoleDetector[] =
-      activePresetForRoles.roleDetectors ?? [];
-    const roleDetectionConfig: RoleDetectionConfig | undefined =
-      activePresetForRoles.roleDetectionConfig;
-
-    // Build parent map (child -> parent) for signature and graph helpers
+    // 4) Build parent map for graph helpers and role scoring
     const parentIdByChildId: Record<string, string | null> = {};
-    try {
-      for (const pair of elementStylePairs) {
-        const el: any = pair.element;
-        const childId = String(
-          (el?.id && el.id.element) ?? el?.id ?? el?.nodeId ?? ""
-        );
-        const parent =
-          typeof el.getParent === "function" ? await el.getParent() : null;
-        const parentId = parent
-          ? String(
-              (parent?.id && parent.id.element) ??
-                parent?.id ??
-                parent?.nodeId ??
-                ""
-            )
-          : null;
-        parentIdByChildId[childId] = parentId;
+    for (const { element } of elementStylePairs) {
+      const id = toElementKey(element);
+      let parentId: string | null = null;
+      if (typeof (element as any).getParent === "function") {
+        try {
+          const parent = await (element as any).getParent();
+          parentId = parent ? toElementKey(parent) : null;
+        } catch {
+          parentId = null;
+        }
       }
-    } catch {
-      // Parent resolution best-effort; leave map partial if API not available
+      parentIdByChildId[id] = parentId;
     }
 
-    const getParentId = (elementId: string): string | null =>
-      parentIdByChildId[elementId] ?? null;
+    // 5) Detect roles once per page with caching
+    const activePreset = resolvePresetOrFallback(getCurrentPreset());
+    const roleDetectors: readonly RoleDetector[] =
+      activePreset.roleDetectors ?? [];
+    const roleDetectionConfig: RoleDetectionConfig | undefined =
+      activePreset.roleDetectionConfig;
 
-    // Compute signature for roles cache using element IDs + class names + parent edges
-    const elementsForSig = elementStylePairs.map((p) => ({
-      id: p.elementId,
-      classes: Array.from(
-        new Set(
-          p.styles
-            .map((s) => s.name)
-            .filter((n) => typeof n === "string" && n.trim() !== "")
-        )
-      ),
-    }));
-    const parentMapForSig = new Map<string, string | null>(
-      Object.entries(parentIdByChildId)
-    );
-    const signature = computeSignature(elementsForSig, parentMapForSig);
+    const sig = signatureFor(elementStylePairs, parentIdByChildId);
+    let rolesByElement: RolesByElement;
 
-    let rolesByElement: RolesByElement = {} as RolesByElement;
-    if (
-      rolesCacheSignature &&
-      cachedRolesByElement &&
-      signature === rolesCacheSignature
-    ) {
+    if (rolesCacheSignature === sig && cachedRolesByElement) {
       rolesByElement = cachedRolesByElement;
-      console.log("[PageLintService] Using cached roles (signature match)");
+      if (DEBUG) console.log("[PageLintService] Using cached roles");
     } else {
-      try {
-        const roleDetection = createRoleDetectionService({
-          grammar: activePresetForRoles.grammar ?? lumosGrammar,
-          detectors: roleDetectors,
-          config: roleDetectionConfig,
-        });
-        rolesByElement = roleDetection.detectRolesForPage(
-          elementsWithClassNames
-        );
-        rolesCacheSignature = signature;
-        cachedRolesByElement = rolesByElement;
-        console.log("[PageLintService] Computed roles and refreshed cache");
-      } catch (err) {
-        rolesByElement = {} as RolesByElement;
-        rolesCacheSignature = signature;
-        cachedRolesByElement = rolesByElement;
-      }
+      const roleDetection = createRoleDetectionService({
+        detectors: [...roleDetectors],
+        config: roleDetectionConfig,
+      });
+      rolesByElement = roleDetection.detectRolesForPage(elementsWithClassNames);
+      rolesCacheSignature = sig;
+      cachedRolesByElement = rolesByElement;
+      if (DEBUG) console.log("[PageLintService] Computed roles for page");
     }
 
-    // 6. Page-scope canonical rules
+    // 6) Graph helpers
     const graph = createElementGraphService(
-      elementStylePairs.map((p) => p.element as WebflowElement),
+      elementStylePairs.map((p) => p.element),
       parentIdByChildId
     );
-    const pageRunner = createPageRuleRunner();
-    const pageResults = pageRunner.run(
-      [createMainSingletonPageRule(), createMainHasContentPageRule()],
-      {
-        rolesByElement,
-        getParentId: graph.getParentId,
-        getChildrenIds: graph.getChildrenIds,
-      }
-    );
 
-    // Stamp canonical page results with element metadata for UI (selection/role badges)
-    const hydratedPageResults = pageResults.map((r) => {
-      const elementId = (r as any).elementId as string | undefined;
-      const role = elementId ? (rolesByElement[elementId] as any) : undefined;
-      return {
-        ...r,
-        metadata: {
-          ...(r.metadata ?? {}),
-          ...(elementId ? { elementId } : {}),
-          ...(role ? { role } : {}),
-        },
-      } as typeof r;
-    });
-
-    // 7. Element-scope rules with roles
+    // 7) Run rules via runner (page and element rules are handled by the runner)
     const results = ruleRunner.runRulesOnStylesWithContext(
       allAppliedStyles,
-      elementContexts,
+      {},
       allStyles,
       rolesByElement,
-      getParentId,
+      graph.getParentId,
       graph.getChildrenIds,
       graph.getAncestorIds,
-      (name: string) =>
-        (activePresetForRoles.grammar ?? lumosGrammar).parse(name)
+      (name: string) => (activePreset.grammar ?? lumosGrammar).parse(name)
     );
 
-    // Role metadata is provided by rolesByElement; no post-stamping here
+    if (DEBUG)
+      console.log(
+        `[PageLintService] Lint complete with ${results.length} result${
+          results.length === 1 ? "" : "s"
+        }`
+      );
 
-    console.log(
-      `[PageLintService] Lint complete. Found ${results.length} issue${
-        results.length === 1 ? "" : "s"
-      }.`
-    );
-
-    return [...hydratedPageResults, ...results];
+    return results;
   }
 
-  return { lintCurrentPage };
+  return { lintCurrentPage } as const;
 }

@@ -5,17 +5,17 @@ import {
   applyOpinionMode,
   OpinionMode,
 } from "@/features/linter/model/opinion.modes";
-import { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
+import { createRuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import type { Rule } from "@/features/linter/model/rule.types";
-import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
-import { createComponentRootStructureRule } from "@/features/linter/rules/canonical/component-root-structure";
 import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
+import { createMainSingletonPageRule } from "@/features/linter/rules/canonical/main-singleton.page";
+import { createMainHasContentPageRule } from "@/features/linter/rules/canonical/main-children.page";
 
 // Global registry instance
 export const ruleRegistry = createRuleRegistry();
 
 // Pass the registry into the config service
-export const ruleConfigService = new RuleConfigurationService(ruleRegistry);
+export const ruleConfigService = createRuleConfigurationService(ruleRegistry);
 
 // Initialize with default rules and user configurations
 export function initializeRuleRegistry(
@@ -27,20 +27,22 @@ export function initializeRuleRegistry(
   // 1) register preset rules (seeds defaults too)
   ruleRegistry.clear();
   const selected = resolvePresetOrFallback(presetId);
-  ruleRegistry.registerRules(selected.rules);
+  ruleRegistry.registerRules([...selected.rules]);
 
-  // 2) register canonical element rules globally (preset-agnostic)
-  ruleRegistry.registerRules([
-    createSectionParentIsMainRule(),
-    createComponentRootStructureRule(),
-    createChildGroupKeyMatchRule(),
+  // 2) register canonical page rules globally (preset-agnostic)
+  ruleRegistry.registerPageRules([
+    createMainSingletonPageRule(),
+    createMainHasContentPageRule(),
   ]);
 
-  // 3) apply opinion mode adjustments
+  // 3) register canonical element rules globally (preset-agnostic)
+  ruleRegistry.registerRules([createChildGroupKeyMatchRule()]);
+
+  // 4) apply opinion mode adjustments
   applyOpinionMode(ruleRegistry, mode);
 
-  // 4) load any persisted user settings and apply
-  const userConfigs = ruleConfigService.loadConfiguration();
+  // 5) load any persisted user settings and apply
+  const userConfigs = ruleConfigService.load();
   userConfigs.forEach((cfg) =>
     ruleRegistry.updateRuleConfiguration(cfg.ruleId, {
       enabled: cfg.enabled,

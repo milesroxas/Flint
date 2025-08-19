@@ -7,7 +7,12 @@
     "build:prod": "tsc && vite build --mode prod  && webflow extension bundle && mv bundle.zip bundle/prod/bundle_$(date +'%Y-%m-%d_%H-%M-%S').zip",
     "build:dev": "tsc && vite build --mode development && webflow extension bundle && mv bundle.zip bundle/development/bundle_$(date +'%Y-%m-%d_%H-%M-%S').zip",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:structure": "vitest run src/features/linter/rules/lumos/structure/__tests__/",
+    "test:class-order": "vitest run src/features/linter/rules/lumos/structure/__tests__/class-order.element.test.ts"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.2",

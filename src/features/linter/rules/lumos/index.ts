@@ -1,3 +1,2 @@
-import { createLumosCustomClassFormatRule } from "./naming/naming-class-format";
-
-export const lumosRules = [createLumosCustomClassFormatRule()];
+export * from "./naming";
+export * from "./composition";

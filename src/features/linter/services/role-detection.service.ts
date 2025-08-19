@@ -1,17 +1,14 @@
 import type {
-  GrammarAdapter,
-  ParsedClass,
   RoleDetectionConfig,
-  RoleDetector,
   RolesByElement,
 } from "@/features/linter/model/linter.types";
+import type { RoleDetector } from "@/features/linter/model/preset.types";
 import type {
   ElementWithClassNames,
   WebflowElement,
-} from "@/features/linter/entities/element/model/element.types";
+} from "@/entities/element/model/element.types";
 
 interface CreateArgs {
-  grammar: GrammarAdapter;
   detectors: RoleDetector[];
   config?: RoleDetectionConfig;
 }
@@ -40,28 +37,9 @@ function getParentId(el: WebflowElement | undefined): string | null {
   return pid ? String(pid) : null;
 }
 
-/** Returns the first BASE custom class parsed by the active grammar */
-function getFirstCustom(
-  grammar: GrammarAdapter,
-  classNames: string[]
-): ParsedClass | undefined {
-  for (const name of classNames) {
-    let parsed: ParsedClass;
-    try {
-      parsed = grammar.parse(name);
-    } catch {
-      continue;
-    }
-    if (parsed?.kind === "custom") return parsed;
-  }
-  return undefined;
-}
+// No longer used with ElementSnapshot approach
 
-export function createRoleDetectionService({
-  grammar,
-  detectors,
-  config,
-}: CreateArgs) {
+export function createRoleDetectionService({ detectors, config }: CreateArgs) {
   const effectiveConfig: RoleDetectionConfig = {
     ...DEFAULT_CONFIG,
     ...(config ?? {}),
@@ -88,17 +66,7 @@ export function createRoleDetectionService({
       parentIdByChildId.set(elId, getParentId(element));
     }
 
-    const getAncestry = (id: string): string[] => {
-      const out: string[] = [];
-      let p = parentIdByChildId.get(id) ?? null;
-      const guard = new Set<string>();
-      while (p && !guard.has(p)) {
-        out.push(p);
-        guard.add(p);
-        p = parentIdByChildId.get(p) ?? null;
-      }
-      return out;
-    };
+    // No longer used with ElementSnapshot approach
 
     // Track best scores for singleton main enforcement
     const scoresByElement: Record<
@@ -112,21 +80,34 @@ export function createRoleDetectionService({
       if (!elementId) continue;
 
       const classNames = classesByElementId.get(elementId) ?? [];
-      const parsedFirstCustom = getFirstCustom(grammar, classNames);
-      const ancestryIds = getAncestry(elementId);
+      // These are no longer used with the new ElementSnapshot/DetectionContext approach
+      // const parsedFirstCustom = getFirstCustom(grammar, classNames);
+      // const ancestryIds = getAncestry(elementId);
 
       let bestRole: RolesByElement[string] | null = null;
       let bestScore = -1;
 
       for (const detector of detectors) {
         try {
-          const scored = detector({
-            elementId,
-            element: element as WebflowElement,
-            classNames,
-            parsedFirstCustom,
-            ancestryIds,
-          });
+          // Create ElementSnapshot for the detector
+          const elementSnapshot = {
+            id: elementId,
+            tagName: (element as any)?.tagName || "div",
+            classes: classNames || [],
+            parentId: (element as any)?.parentId || null,
+            childrenIds: (element as any)?.childrenIds || [],
+            textContent: (element as any)?.textContent,
+            attributes: (element as any)?.attributes || {},
+          };
+
+          // Create DetectionContext (minimal for now)
+          const detectionContext = {
+            allElements: [], // TODO: populate when needed
+            styleInfo: [], // TODO: populate when needed
+            pageInfo: {}, // TODO: populate when needed
+          };
+
+          const scored = detector.detect(elementSnapshot, detectionContext);
           if (!scored) continue;
           if (scored.score > bestScore) {
             bestScore = scored.score;

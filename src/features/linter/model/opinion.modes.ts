@@ -2,7 +2,10 @@ import type { RuleRegistry } from "@/features/linter/services/rule-registry";
 
 export type OpinionMode = "strict" | "balanced" | "lenient";
 
-export function applyOpinionMode(ruleRegistry: RuleRegistry, mode: OpinionMode): void {
+export function applyOpinionMode(
+  ruleRegistry: RuleRegistry,
+  mode: OpinionMode
+): void {
   if (mode === "balanced") return;
 
   const promoteToError = (ruleId: string) => {
@@ -18,23 +21,17 @@ export function applyOpinionMode(ruleRegistry: RuleRegistry, mode: OpinionMode):
   };
 
   if (mode === "strict") {
-    // Promote format violations and display-on-root to errors
+    // Promote format violations to errors
     const strictIds = [
       "lumos-utility-class-format",
       "lumos-combo-class-format",
-      "component-root-no-display-utilities",
     ];
     strictIds.forEach(promoteToError);
   }
 
   if (mode === "lenient") {
     // Demote structure rules to suggestions
-    const lenientIds = [
-      "component-root-semantic-naming",
-      "component-root-required-structure",
-    ];
+    const lenientIds = ["canonical:childgroup-key-match"];
     lenientIds.forEach(demoteToSuggestion);
   }
 }
-
-

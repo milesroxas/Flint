@@ -80,7 +80,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({
                   void (async () => {
                     try {
                       const mod = await import(
-                        "@/features/linter/entities/style/model/style-cache"
+                        "@/entities/style/services/style-cache"
                       );
                       if (
                         mod &&

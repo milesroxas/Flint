@@ -1,5 +1,5 @@
 import type { Rule } from "@/features/linter/model/rule.types";
-import type { Preset } from "@/features/linter/model/linter.types";
+import type { Preset } from "@/features/linter/model/preset.types";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 
 import { cfVariantIsPrefixRule } from "@/features/linter/rules/naming/cf-variant-is-prefix";

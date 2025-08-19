@@ -1,8 +1,12 @@
-import type { GrammarAdapter, ParsedClass, ClassKind } from "@/features/linter/model/linter.types";
+import type {
+  GrammarAdapter,
+  ParsedClass,
+} from "@/features/linter/model/linter.types";
+import type { ClassType } from "@/features/linter/model/rule.types";
 
-function getClassKind(name: string): ClassKind {
+function getClassType(name: string): ClassType {
   if (name.startsWith("u-")) return "utility";
-  if (name.startsWith("c-")) return "component" as ClassKind;
+  if (name.startsWith("c-")) return "component" as ClassType;
   if (name.startsWith("is-")) return "combo";
   return "custom";
 }
@@ -18,7 +22,8 @@ function parseCustom(name: string): ParsedClass {
   };
 
   if (tokens.length > 0) parsed.type = tokens[0];
-  if (tokens.length > 2) parsed.variation = tokens.slice(1, -1).join("_") || undefined;
+  if (tokens.length > 2)
+    parsed.variation = tokens.slice(1, -1).join("_") || undefined;
   if (tokens.length >= 2) parsed.elementToken = tokens[tokens.length - 1];
   return parsed;
 }
@@ -30,12 +35,10 @@ export const clientFirstGrammar: GrammarAdapter = {
   componentPrefix: "c-",
   comboPrefix: "is-",
   parse(name: string): ParsedClass {
-    const kind = getClassKind(name);
+    const kind = getClassType(name);
     if (kind !== "custom") {
       return { raw: name, kind } as ParsedClass;
     }
     return parseCustom(name);
   },
 };
-
-

@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { RuleResult } from "@/features/linter/model/rule.types";
-import { scanCurrentPageWithMeta } from "@/features/linter/processes/scan/scan-current-page";
+import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 

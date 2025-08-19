@@ -18,14 +18,27 @@ export function ensureLinterInitialized(
   isInitialized = true;
   currentMode = mode;
   currentPreset = preset;
-  // Invalidate style cache when registry (and potentially preset) changes
+  // Invalidate style cache and services when registry (and potentially preset) changes
   void (async () => {
     try {
-      const mod = await import(
-        "@/features/linter/entities/style/model/style-cache"
+      const styleCacheMod = await import(
+        "@/entities/style/services/style-cache"
       );
-      if (mod && typeof mod.resetStyleServiceCache === "function") {
-        mod.resetStyleServiceCache();
+      if (
+        styleCacheMod &&
+        typeof styleCacheMod.resetStyleServiceCache === "function"
+      ) {
+        styleCacheMod.resetStyleServiceCache();
+      }
+
+      const servicesMod = await import(
+        "@/features/linter/services/linter-service-singleton"
+      );
+      if (
+        servicesMod &&
+        typeof servicesMod.resetLinterServices === "function"
+      ) {
+        servicesMod.resetLinterServices();
       }
     } catch {
       // Ignore errors in cache reset during initialization

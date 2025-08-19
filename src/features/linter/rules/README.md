@@ -10,6 +10,17 @@ This document reflects the current implementation and how to extend it safely.
 
 ---
 
+## Taxonomy
+
+- **Structure**: element graph and roles.
+
+- **Naming**: lexical patterns and tokens for individual class names.
+
+- **Composition**: rules about the class list on an element, including count, ordering, and the presence of a single base.
+
+- **Property**: rules that inspect
+  computed style declarations or utilities’ property effects.
+
 ## Directory structure
 
 ```txt
@@ -20,31 +31,12 @@ src/features/linter/rules/
     section-parent-is-main.ts
     main-children.page.ts
     main-singleton.page.ts
-  naming/
-    lumos-custom-class-format.ts
-    lumos-component-class-format.ts
-    lumos-utility-class-format.ts
-    lumos-combo-class-format.ts
-    lumos-class-ordering.ts
-    cf-variant-is-prefix.ts
-    cf-unknown-utility-family.ts
-    cf-custom-kebab-case.ts
-  property/
-    lumos-utility-class-exact-duplicate.ts
-    lumos-utility-class-duplicate-properties.ts
-  role-aware/
-    component-root-semantic-naming.ts
-    component-root-no-display-utilities.ts
-    cf-no-utilities-on-root.ts
-    cf-containers-clean.ts
-    cf-no-padding-on-inner.ts
+  lumos/
+    composition/
+    naming/
+    property/
+    structure/
 ```
-
-Notes:
-
-- The two legacy structural files that duplicated canonical behavior were removed:
-  - `component-root-required-structure.ts` (replaced by canonical `component-root-structure.ts`)
-  - `lumos-child-group-references-parent.ts` (replaced by canonical `child-group-key-match.ts`)
 
 ---
 

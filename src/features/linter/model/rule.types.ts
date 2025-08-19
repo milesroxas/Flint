@@ -1,4 +1,5 @@
-import { StyleInfo } from "@/features/linter/entities/style/model/style.service";
+import { StyleInfo } from "@/entities/style/model/style.types";
+import { ElementGraph } from "@/entities/element/services/element-graph.service";
 import {
   ElementRole,
   ParsedClass,
@@ -8,6 +9,7 @@ import {
 // -------------------------
 // Severity & Result Types
 // -------------------------
+
 export type Severity = "suggestion" | "warning" | "error";
 
 export interface RuleResult {
@@ -21,7 +23,34 @@ export interface RuleResult {
   comboIndex?: number;
   example?: string;
   metadata?: Record<string, any>;
+  fix?: QuickFix;
 }
+
+// -------------------------
+// Quick Fix
+// -------------------------
+export type QuickFix =
+  | {
+      kind: "rename-class";
+      from: string;
+      to: string;
+      scope: "element" | "global";
+    }
+  | {
+      kind: "reorder-classes";
+      order: string[]; // full class order to apply
+      scope: "element";
+    }
+  | {
+      kind: "add-class";
+      className: string;
+      scope: "element";
+    }
+  | {
+      kind: "remove-class";
+      className: string;
+      scope: "element";
+    };
 
 // -------------------------
 // Configuration Schema
@@ -50,11 +79,18 @@ export type ClassType = "custom" | "utility" | "combo" | "unknown";
 export type RuleCategory =
   | "structure"
   | "format"
+  | "composition"
   | "semantics"
   | "performance"
   | "accessibility"
+  | "maintainability"
   | "custom";
-export type RuleType = "naming" | "property" | "structure";
+export type RuleType =
+  | "naming"
+  | "property"
+  | "structure"
+  | "composition"
+  | "page";
 
 export interface BaseRule {
   id: string;
@@ -74,7 +110,7 @@ export interface NamingRule extends BaseRule {
   test: (className: string) => boolean;
   evaluate?: (
     className: string,
-    context?: { config?: Record<string, unknown> }
+    context: RuleContext & { config?: Record<string, unknown> }
   ) => RuleResult | null | undefined;
   config?: RuleConfigSchema;
 }
@@ -97,7 +133,25 @@ export interface StructureRule extends BaseRule {
   analyzeElement: (args: ElementAnalysisArgs) => RuleResult[];
 }
 
-export type Rule = NamingRule | PropertyRule | StructureRule;
+export interface CompositionRule extends BaseRule {
+  type: "composition";
+  category: RuleCategory;
+  analyzeElement: (args: ElementAnalysisArgs) => RuleResult[];
+  config?: RuleConfigSchema;
+}
+
+/** Page-scope rules aggregate signals across the whole page */
+export interface PageRule extends BaseRule {
+  type: "page";
+  analyzePage(args: PageAnalysisArgs): RuleResult[];
+}
+
+export type Rule =
+  | NamingRule
+  | PropertyRule
+  | StructureRule
+  | CompositionRule
+  | PageRule;
 
 // -------------------------
 // Execution Context & Save
@@ -106,6 +160,25 @@ export interface RuleContext {
   allStyles: StyleInfo[];
   utilityClassPropertiesMap: Map<string, { name: string; properties: any }[]>;
   propertyToClassesMap: Map<string, Set<string>>;
+}
+
+// -------------------------
+// Page-level Analysis
+// -------------------------
+
+export interface PageAnalysisArgs {
+  rolesByElement: RolesByElement;
+  graph: ElementGraph;
+  styles: StyleInfo[];
+  getRoleForElement(id: string): ElementRole | "unknown";
+  getRuleConfig<T extends Record<string, unknown>>(
+    ruleId: string
+  ): {
+    ruleId: string;
+    enabled: boolean;
+    severity: Severity;
+    customSettings: T;
+  };
 }
 
 // -------------------------

@@ -1,29 +1,49 @@
-import type { RoleDetector } from "@/features/linter/model/linter.types";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type {
+  RoleDetector,
+  ElementSnapshot,
+  DetectionContext,
+} from "@/features/linter/model/preset.types";
 
 const endsWithWrap = (name: string) => /(?:^|[_-])(wrap|wrapper)$/.test(name);
 
 export const clientFirstRoleDetectors: RoleDetector[] = [
-  ({ classNames, elementId }) => {
-    const hit = classNames.find(
-      (n) => n === "main-wrapper" || /^main_/.test(n)
-    );
-    if (hit) return { elementId, role: "main", score: 0.95 } as const;
-    return null;
+  {
+    id: "client-first-main-detector",
+    description: "Detects main elements using Client-First naming conventions",
+    detect: (element: ElementSnapshot, _context: DetectionContext) => {
+      const hit = element.classes.find(
+        (n) => n === "main-wrapper" || /^main_/.test(n)
+      );
+      if (hit) return { role: "main", score: 0.95 };
+      return null;
+    },
   },
-  ({ classNames, elementId }) => {
-    const hit = classNames.find((n) => /^section[_-]/.test(n));
-    if (hit) return { elementId, role: "section", score: 0.85 } as const;
-    return null;
+  {
+    id: "client-first-section-detector",
+    description:
+      "Detects section elements using Client-First naming conventions",
+    detect: (element: ElementSnapshot, _context: DetectionContext) => {
+      const hit = element.classes.find((n) => /^section[_-]/.test(n));
+      if (hit) return { role: "section", score: 0.85 };
+      return null;
+    },
   },
-  ({ classNames, parsedFirstCustom, elementId }) => {
-    if (!parsedFirstCustom) return null;
-    const first =
-      classNames.find((n) => n === parsedFirstCustom.raw) ??
-      parsedFirstCustom.raw;
-    if (!endsWithWrap(first)) return null;
-    const tokenCount = parsedFirstCustom.tokens?.length ?? 0;
-    if (tokenCount >= 3)
-      return { elementId, role: "childGroup", score: 0.7 } as const;
-    return { elementId, role: "componentRoot", score: 0.72 } as const;
+  {
+    id: "client-first-wrapper-detector",
+    description:
+      "Detects component roots and child groups using wrapper naming patterns",
+    detect: (element: ElementSnapshot, _context: DetectionContext) => {
+      // For Client-First, we'll use a simplified heuristic since we don't have parsed data
+      const firstClass = element.classes[0];
+      if (!firstClass || !endsWithWrap(firstClass)) return null;
+
+      // Simple heuristic: if the class has 3+ tokens, likely childGroup, otherwise componentRoot
+      const tokenCount = firstClass.split(/[_-]/).filter(Boolean).length;
+      if (tokenCount >= 3) {
+        return { role: "childGroup", score: 0.7 };
+      }
+      return { role: "componentRoot", score: 0.72 };
+    },
   },
 ];

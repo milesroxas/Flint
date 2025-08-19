@@ -1,4 +1,4 @@
-import type { Preset } from "@/features/linter/model/linter.types";
+import type { Preset } from "@/features/linter/model/preset.types";
 
 type PresetMap = Map<string, Preset>;
 
@@ -13,7 +13,9 @@ function isPreset(value: unknown): value is Preset {
 }
 
 // Eagerly import all preset modules under this directory
-const presetModules = import.meta.glob("./*.preset.ts", { eager: true }) as Record<string, any>;
+const presetModules = import.meta.glob("./*.preset.ts", {
+  eager: true,
+}) as Record<string, any>;
 
 const presets: PresetMap = new Map();
 
@@ -44,7 +46,9 @@ export function getDefaultPresetId(): string {
   if (presets.has("lumos")) return "lumos";
   const first = getPresetIds()[0];
   if (first) return first;
-  throw new Error("No presets found. Ensure at least one *.preset.ts exports a Preset object.");
+  throw new Error(
+    "No presets found. Ensure at least one *.preset.ts exports a Preset object."
+  );
 }
 
 export function resolvePresetOrFallback(id?: string): Preset {
@@ -52,9 +56,9 @@ export function resolvePresetOrFallback(id?: string): Preset {
   if (byId) return byId;
   const fallback = getPresetById(getDefaultPresetId());
   if (!fallback) {
-    throw new Error("Preset resolution failed and no default preset available.");
+    throw new Error(
+      "Preset resolution failed and no default preset available."
+    );
   }
   return fallback;
 }
-
-
