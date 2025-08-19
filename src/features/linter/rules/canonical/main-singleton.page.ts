@@ -87,9 +87,9 @@ export const createMainSingletonPageRule = (): PageRule => ({
             ruleId: "canonical:main-singleton",
             name: "Exactly one main role per page",
             message:
-              "Element with role 'main' should use <main> tag, but detected preset-specific main class (e.g., page_main). Consider using proper <main> tag for better semantics.",
+              "Detected preset-specific main class. Review that this element is set to the proper <main> tag.",
             severity: "warning" as Severity,
-            className: "",
+            className: getClassNamesForElement(elementId).join(" "),
             isCombo: false,
             elementId,
           });
