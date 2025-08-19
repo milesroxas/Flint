@@ -76,9 +76,7 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
           const idx = indexById.get(lastOpenedId);
           if (idx === undefined) return;
           const violation = items[idx];
-          const elementId = violation?.metadata?.elementId as
-            | string
-            | undefined;
+          const elementId = violation?.elementId;
           if (!elementId) return;
           try {
             await selectElementById(elementId);

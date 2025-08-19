@@ -22,6 +22,7 @@ function ScrollArea({
   const emittedDirRef = React.useRef<"up" | "down" | null>(null);
   const pendingDirRef = React.useRef<"up" | "down" | null>(null);
   const pendingAccumRef = React.useRef(0);
+  const lastEmitTimeRef = React.useRef(0);
 
   React.useEffect(() => {
     const el = viewportRef.current;
@@ -44,11 +45,11 @@ function ScrollArea({
 
           // Determine if we're at extremes to avoid bounce flicker
           const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-          const nearBottom = nextTop >= maxTop - 2;
-          const nearTop = nextTop <= 2;
+          const nearBottom = nextTop >= maxTop - 8;
+          const nearTop = nextTop <= 8;
 
           // Hysteresis threshold for emitting a change
-          const threshold = 24; // px of sustained movement before emit
+          const threshold = 32; // px of sustained movement before emit
 
           if (emittedDirRef.current === null) {
             // First-time emit requires threshold
@@ -65,10 +66,20 @@ function ScrollArea({
             const blockedByTop =
               dir === "down" ? false : nearTop && !passedThreshold;
 
-            if (passedThreshold && !blockedByBottom && !blockedByTop) {
+            const now = Date.now();
+            const timeSinceLastEmit = now - lastEmitTimeRef.current;
+            const minEmitInterval = 150; // ms minimum between direction changes
+
+            if (
+              passedThreshold &&
+              !blockedByBottom &&
+              !blockedByTop &&
+              timeSinceLastEmit >= minEmitInterval
+            ) {
               emittedDirRef.current = dir;
               pendingDirRef.current = null;
               pendingAccumRef.current = 0;
+              lastEmitTimeRef.current = now;
               onScrollDirectionChange(dir);
             }
           } else if (dir === emittedDirRef.current) {
@@ -90,10 +101,20 @@ function ScrollArea({
             const blockedByTop =
               dir === "down" ? false : nearTop && !passedThreshold;
 
-            if (passedThreshold && !blockedByBottom && !blockedByTop) {
+            const now = Date.now();
+            const timeSinceLastEmit = now - lastEmitTimeRef.current;
+            const minEmitInterval = 150; // ms minimum between direction changes
+
+            if (
+              passedThreshold &&
+              !blockedByBottom &&
+              !blockedByTop &&
+              timeSinceLastEmit >= minEmitInterval
+            ) {
               emittedDirRef.current = dir;
               pendingDirRef.current = null;
               pendingAccumRef.current = 0;
+              lastEmitTimeRef.current = now;
               onScrollDirectionChange(dir);
             }
           }

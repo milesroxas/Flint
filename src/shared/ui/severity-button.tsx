@@ -40,7 +40,7 @@ const severityBgActive: Record<Severity, string> = {
 };
 
 const severityButtonVariants = cva(
-  "relative overflow-hidden duration-300 ease-in-out outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[border-radius,background-color,color,opacity,transform,padding] [border-radius:var(--rb)] [will-change:border-radius]",
+  "relative overflow-hidden duration-300 ease-in-out outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[border-radius,background-color,color,opacity,padding] [border-radius:var(--rb)] [will-change:border-radius]",
   {
     variants: {
       severity: {
@@ -132,9 +132,13 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
     >
       <span
         className={cn(
-          "absolute inset-0 flex items-center justify-center gap-1 text-xs transition-[opacity,transform] duration-300 ease-in-out",
-          condensed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
+          "absolute inset-0 flex items-center justify-center gap-1 text-xs transition-[opacity] duration-300 ease-in-out",
+          condensed ? "opacity-100" : "opacity-0"
         )}
+        style={{
+          transform: condensed ? "translateY(0)" : "translateY(-4px)",
+          transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
+        }}
       >
         <span
           className={cn(
@@ -148,9 +152,13 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
 
       <span
         className={cn(
-          "absolute inset-0 flex flex-col items-center justify-center transition-[opacity,transform] duration-300 ease-in-out",
-          condensed ? "opacity-0 translate-y-1" : "opacity-100 translate-y-0"
+          "absolute inset-0 flex flex-col items-center justify-center transition-[opacity] duration-300 ease-in-out",
+          condensed ? "opacity-0" : "opacity-100"
         )}
+        style={{
+          transform: condensed ? "translateY(4px)" : "translateY(0)",
+          transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
+        }}
       >
         <span className="text-lg font-semibold leading-none">{count}</span>
         <span className="mt-1 text-xs">{expandedLabel}</span>

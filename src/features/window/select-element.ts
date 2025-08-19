@@ -56,7 +56,10 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     const hasGetAll = typeof wf.getAllElements === "function";
     if (hasGetAll) {
       const allElements: any[] = await wf.getAllElements();
-      dbg("getAllElements size", Array.isArray(allElements) ? allElements.length : 0);
+      dbg(
+        "getAllElements size",
+        Array.isArray(allElements) ? allElements.length : 0
+      );
       if (Array.isArray(allElements) && allElements.length > 0) {
         target = allElements.find((el) => {
           const id = getElementIdFromAnyElement(el);
@@ -109,6 +112,20 @@ export async function selectElementById(elementId: string): Promise<boolean> {
 
     // Mark to ignore the immediate 'selectedelement' event fired by Designer
     (window as any).__flowlint_ignoreNextSelectedEvent = true;
+
+    // For elements already in viewport, force a clear selection first
+    // This ensures consistent highlighting behavior regardless of viewport position
+    const currentSelected = await wf.getSelectedElement();
+    if (
+      currentSelected &&
+      getElementIdFromAnyElement(currentSelected) === String(elementId)
+    ) {
+      // Element is already selected, briefly deselect to force re-highlight
+      await wf.setSelectedElement(null);
+      // Small delay to ensure the deselection is processed
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
     await wf.setSelectedElement(target);
     dbg("selection success");
     return true;
@@ -121,5 +138,3 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     return false;
   }
 }
-
-

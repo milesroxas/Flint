@@ -12,14 +12,14 @@ Users reviewing page-wide violations frequently click into a violation and immed
 
 ## Decision
 
-- In page view, when a violation accordion item is opened, automatically trigger highlight of the corresponding element using `selectElementById(violation.metadata.elementId)`.
+- In page view, when a violation accordion item is opened, automatically trigger highlight of the corresponding element using `selectElementById(violation.elementId)`.
 - Keep the existing manual "Highlight element" button for explicit user control.
 - Scope the behavior to page mode only by reusing the existing `showHighlight` flag passed from `PageLintSection` → `ViolationsList`.
 
 ## Consequences
 
 - Reduces clicks during page audits while preserving explicit controls.
-- No API contract changes: relies on existing `metadata.elementId` and selection helper.
+- No API contract changes: relies on existing `elementId` and selection helper.
 - Fallback remains intact when Designer APIs are unavailable.
 
 ## Affected Files
@@ -34,5 +34,3 @@ Users reviewing page-wide violations frequently click into a violation and immed
 ## Validation
 
 - Build passes; manual verification confirms that opening a violation item in page mode triggers element selection/highlight via the Designer API (or dispatches the fallback event when unavailable).
-
-
