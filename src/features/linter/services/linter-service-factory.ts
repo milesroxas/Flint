@@ -4,7 +4,11 @@ import { createUtilityClassAnalyzer } from "@/features/linter/services/analyzers
 import { createRuleRunner } from "@/features/linter/services/rule-runner";
 import { createElementLintService } from "@/features/linter/services/element-lint-service";
 import { createPageLintService } from "@/features/linter/services/page-lint-service";
-import { getRuleRegistry, getCurrentPreset } from "@/features/linter/model/linter.factory";
+import { createLintContextService } from "@/features/linter/services/lint-context.service";
+import {
+  getRuleRegistry,
+  getCurrentPreset,
+} from "@/features/linter/model/linter.factory";
 import { resolvePresetOrFallback } from "@/features/linter/presets";
 
 /**
@@ -15,12 +19,14 @@ export function createLinterServices() {
   // Core services - created once and shared
   const styleService = createStyleService();
   const analyzer = createUtilityClassAnalyzer();
-  
+  const contextService = createLintContextService({ styleService });
+
   // Get active preset for grammar-aware rule runner
   const activePreset = resolvePresetOrFallback(getCurrentPreset());
-  const activeGrammar = activePreset.grammar || 
+  const activeGrammar =
+    activePreset.grammar ||
     ({ parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any);
-  
+
   const ruleRunner = createRuleRunner(
     getRuleRegistry(),
     analyzer,
@@ -31,13 +37,17 @@ export function createLinterServices() {
     }
   );
 
-  // Higher-level services
-  const elementLintService = createElementLintService({ styleService, ruleRunner });
-  const pageLintService = createPageLintService({ styleService, ruleRunner });
+  // Higher-level services - now using shared context service
+  const elementLintService = createElementLintService({
+    contextService,
+    ruleRunner,
+  });
+  const pageLintService = createPageLintService({ contextService, ruleRunner });
 
   return {
     styleService,
     analyzer,
+    contextService,
     ruleRunner,
     elementLintService,
     pageLintService,

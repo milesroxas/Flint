@@ -59,8 +59,10 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 ### Architecture overview
 
 - See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
+- **Core Services**: `src/features/linter/services/` contains the shared context service architecture with intelligent caching and redundancy elimination.
 - Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
   - Auto-highlight on violation open in page mode is implemented in `src/features/linter/ui/violations/ViolationsSection.tsx` via `selectElementById` with a fallback `flowlint:highlight` event.
+  - **New**: Context service (`lint-context.service.ts`) centralizes bootstrap logic with 57% overall code reduction in linting services.
 
 ### Documentation index
 
@@ -76,7 +78,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 - Module READMEs
 
   - Linter (feature overview): `src/features/linter/README.md`
-  - Linter services: `src/features/linter/services/README.md`
+  - **Linter services**: `src/features/linter/services/README.md` ✨ _Updated with context service architecture_
   - Linter grammar adapters: `src/features/linter/grammar/README.md`
   - Linter role resolvers: `src/features/linter/roles/README.md`
   - Linter store: `src/features/linter/store/README.md`

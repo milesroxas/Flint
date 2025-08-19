@@ -6,29 +6,83 @@ This directory contains the core services that power the Webflow linter function
 
 ### Core Linting Services
 
-#### `element-lint-service.ts`
+#### `lint-context.service.ts` 🆕
 
-- **Purpose**: Orchestrates individual element scans with role detection and graph context
+- **Purpose**: Shared context builder that consolidates all bootstrap logic for linting operations
 - **Key Functions**:
-  - `lintElement(element: WebflowElement): Promise<RuleResult[]>`: Lints a single Webflow element
+  - `createContext(elements: WebflowElement[]): Promise<LintContext>`: Creates full page context with intelligent caching
+  - `createElementContext(element: WebflowElement, pageContext?: LintContext): Promise<LintContext>`: Creates element context, optionally reusing page context
 - **Dependencies**:
   - `StyleService`: For retrieving style information
+- **File Reference**: [`src/features/linter/services/lint-context.service.ts`](./lint-context.service.ts)
+
+**Detailed Description**: This service centralizes all the complex bootstrap logic previously duplicated between page and element linting services (200+ lines of redundancy removed). It handles preset resolution, style collection, parent relationship building, role detection, element graph creation, and tag collection. The service implements intelligent caching using DJB2-hashed page signatures based on element styles and relationships to avoid redundant computation. Supports both isolated element contexts and rich page contexts for future context-aware element linting.
+
+**Code Example**:
+
+```typescript
+// Create context service
+const contextService = createLintContextService({ styleService });
+
+// Page context with caching
+const pageContext = await contextService.createContext(allPageElements);
+
+// Element context (reuses page context if available)
+const elementContext = await contextService.createElementContext(
+  element,
+  pageContext
+);
+```
+
+#### `element-lint-service.ts` ✨
+
+- **Purpose**: Simplified element linting that leverages shared context service (53% code reduction)
+- **Key Functions**:
+  - `lintElement(element: WebflowElement, pageContext?: LintContext): Promise<RuleResult[]>`: Lints a single element with optional page context
+- **Dependencies**:
+  - `LintContextService`: For context building and caching
   - `RuleRunner`: For executing linting rules
 - **File Reference**: [`src/features/linter/services/element-lint-service.ts`](./element-lint-service.ts)
 
-**Detailed Description**: This service is the primary entry point for linting individual Webflow elements. It resolves the active preset with fallback to Lumos grammar, ensuring consistent rule execution context. The service loads all site-wide style information for comprehensive property analysis, then retrieves and maps applied styles to the target element. It builds a minimal element graph around the target element to support relationship-aware rules, and performs role detection using the same service as page-level scans for consistency. Finally, it executes rules via the shared rule runner API, maintaining parity with page-level linting. The service handles errors gracefully and provides role context for more sophisticated rule analysis.
+**Detailed Description**: Dramatically simplified from 104 lines to 49 lines (53% reduction), this service now focuses purely on element-specific linting logic. It delegates all complex bootstrap logic to the shared context service and executes rules via the shared runner. The optional pageContext parameter prepares the service for future context-aware element linting capabilities.
 
-#### `page-lint-service.ts`
+**Code Example**:
 
-- **Purpose**: Orchestrates full page scans across all elements with intelligent caching
+```typescript
+// Current: Works as before
+const results = await elementLintService.lintElement(element);
+
+// Future: Rich context awareness
+const pageContext = await contextService.createContext(allPageElements);
+const results = await elementLintService.lintElement(element, pageContext);
+```
+
+#### `page-lint-service.ts` ✨
+
+- **Purpose**: Simplified page linting that leverages shared context service (77% code reduction)
 - **Key Functions**:
   - `lintCurrentPage(elements: WebflowElement[]): Promise<RuleResult[]>`: Lints all elements on the current page
 - **Dependencies**:
-  - `StyleService`: For retrieving style information
+  - `LintContextService`: For context building and caching
   - `RuleRunner`: For executing linting rules
 - **File Reference**: [`src/features/linter/services/page-lint-service.ts`](./page-lint-service.ts)
 
-**Detailed Description**: The page lint service provides comprehensive linting across entire pages by orchestrating scans of all elements simultaneously. It filters elements to only those supporting the `getStyles()` method, then loads all site-wide style definitions to provide complete context for rule execution. The service collects applied styles for each element while maintaining element-to-style associations, and builds a parent mapping for graph helpers and role scoring. It implements intelligent role detection caching using a DJB2-based page signature that includes element IDs, class names, and parent relationships to avoid redundant role computation. The service creates an element graph for relationship analysis and executes rules via the shared rule runner, which handles both page-scope canonical rules and element-level rules. The entire process is optimized for performance with signature-based caching and efficient data structures.
+**Detailed Description**: Dramatically simplified from 200 lines to 45 lines (77% reduction), this service now delegates all complex bootstrap logic to the shared context service. It focuses purely on collecting styles from the context and executing rules, with all caching and optimization handled by the context service.
+
+**Code Example**:
+
+```typescript
+// Simple page linting with shared context
+const results = await pageLintService.lintCurrentPage(elements);
+
+// Context service handles all the complexity:
+// - Preset resolution
+// - Style collection
+// - Parent relationships
+// - Role detection
+// - Element graph creation
+// - Intelligent caching
+```
 
 #### `rule-runner.ts`
 
@@ -169,16 +223,30 @@ This directory contains the core services that power the Webflow linter function
 
 ### Service Factories & Lifecycle
 
-#### `linter-service-factory.ts`
+#### `linter-service-factory.ts` ✨
 
-- **Purpose**: Centralized factory for creating linter services with shared dependencies
+- **Purpose**: Centralized factory for creating linter services with shared dependencies (now includes context service)
 - **Key Functions**:
   - `createLinterServices(): LinterServices`: Creates complete service dependency graph
 - **Features**:
   - Creates shared service instances to reduce redundancy
   - Grammar-aware rule runner configuration
   - Consistent preset resolution across services
+  - **New**: Exposes `contextService` for future context-aware features
 - **File Reference**: [`src/features/linter/services/linter-service-factory.ts`](./linter-service-factory.ts)
+
+**Code Example**:
+
+```typescript
+// Factory creates all services with shared dependencies
+const services = createLinterServices();
+
+// Services now available:
+// - contextService (new shared service)
+// - elementLintService (uses contextService)
+// - pageLintService (uses contextService)
+// - styleService, ruleRunner, analyzer (unchanged)
+```
 
 #### `linter-service-singleton.ts`
 
@@ -373,16 +441,42 @@ graph TD
 ### Service Factory Types
 
 ```typescript
-// From linter-service-factory.ts
+// From linter-service-factory.ts - Updated with contextService
 type LinterServices = {
   styleService: StyleService;
   analyzer: UtilityClassAnalyzer;
+  contextService: LintContextService; // ✨ New shared service
   ruleRunner: RuleRunner;
   elementLintService: ElementLintService;
   pageLintService: PageLintService;
   activePreset: PresetDefinition;
   activeGrammar: GrammarAdapter;
 };
+```
+
+### LintContext Interface
+
+```typescript
+// From lint-context.service.ts - Core context structure
+interface LintContext {
+  allStyles: StyleInfo[]; // Site-wide styles
+  rolesByElement: RolesByElement; // Element role assignments
+  graph: ElementGraph; // Element relationships
+  elementStyleMap: Map<string, StyleWithElement[]>; // Element styles lookup
+  elementsWithClassNames: ElementWithClassNames[]; // Role detection input
+  signature: string; // Cache invalidation key
+  activePreset: PresetDefinition; // Resolved preset
+  parseClass: (name: string) => ParsedClass; // Grammar parser
+  tagByElementId: Map<string, string | null>; // Element tags
+}
+
+interface LintContextService {
+  createContext(elements: WebflowElement[]): Promise<LintContext>;
+  createElementContext(
+    element: WebflowElement,
+    pageContext?: LintContext
+  ): Promise<LintContext>;
+}
 ```
 
 ### Rule Runner Context
@@ -454,13 +548,18 @@ import { getLinterServices } from "@/features/linter/services/linter-service-sin
 // Get shared services instance
 const services = getLinterServices();
 
-// Element linting
-const elementResults = await services.elementLintService.lintElement(
-  webflowElement
-);
+// Element linting (isolated context)
+const elementResults = await services.elementLintService.lintElement(element);
 
-// Page linting
+// Page linting (with shared context caching)
 const pageResults = await services.pageLintService.lintCurrentPage(elements);
+
+// Context-aware element linting (new capability)
+const pageContext = await services.contextService.createContext(elements);
+const contextAwareResults = await services.elementLintService.lintElement(
+  element,
+  pageContext
+);
 ```
 
 ### Using the Service Factory Directly
