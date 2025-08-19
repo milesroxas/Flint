@@ -17,6 +17,7 @@ import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 
 import { createRoleDetectionService } from "@/features/linter/services/role-detection.service";
 import { createElementGraphService } from "@/entities/element/services/element-graph.service";
+import { createParentRelationshipService } from "@/entities/element/services/parent-relationship.service";
 
 import type {
   StyleInfo,
@@ -113,20 +114,17 @@ export function createPageLintService(deps: {
       }));
 
     // 4) Build parent map for graph helpers and role scoring
-    const parentIdByChildId: Record<string, string | null> = {};
-    for (const { element } of elementStylePairs) {
-      const id = toElementKey(element);
-      let parentId: string | null = null;
-      if (typeof (element as any).getParent === "function") {
-        try {
-          const parent = await (element as any).getParent();
-          parentId = parent ? toElementKey(parent) : null;
-        } catch {
-          parentId = null;
-        }
-      }
-      parentIdByChildId[id] = parentId;
-    }
+    const parentRelationshipService = createParentRelationshipService();
+    const validElementsForGraph = elementStylePairs.map(
+      ({ element }) => element
+    );
+    const parentIdByChildId =
+      await parentRelationshipService.buildParentChildMap(
+        validElementsForGraph
+      );
+
+    // DEBUG: Log final parent map
+    console.log("[DEBUG] Complete parentIdByChildId map:", parentIdByChildId);
 
     // 5) Detect roles once per page with caching
     const activePreset = resolvePresetOrFallback(getCurrentPreset());

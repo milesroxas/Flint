@@ -39,6 +39,7 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
 
     const parentIdByChildId = new Map<string, string | null>();
     const classesByElementId = new Map<string, string[]>();
+    const elementById = new Map<string, WebflowElement | undefined>();
 
     for (const item of elements) {
       const element = item.element as WebflowElement | undefined;
@@ -49,6 +50,63 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       classesByElementId.set(elId, classNames);
 
       parentIdByChildId.set(elId, getParentId(element));
+      elementById.set(elId, element);
+    }
+
+    // Build children index from parent map
+    const childrenIdsByParentId = new Map<string, string[]>();
+    for (const [childId, parentId] of parentIdByChildId.entries()) {
+      if (!parentId) continue;
+      const list = childrenIdsByParentId.get(parentId) ?? [];
+      list.push(childId);
+      childrenIdsByParentId.set(parentId, list);
+    }
+
+    // Build stable snapshots for detectors with ancestry context
+    const snapshots: {
+      readonly id: string;
+      readonly tagName: string;
+      readonly classes: readonly string[];
+      readonly parentId: string | null;
+      readonly childrenIds: readonly string[];
+      readonly textContent?: string;
+      readonly attributes: Readonly<Record<string, string>>;
+    }[] = [];
+    const snapshotById = new Map<string, any>();
+
+    for (const [id, _el] of elementById.entries()) {
+      const el = _el as any;
+      const classes = classesByElementId.get(id) ?? [];
+      const parentId = parentIdByChildId.get(id) ?? null;
+      const childrenIds = childrenIdsByParentId.get(id) ?? [];
+      const tagName = (el?.tagName || "div") as string;
+      const textContent = (el?.textContent ?? undefined) as string | undefined;
+      const attributes: Record<string, string> = (() => {
+        try {
+          const attrs = el?.attributes;
+          if (!attrs || typeof attrs !== "object") return {};
+          // Normalize a shallow copy of string-like attributes
+          const out: Record<string, string> = {};
+          for (const [k, v] of Object.entries(attrs)) {
+            if (typeof v === "string") out[k] = v;
+          }
+          return out;
+        } catch {
+          return {};
+        }
+      })();
+
+      const snap = {
+        id,
+        tagName,
+        classes,
+        parentId,
+        childrenIds,
+        textContent,
+        attributes,
+      } as const;
+      snapshots.push(snap);
+      snapshotById.set(id, snap);
     }
 
     // Track best scores for singleton main enforcement
@@ -65,30 +123,20 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
         continue;
       }
 
-      const classNames = classesByElementId.get(elementId) ?? [];
-
       let bestRole: RolesByElement[string] | null = null;
       let bestScore = -1;
 
+      // Prepare shared detection context (currently no style/page signals wired)
+      const detectionContext = {
+        allElements: snapshots,
+        styleInfo: [],
+        pageInfo: {},
+      } as const;
+
       for (const detector of detectors) {
         try {
-          // Create ElementSnapshot for the detector
-          const elementSnapshot = {
-            id: elementId,
-            tagName: (element as any)?.tagName || "div",
-            classes: classNames || [],
-            parentId: (element as any)?.parentId || null,
-            childrenIds: (element as any)?.childrenIds || [],
-            textContent: (element as any)?.textContent,
-            attributes: (element as any)?.attributes || {},
-          };
-
-          // Create DetectionContext (minimal for now)
-          const detectionContext = {
-            allElements: [], // TODO: populate when needed
-            styleInfo: [], // TODO: populate when needed
-            pageInfo: {}, // TODO: populate when needed
-          };
+          const elementSnapshot = snapshotById.get(elementId);
+          if (!elementSnapshot) continue;
 
           const scored = detector.detect(elementSnapshot, detectionContext);
 
@@ -110,6 +158,18 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       result[elementId] =
         bestRole && bestScore >= threshold ? bestRole : "unknown";
       scoresByElement[elementId] = { best: bestScore, role: result[elementId] };
+
+      // DEBUG: Log role detection results
+      if (bestRole === "section" || bestRole === "main" || bestScore > 0) {
+        const snapshot = snapshotById.get(elementId);
+        console.log(`[DEBUG] Role detection for ${elementId}:`, {
+          classes: snapshot?.classes || [],
+          bestRole,
+          bestScore,
+          threshold,
+          finalRole: result[elementId],
+        });
+      }
     }
 
     // Enforce singleton `main`: keep highest-scoring, demote others to unknown

@@ -12,6 +12,7 @@ import { resolvePresetOrFallback } from "@/features/linter/presets";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 import { createRoleDetectionService } from "@/features/linter/services/role-detection.service";
 import { createElementGraphService } from "@/entities/element/services/element-graph.service";
+import { createParentRelationshipService } from "@/entities/element/services/parent-relationship.service";
 import { toElementKey } from "@/entities/element/lib/id";
 
 import type {
@@ -53,17 +54,12 @@ export function createElementLintService(deps: {
       elementId,
     }));
 
-    // 4) Build a minimal graph around the element
-    //    Parent and ancestors are enough for most role-aware rules at element scope
-    const parent =
-      typeof (element as any).getParent === "function"
-        ? await (element as any).getParent().catch(() => null)
-        : null;
-    const parentId = parent ? toElementKey(parent) : null;
+    // 4) Build a minimal graph around the element using parent relationship service
+    const parentRelationshipService = createParentRelationshipService();
+    const parentIdByChildId =
+      await parentRelationshipService.buildParentChildMap([element]);
 
-    const graph = createElementGraphService([element], {
-      [elementId]: parentId,
-    });
+    const graph = createElementGraphService([element], parentIdByChildId);
 
     // 5) Detect roles using the same service as page scans
     const roleDetection = createRoleDetectionService({

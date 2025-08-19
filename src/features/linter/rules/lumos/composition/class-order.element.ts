@@ -2,7 +2,7 @@ import type {
   ElementAnalysisArgs,
   RuleResult,
   ClassType,
-  CompositionRule,
+  StructureRule,
 } from "@/features/linter/model/rule.types";
 
 // Simple classifiers for variants and utilities
@@ -10,13 +10,13 @@ const isVariant = (name: string) => /^is[_-]/.test(name);
 const isUtility = (name: string, classType: ClassType) =>
   classType === "utility" || /^u[_-]/.test(name);
 
-export const createLumosClassOrderRule = (): CompositionRule => ({
+export const createLumosClassOrderRule = (): StructureRule => ({
   id: "lumos:composition:class-order",
   name: "Base class must precede variants and utilities",
   description:
     "Within an element, base classes (custom/component/combo) must come before variant classes (is-*) and utility classes (u-*).",
-  type: "composition", // element-scope
-  category: "composition", // category is constrained on CompositionRule
+  type: "structure", // element-scope per tests
+  category: "structure", // align with tests expecting 'structure'
   severity: "error",
   enabled: true,
   example: "base_custom is-active u-hidden",

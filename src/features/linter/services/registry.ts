@@ -9,7 +9,7 @@ import { createRuleConfigurationService } from "@/features/linter/services/rule-
 import type { Rule } from "@/features/linter/model/rule.types";
 import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
 import { createMainSingletonPageRule } from "@/features/linter/rules/canonical/main-singleton.page";
-import { createMainHasContentPageRule } from "@/features/linter/rules/canonical/main-children.page";
+import { createMainChildrenPageRule } from "@/features/linter/rules/canonical/main-children.page";
 
 // Global registry instance
 export const ruleRegistry = createRuleRegistry();
@@ -32,7 +32,7 @@ export function initializeRuleRegistry(
   // 2) register canonical page rules globally (preset-agnostic)
   ruleRegistry.registerPageRules([
     createMainSingletonPageRule(),
-    createMainHasContentPageRule(),
+    createMainChildrenPageRule(),
   ]);
 
   // 3) register canonical element rules globally (preset-agnostic)
