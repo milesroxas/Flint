@@ -75,8 +75,17 @@ export function createElementLintService(deps: {
       { element, classNames: applied.map((s) => s.name).filter(Boolean) },
     ]);
 
-    // 6) Execute rules via the same runner API used by page scans
+    // 6) Get tag for this element synchronously for rules that need it
+    let elementTag: string | null = null;
+    try {
+      elementTag = await graph.getTag(elementId);
+    } catch (error) {
+      console.warn(`Failed to get tag for element ${elementId}:`, error);
+    }
+
+    // 7) Execute rules via the same runner API used by page scans
     //    Keep the call signature identical to page-lint-service for parity
+    //    But skip page rules since we only have one element context
     const results = ruleRunner.runRulesOnStylesWithContext(
       appliedWithElement,
       {},
@@ -85,7 +94,10 @@ export function createElementLintService(deps: {
       graph.getParentId,
       graph.getChildrenIds,
       graph.getAncestorIds,
-      parseClass
+      parseClass,
+      { getTag: graph.getTag },
+      (id: string) => (id === elementId ? elementTag : null), // Only this element's tag available
+      true // skipPageRules = true for element lint mode
     );
 
     return results;

@@ -26,8 +26,6 @@ import { StyleService } from "@/entities/style/services/style.service";
 
 import type { RuleRunner } from "@/features/linter/services/rule-runner";
 
-const DEBUG = false;
-
 export type PageLintService = ReturnType<typeof createPageLintService>;
 
 export function createPageLintService(deps: {
@@ -36,9 +34,11 @@ export function createPageLintService(deps: {
 }) {
   const { styleService, ruleRunner } = deps;
 
-  // Cache roles for the current DOM signature to avoid re-detecting
+  // Cache roles and tags for the current DOM signature to avoid re-detecting
   let rolesCacheSignature: string | null = null;
   let cachedRolesByElement: RolesByElement | null = null;
+  let tagCacheSignature: string | null = null;
+  let cachedTagsByElement: Map<string, string | null> | null = null;
 
   function toElementKey(el: any): string {
     return String((el?.id && el.id.element) ?? el?.id ?? el?.nodeId ?? "");
@@ -85,10 +85,6 @@ export function createPageLintService(deps: {
     // 1) Site-wide style context
     const allStyles: StyleInfo[] =
       await styleService.getAllStylesWithProperties();
-    if (DEBUG)
-      console.log(
-        `[PageLintService] Loaded ${allStyles.length} styles site-wide`
-      );
 
     // 2) Collect applied styles with normalized element ids
     const elementStylePairs = await Promise.all(
@@ -106,10 +102,6 @@ export function createPageLintService(deps: {
     const allAppliedStyles: StyleWithElement[] = elementStylePairs.flatMap(
       (p) => p.styles
     );
-    if (DEBUG)
-      console.log(
-        `[PageLintService] Collected ${allAppliedStyles.length} applied style instances`
-      );
 
     // 3) Build ElementWithClassNames for role detection
     const elementsWithClassNames: ElementWithClassNames[] =
@@ -148,7 +140,6 @@ export function createPageLintService(deps: {
 
     if (rolesCacheSignature === sig && cachedRolesByElement) {
       rolesByElement = cachedRolesByElement;
-      if (DEBUG) console.log("[PageLintService] Using cached roles");
     } else {
       const roleDetection = createRoleDetectionService({
         detectors: [...roleDetectors],
@@ -157,14 +148,37 @@ export function createPageLintService(deps: {
       rolesByElement = roleDetection.detectRolesForPage(elementsWithClassNames);
       rolesCacheSignature = sig;
       cachedRolesByElement = rolesByElement;
-      if (DEBUG) console.log("[PageLintService] Computed roles for page");
     }
 
-    // 6) Graph helpers
+    // 6) Graph helpers and tag collection
     const graph = createElementGraphService(
       elementStylePairs.map((p) => p.element),
       parentIdByChildId
     );
+
+    // 6.5) Collect tag information with caching
+    let tagByElementId: Map<string, string | null>;
+
+    if (tagCacheSignature === sig && cachedTagsByElement) {
+      tagByElementId = cachedTagsByElement;
+    } else {
+      tagByElementId = new Map<string, string | null>();
+      await Promise.all(
+        elementStylePairs.map(async ({ element }) => {
+          const id = toElementKey(element);
+
+          try {
+            const tag = await graph.getTag(id);
+
+            tagByElementId.set(id, tag);
+          } catch (error) {
+            tagByElementId.set(id, null);
+          }
+        })
+      );
+      tagCacheSignature = sig;
+      cachedTagsByElement = tagByElementId;
+    }
 
     // 7) Run rules via runner (page and element rules are handled by the runner)
     const results = ruleRunner.runRulesOnStylesWithContext(
@@ -175,15 +189,10 @@ export function createPageLintService(deps: {
       graph.getParentId,
       graph.getChildrenIds,
       graph.getAncestorIds,
-      (name: string) => (activePreset.grammar ?? lumosGrammar).parse(name)
+      (name: string) => (activePreset.grammar ?? lumosGrammar).parse(name),
+      { getTag: graph.getTag },
+      (id: string) => tagByElementId.get(id) ?? null
     );
-
-    if (DEBUG)
-      console.log(
-        `[PageLintService] Lint complete with ${results.length} result${
-          results.length === 1 ? "" : "s"
-        }`
-      );
 
     return results;
   }

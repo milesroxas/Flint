@@ -44,7 +44,7 @@ export interface ElementGraphApi {
   getChildrenIds(id: ElementId): ElementId[];
   getAncestorIds(id: ElementId): ElementId[];
   getDescendantIds(id: ElementId): ElementId[];
-  getTagName(id: ElementId): string | null;
+  getTag(id: ElementId): Promise<string | null>;
 }
 
 /** Style context used by rules but defined by the linter runtime */

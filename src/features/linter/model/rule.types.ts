@@ -179,6 +179,7 @@ export interface PageAnalysisArgs {
     severity: Severity;
     customSettings: T;
   };
+  getTagName(id: string): string | null;
 }
 
 // -------------------------

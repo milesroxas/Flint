@@ -43,10 +43,7 @@ export const createRuleRunner = (
         if (isComboFlag === true) return "combo";
         return "custom";
       } catch {
-        console.error(`Error resolving class type for ${className}`, {
-          className,
-          isComboFlag,
-        });
+        console.error(`Error resolving class type for ${className}`);
       }
     }
     return isComboFlag === true ? "combo" : "custom";
@@ -98,7 +95,10 @@ export const createRuleRunner = (
     getParentId?: (elementId: string) => string | null,
     getChildrenIds?: (elementId: string) => string[],
     getAncestorIds?: (elementId: string) => string[],
-    parseClass?: (name: string) => ParsedClass
+    parseClass?: (name: string) => ParsedClass,
+    graph?: { getTag?: (id: string) => Promise<string | null> },
+    getTagName?: (id: string) => string | null,
+    skipPageRules: boolean = false
   ): RuleResult[] => {
     const results: RuleResult[] = [];
 
@@ -141,7 +141,7 @@ export const createRuleRunner = (
       }
     }
 
-    if (ruleRegistry.getPageRules) {
+    if (ruleRegistry.getPageRules && !skipPageRules) {
       const pageRules = ruleRegistry.getPageRules().filter((r) => {
         const cfg = ruleRegistry.getRuleConfiguration(r.id);
         return (cfg?.enabled ?? true) === true;
@@ -154,8 +154,10 @@ export const createRuleRunner = (
             getParentId: getParentId ?? (() => null),
             getChildrenIds: getChildrenIds ?? (() => []),
             getAncestorIds: getAncestorIds ?? (() => []),
+            getDescendantIds: () => [], // Simple fallback - no descendants available in this context
+            getTag: graph?.getTag ?? (async () => await Promise.resolve(null)), // Use provided getTag or fallback
           },
-          styles: [],
+          styles: stylesWithElement,
           getRoleForElement: (id: string) => rolesByElement?.[id] || "unknown",
           getRuleConfig: (ruleId: string) => ({
             ruleId,
@@ -163,6 +165,7 @@ export const createRuleRunner = (
             severity: "error",
             customSettings: {} as any,
           }),
+          getTagName: getTagName ?? (() => null),
         });
         // normalize severity from config
         const cfg = ruleRegistry.getRuleConfiguration(pr.id);

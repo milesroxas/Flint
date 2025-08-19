@@ -422,6 +422,8 @@ interface ElementGraph {
   getParentId: (id: string) => string | null;
   getChildrenIds: (id: string) => string[];
   getAncestorIds: (id: string) => string[];
+  getDescendantIds: (id: string) => string[];
+  getTag: (id: string) => Promise<string | null>;
 }
 ```
 

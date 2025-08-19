@@ -7,6 +7,7 @@ import type {
   ElementWithClassNames,
   WebflowElement,
 } from "@/entities/element/model/element.types";
+import { toElementKey } from "@/entities/element/lib/id";
 
 interface CreateArgs {
   detectors: RoleDetector[];
@@ -15,19 +16,6 @@ interface CreateArgs {
 
 const DEFAULT_CONFIG: RoleDetectionConfig = { threshold: 0.6 };
 
-/** Best-effort, stable element id extraction */
-function getElementId(el: WebflowElement | undefined): string {
-  // Prefer plain id → nodeId → nested { element } shape (older adapters)
-  const id =
-    (el as any)?.id ??
-    (el as any)?.nodeId ??
-    (el as any)?.element?.id ??
-    (el as any)?.element ??
-    "";
-  return String(id);
-}
-
-/** Try to read a parent id if the element object exposes one */
 function getParentId(el: WebflowElement | undefined): string | null {
   const pid =
     (el as any)?.parentId ??
@@ -36,8 +24,6 @@ function getParentId(el: WebflowElement | undefined): string | null {
     null;
   return pid ? String(pid) : null;
 }
-
-// No longer used with ElementSnapshot approach
 
 export function createRoleDetectionService({ detectors, config }: CreateArgs) {
   const effectiveConfig: RoleDetectionConfig = {
@@ -51,13 +37,12 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
     const threshold = Math.max(0, Math.min(1, effectiveConfig.threshold));
     const result: RolesByElement = {};
 
-    // Build parent map (best-effort) to compute ancestry if possible
     const parentIdByChildId = new Map<string, string | null>();
     const classesByElementId = new Map<string, string[]>();
 
     for (const item of elements) {
       const element = item.element as WebflowElement | undefined;
-      const elId = getElementId(element);
+      const elId = toElementKey(element);
       if (!elId) continue;
 
       const classNames = (item.classNames ?? []).filter(Boolean);
@@ -65,8 +50,6 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
 
       parentIdByChildId.set(elId, getParentId(element));
     }
-
-    // No longer used with ElementSnapshot approach
 
     // Track best scores for singleton main enforcement
     const scoresByElement: Record<
@@ -76,13 +59,13 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
 
     for (const item of elements) {
       const element = item.element as WebflowElement | undefined;
-      const elementId = getElementId(element);
-      if (!elementId) continue;
+      const elementId = toElementKey(element);
+      if (!elementId) {
+        console.log("[DEBUG] Skipping element with no ID:", item);
+        continue;
+      }
 
       const classNames = classesByElementId.get(elementId) ?? [];
-      // These are no longer used with the new ElementSnapshot/DetectionContext approach
-      // const parsedFirstCustom = getFirstCustom(grammar, classNames);
-      // const ancestryIds = getAncestry(elementId);
 
       let bestRole: RolesByElement[string] | null = null;
       let bestScore = -1;
@@ -108,12 +91,17 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
           };
 
           const scored = detector.detect(elementSnapshot, detectionContext);
+
           if (!scored) continue;
           if (scored.score > bestScore) {
             bestScore = scored.score;
             bestRole = scored.role;
           }
-        } catch {
+        } catch (error) {
+          console.error(
+            `[DEBUG] Detector ${detector.id} error for element ${elementId}:`,
+            error
+          );
           // detector errors are non-fatal; continue
         }
       }

@@ -15,6 +15,7 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
   rules: [
     // Naming rules
     lumosRules.createLumosCustomClassFormatRule(),
+    lumosRules.createLumosComboClassFormatRule(),
 
     // Structure rules
     lumosRules.createLumosClassOrderRule(),

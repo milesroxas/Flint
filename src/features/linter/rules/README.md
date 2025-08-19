@@ -3,10 +3,7 @@
 This directory contains all rules that the linter executes. It includes:
 
 - Canonical, preset‑agnostic structural rules (shared by all presets)
-- Preset‑specific naming and property rules (e.g., Lumos, Client‑First)
-- A small set of legacy‑compatible, context‑aware rules that do not conflict with the canonical role rules
-
-This document reflects the current implementation and how to extend it safely.
+- Preset‑specific rules (e.g., Lumos, Client‑First) organized by Rule Type
 
 ---
 
