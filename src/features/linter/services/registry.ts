@@ -34,14 +34,12 @@ export function initializeRuleRegistry(
     createMainSingletonPageRule(),
     createMainChildrenPageRule(),
   ]);
-
-  // 3) register canonical element rules globally (preset-agnostic)
   ruleRegistry.registerRules([createChildGroupKeyMatchRule()]);
 
-  // 4) apply opinion mode adjustments
+  // 3) apply opinion mode adjustments
   applyOpinionMode(ruleRegistry, mode);
 
-  // 5) load any persisted user settings and apply
+  // 4) load any persisted user settings and apply
   const userConfigs = ruleConfigService.load();
   userConfigs.forEach((cfg) =>
     ruleRegistry.updateRuleConfiguration(cfg.ruleId, {
