@@ -54,41 +54,6 @@ export function invalidatePageContextCache(): void {
  * Find the section element that represents a component boundary.
  * Walks up the ancestor chain to find a section element.
  */
-async function findSectionRoot(
-  element: WebflowElement
-): Promise<WebflowElement | null> {
-  let current: WebflowElement | null = element;
-
-  while (current) {
-    try {
-      // Check if current element is a section
-      const styles = await (current as any).getStyles?.();
-      const classNames = (styles || [])
-        .map((style: any) => style.name)
-        .filter((name: string) => name && name.trim() !== "");
-
-      // Check for section patterns across presets
-      const isSection = classNames.some(
-        (name: string) =>
-          name === "u-section" ||
-          /^section[_-]/.test(name) ||
-          name === "page_main" // Lumos main pattern
-      );
-
-      if (isSection || (current as any).tagName?.toLowerCase() === "section") {
-        return current;
-      }
-
-      // Move to parent
-      current = await (current as any).getParent?.();
-    } catch {
-      // If we can't access parent or styles, break the chain
-      break;
-    }
-  }
-
-  return null;
-}
 
 /**
  * Recursively gather all descendants of an element
