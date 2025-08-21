@@ -25,6 +25,35 @@ function parseCustom(name: string): ParsedClass {
   if (tokens.length > 2)
     parsed.variation = tokens.slice(1, -1).join("_") || undefined;
   if (tokens.length >= 2) parsed.elementToken = tokens[tokens.length - 1];
+
+  // Extract componentKey: for wrapper patterns, exclude the wrapper suffix
+  // e.g., "home-testimonials_wrapper" -> "home_testimonials", "home-testimonial-cta_wrapper" -> "home_testimonial"
+  if (tokens.length >= 2) {
+    const lastToken = tokens[tokens.length - 1]?.toLowerCase();
+    if (lastToken === "wrap" || lastToken === "wrapper") {
+      // Remove wrapper suffix and use the remaining tokens as componentKey
+      const keyTokens = tokens.slice(0, -1);
+      if (keyTokens.length >= 2) {
+        // For child groups, use the first two tokens to match component root
+        parsed.componentKey = keyTokens.slice(0, 2).join("_");
+      } else if (keyTokens.length === 1) {
+        // For simple wrappers, use the single token
+        parsed.componentKey = keyTokens[0];
+      } else {
+        parsed.componentKey = null;
+      }
+    } else {
+      // For non-wrapper classes, use first two tokens if available
+      if (tokens.length >= 2) {
+        parsed.componentKey = tokens.slice(0, 2).join("_");
+      } else {
+        parsed.componentKey = tokens[0] || null;
+      }
+    }
+  } else {
+    parsed.componentKey = null;
+  }
+
   return parsed;
 }
 

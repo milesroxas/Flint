@@ -6,10 +6,10 @@ import type {
 
 export const createChildGroupKeyMatchRule = (): Rule => ({
   id: "canonical:childgroup-key-match",
-  name: "Child group key must match nearest component root",
+  name: "Child group component key must match nearest component root",
   description:
-    "Child group component key must match its nearest component root.",
-  example: "hero_primary_wrap → hero_primary_cta_wrap",
+    "Child groups must share the same component key (name_variant) with their nearest component root ancestor to maintain consistent component naming.",
+  example: "hero_primary_wrap (root) → hero_primary_cta_wrap (child group)",
   category: "structure",
   type: "structure",
   severity: "error",
@@ -24,26 +24,68 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     getClassType,
     getClassNamesForElement,
   }) => {
-    if (!elementId || !getRoleForElement) return [];
+    // DEBUG: Log all rule execution attempts
+    console.log(
+      `[DEBUG] child-group-key-match rule executing for element ${elementId}`
+    );
+    console.log(
+      `[DEBUG] Element classes:`,
+      classes?.map((c) => c.className)
+    );
+
+    if (!elementId || !getRoleForElement) {
+      console.log(
+        `[DEBUG] Missing required dependencies: elementId=${!!elementId}, getRoleForElement=${!!getRoleForElement}`
+      );
+      return [];
+    }
 
     const role: ElementRole = getRoleForElement(elementId) ?? "unknown";
-    if (role !== "childGroup") return [];
+    console.log(`[DEBUG] Element ${elementId} has role: ${role}`);
+
+    // Only analyze elements that have been identified as child groups by the detectors
+    // This ensures component roots and sections are never processed as child groups
+    if (role !== "childGroup") {
+      // Log when we skip elements for role reasons
+      if (role !== "unknown") {
+        console.log(
+          `[DEBUG] Skipping element ${elementId} with role ${role} (not childGroup)`
+        );
+      }
+      return [];
+    }
+
+    console.log(`[DEBUG] Processing childGroup element ${elementId}`);
 
     // Required helpers; if missing, skip to avoid false positives
     if (!parseClass || !getAncestorIds || !getClassNamesForElement) return [];
 
     // Find nearest componentRoot ancestor
     const ancestors = getAncestorIds(elementId) ?? [];
+    console.log(`[DEBUG] Ancestors for ${elementId}:`, ancestors);
+
+    // Log roles for all ancestors
+    const ancestorRoles = ancestors.map((id) => ({
+      id,
+      role: getRoleForElement(id),
+    }));
+    console.log(`[DEBUG] Ancestor roles:`, ancestorRoles);
+
     const rootId = ancestors.find(
       (id) => getRoleForElement(id) === "componentRoot"
     );
+
+    console.log(`[DEBUG] Found component root:`, rootId);
+
     if (!rootId) {
+      // This should be rare now that we have structural detection
       const first = classes[0];
       return [
         {
           ruleId: "canonical:childgroup-key-match",
-          name: "Child group key must match nearest component root",
-          message: "Child group has no component root ancestor.",
+          name: "Child group component key must match nearest component root",
+          message:
+            "Child group has no component root ancestor (structural validation failed).",
           severity: "error",
           elementId,
           className: first?.className ?? "",
@@ -52,7 +94,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
       ];
     }
 
-    // --- Child group's base custom class
+    // Extract child group's component key
     const baseChild =
       classes.find(
         (c) =>
@@ -64,7 +106,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
       parseClass(baseChild?.className ?? "") ?? null;
     const childKey = childParsed?.componentKey ?? null;
 
-    // --- Root's base custom class
+    // Extract component root's component key
     const rootClassNames = getClassNamesForElement(rootId) ?? [];
     const rootBaseName =
       rootClassNames.find(
@@ -74,13 +116,29 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     const rootParsed: ParsedClass | null = parseClass(rootBaseName) ?? null;
     const rootKey = rootParsed?.componentKey ?? null;
 
+    // Validate component key matching
     if (!childKey || !rootKey || childKey !== rootKey) {
+      let message: string;
+      let actionableAdvice = "";
+
+      if (!childKey) {
+        message = `Child group component key could not be extracted from "${baseChild?.className}".`;
+        actionableAdvice =
+          " Ensure child group follows naming pattern like 'hero_primary_content_wrap'.";
+      } else if (!rootKey) {
+        message = `Component root key could not be extracted from "${rootBaseName}".`;
+        actionableAdvice =
+          " Ensure component root follows naming pattern like 'hero_primary_wrap'.";
+      } else {
+        message = `Child group key "${childKey}" does not match component root key "${rootKey}".`;
+        actionableAdvice = ` Change child group to use "${rootKey}_[element]_wrap" pattern.`;
+      }
+
       return [
         {
           ruleId: "canonical:childgroup-key-match",
-          name: "Child group key must match nearest component root",
-          message:
-            "Child group's component key does not match the nearest component root.",
+          name: "Child group component key must match nearest component root",
+          message: message + actionableAdvice,
           severity: "error",
           elementId,
           className: baseChild?.className ?? "",
@@ -89,6 +147,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
       ];
     }
 
+    // Keys match - component structure is valid
     return [];
   },
 });

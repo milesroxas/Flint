@@ -10,6 +10,7 @@ A linting system for Webflow Designer that validates class naming, flags duplica
 - **Canonical roles + graph**: rules analyze elements using detected roles and element graph helpers
 - **Role identification**: parses the first custom class using a preset GrammarAdapter and maps it to an ElementRole via a RoleResolver (e.g., title, text, actions, container). Services attach `metadata.role` on violations for UI badges.
 - **Config persistence**: per-rule settings merged from schemas and stored in localStorage
+- **Structural element linting**: when enabled, analyzes the selected element and all its descendants using the same logic as page scans
 
 ## Class types and conventions
 
@@ -33,17 +34,27 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - Creates page contexts with intelligent DJB2-hashed caching for performance
   - Supports both isolated element contexts and rich page contexts for future context-aware linting
   - Handles preset resolution, style collection, parent relationships, role detection, and element graph creation
+  - **Structural element contexts**: builds subtree-based contexts from selected element boundary, fetches real styles for all descendants
 
-- **`element-lint-service.ts`** ✨ _Simplified (53% reduction)_
+- **`element-lint-service.ts`** ✨ _Enhanced with Structural Mode_
 
   - Streamlined from 104 to 49 lines by delegating bootstrap logic to context service
-  - Enhanced API: `lintElement(element, pageContext?)` supports future context-aware element linting
+  - **Structural mode**: when enabled, collects styles from selected element + all descendants via graph traversal
+  - **Standard mode**: analyzes only the selected element (original behavior)
+  - Enhanced API: `lintElement(element, pageContext?, useStructuralContext)` supports structural subtree analysis
   - Focuses purely on element-specific linting logic
 
 - **`page-lint-service.ts`** ✨ _Simplified (77% reduction)_
 
   - Streamlined from 200 to 45 lines by delegating bootstrap logic to context service
   - All caching and optimization handled by shared context service
+
+- **`lightweight-context.service.ts`** 🆕 _Structural Element Support_
+
+  - Creates subtree contexts starting from selected element as component boundary
+  - Gathers all descendants via `getChildren()` API and builds parent-child maps
+  - Provides `elementById` lookup for style resolution and `getDescendantIds` for complete subtree coverage
+  - Enables structural role detection within element boundaries
 
 - `utility-class-analyzer.ts`
 
@@ -74,6 +85,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - Filters rules by class type and executes naming/property rules, and element-level `analyzeElement`
   - Integrates utility duplicate handling and includes formatted metadata in results
   - Entry point: `runRulesOnStylesWithContext(stylesWithElement, contextsMap, allStyles)`
+  - **Structural support**: receives styles for all subtree elements, enabling child-group rules to run on descendants
 
 - **`linter-service-factory.ts`** ✨ _Enhanced_
 
@@ -94,6 +106,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - Naming: `rules/naming/*`
   - Property: `rules/property/*`
   - Context‑aware: `rules/context-aware/*`
+  - **Canonical**: `rules/canonical/*` - structural rules like `child-group-key-match` that analyze element hierarchies
 
 ### Types
 
@@ -113,6 +126,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 - `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx` (composes `ui/violations/ViolationHeader` + `ui/violations/ViolationDetails`): reusable rendering of violations; supports highlight-on-open in page mode.
 - `ui/controls/ModeToggle.tsx`: page/element toggle buttons.
+- `ui/controls/StructuralContextToggle.tsx`: toggle for structural context in element mode - enables subtree analysis vs. single-element analysis.
 - `ui/controls/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
 - `ui/controls/ActionBar.tsx` and `ui/controls/LintPageButton.tsx`: bottom toolbar and primary actions.
 - `ui/panel/LintPanelHeader.tsx` (LintSummary): shared header for counts and roles.
@@ -125,13 +139,15 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 #### Store
 
 - `store/usePageLintStore.ts`: Zustand store exposing `lintPage`, results, and status.
-- `store/elementLint.store.ts`: Zustand store for selected-element lint; mirrors page store state shape and provides `refresh`.
+- `store/elementLint.store.ts`: Zustand store for selected-element lint; mirrors page store state shape and provides `refresh` and `structuralContext` toggle.
 
-## Runtime flows ✨ **Updated with Context Service**
+## Runtime flows ✨ **Updated with Context Service and Structural Element Linting**
 
 - **Selected element lint**
 
   - `ElementLintService.lintElement()` uses shared `LintContextService` for consistent bootstrap
+  - **Standard mode**: analyzes only the selected element (original behavior)
+  - **Structural mode**: creates subtree context from selected element boundary, fetches styles for all descendants
   - Context service handles all complexity: preset resolution, style collection, role detection, graph creation
   - Optional page context parameter enables future context-aware element linting
   - Intelligent caching avoids redundant computation when scanning multiple elements
@@ -144,7 +160,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 ## Configuration
 
-- Rule registration seeds defaults from each rule’s `config` schema
+- Rule registration seeds defaults from each rule's `config` schema
 - `RuleConfigurationService` stores enabled set and `ruleConfigs` keyed by `ruleId`
 - Loading merges stored values with schema defaults and drops unknown keys
 - The global registry loads and applies persisted configs during initialization
@@ -154,6 +170,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 - Class type detection: resolved by the active grammar via a resolver passed into the rule runner (`utility`, `combo`, else `custom`); when the resolver is unavailable the runner falls back to the previous `u-`/`is-` heuristic
 - Naming rule execution order: `evaluate` (if present) else `test`
 - Utility duplicate handling: single-property exact matches include formatted metadata consumed by the UI
+- **Structural element rules**: receive styles for all subtree elements, enabling rules like `canonical:child-group-key-match` to analyze nested children
 - Results include: rule identifiers, severity (effective from configuration), class name, optional `metadata`
 
 ## UI behavior specifics
@@ -163,6 +180,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 - Badges highlight unrecognized elements (from metadata) and the presence of an element context
 - Labels for contexts and roles are centralized in `lib/labels.ts`
 - Clipboard copy badges avoid timers and reflect state until the next interaction
+- **Structural toggle**: in element mode, shows "Structure" toggle that enables/disables subtree analysis
 
 ### Highlight behavior
 
@@ -173,12 +191,14 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 - `services/element-lint-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`
 - `services/rule-registry.ts`, `services/rule-configuration-service.ts`, `services/registry.ts`
+- `services/lightweight-context.service.ts`, `services/lint-context.service.ts`
 - `entities/style/model/style.service.ts`
-- `rules/*` (naming, property, context-aware)
+- `rules/*` (naming, property, context-aware, canonical)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
 - `store/usePageLintStore.ts`, `store/elementLint.store.ts`
-- `view/LinterPanel.tsx`, `ui/controls/LintPageButton.tsx`, `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx`, `ui/controls/ModeToggle.tsx`, `ui/controls/PresetSwitcher.tsx`, `ui/controls/ActionBar.tsx`, `ui/panel/LintPanelHeader.tsx`
+- `view/LinterPanel.tsx`, `ui/controls/LintPageButton.tsx`, `ui/controls/StructuralContextToggle.tsx`, `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx`, `ui/controls/ModeToggle.tsx`, `ui/controls/PresetSwitcher.tsx`, `ui/controls/ActionBar.tsx`, `ui/panel/LintPanelHeader.tsx`
 
 ## Notes and limitations
 
 - Webflow Designer APIs are expected to provide `getAllElements`, `getAllStyles`, `getStyles`, `getName`, `getProperties`, and `getChildren` where referenced.
+- **Structural element linting**: requires `getChildren()` API to work properly for subtree traversal. Falls back to single-element analysis if structural context creation fails.

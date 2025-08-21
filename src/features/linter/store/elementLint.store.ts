@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
-import { scanSelectedElementWithMeta } from "@/features/linter/use-cases/scan-selected-element";
+import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 
@@ -13,11 +13,13 @@ interface ElementLintState {
   roles: ElementRole[];
   loading: boolean;
   error: string | null;
+  structuralContext: boolean;
 }
 
 interface ElementLintActions {
   refresh: () => Promise<void>;
   clear: () => void;
+  setStructuralContext: (enabled: boolean) => void;
 }
 
 type ElementLintStore = ElementLintState & ElementLintActions;
@@ -28,6 +30,7 @@ const initialState: ElementLintState = {
   roles: [],
   loading: false,
   error: null,
+  structuralContext: false, // Default to enabled for better detection
 };
 
 export const useElementLintStore = create<ElementLintStore>()(
@@ -60,11 +63,15 @@ export const useElementLintStore = create<ElementLintStore>()(
             });
             return;
           }
-          const meta = await scanSelectedElementWithMeta(el);
+          const state = get();
+          const results = await scanSelectedElement(
+            el,
+            state.structuralContext
+          );
           set({
-            results: meta.results,
-            classNames: meta.classNames || [],
-            roles: meta.roles || [],
+            results,
+            classNames: [],
+            roles: [],
             loading: false,
           });
         } catch (err: unknown) {
@@ -79,6 +86,16 @@ export const useElementLintStore = create<ElementLintStore>()(
       },
 
       clear: () => set({ ...initialState }),
+
+      setStructuralContext: (enabled: boolean) => {
+        set({ structuralContext: enabled });
+
+        // Auto-refresh when structural context setting changes
+        const state = get();
+        if (!state.loading) {
+          void state.refresh();
+        }
+      },
     }),
     { name: "element-lint-store", serialize: { options: true } }
   )
@@ -107,11 +124,12 @@ export const useElementLintStore = create<ElementLintStore>()(
       }
       useElementLintStore.setState({ loading: true, error: null });
       try {
-        const meta = await scanSelectedElementWithMeta(el);
+        const state = useElementLintStore.getState();
+        const results = await scanSelectedElement(el, state.structuralContext);
         useElementLintStore.setState({
-          results: meta.results,
-          classNames: meta.classNames || [],
-          roles: meta.roles || [],
+          results,
+          classNames: [],
+          roles: [],
           loading: false,
         });
       } catch (err) {

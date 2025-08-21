@@ -25,6 +25,9 @@ export interface DetectionContext {
     readonly title?: string;
     readonly url?: string;
   };
+  // Structural analysis context (always available for intelligent detection)
+  readonly rolesByElement?: import("@/features/linter/model/linter.types").RolesByElement;
+  readonly graph?: import("@/features/linter/model/linter.types").ElementGraphApi;
 }
 
 /** Role detection result */

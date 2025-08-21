@@ -178,11 +178,29 @@ export const createRuleRunner = (
 
     // 1) Element-level phase
     const allRules = ruleRegistry.getAllRules();
+    console.log(`[DEBUG] Rule runner found ${allRules.length} total rules`);
+
     for (const [elId, list] of byElement.entries()) {
       for (const rule of allRules) {
         if (typeof rule.analyzeElement === "function") {
           const cfg = ruleRegistry.getRuleConfiguration(rule.id);
           const isEnabled = cfg?.enabled ?? rule.enabled;
+
+          // Debug specifically for our child group rule
+          if (rule.id === "canonical:childgroup-key-match") {
+            console.log(
+              `[DEBUG] child-group-key-match rule status for element ${elId}:`,
+              {
+                ruleId: rule.id,
+                isEnabled,
+                configEnabled: cfg?.enabled,
+                ruleEnabled: rule.enabled,
+                hasClasses: list.length > 0,
+                classNames: list.map((c) => c.name),
+              }
+            );
+          }
+
           if (!isEnabled) continue;
 
           const elementResults = rule.analyzeElement({
@@ -203,13 +221,26 @@ export const createRuleRunner = (
             getRuleConfig: (id: string) =>
               ruleRegistry.getRuleConfiguration(id),
             rolesByElement,
-            getRoleForElement: (id: string): ElementRole =>
-              rolesByElement?.[id] ?? "unknown",
+            getRoleForElement: (id: string): ElementRole => {
+              const role = rolesByElement?.[id] ?? "unknown";
+              if (rule.id === "canonical:childgroup-key-match") {
+                console.log(`[DEBUG] getRoleForElement(${id}):`, role);
+              }
+              return role;
+            },
             getParentId,
             getChildrenIds,
             getAncestorIds,
-            getClassNamesForElement: (id: string) =>
-              byElementClassNames.get(id) ?? [],
+            getClassNamesForElement: (id: string) => {
+              const classNames = byElementClassNames.get(id) ?? [];
+              if (rule.id === "canonical:childgroup-key-match") {
+                console.log(
+                  `[DEBUG] getClassNamesForElement(${id}):`,
+                  classNames
+                );
+              }
+              return classNames;
+            },
             parseClass,
           });
 

@@ -34,7 +34,14 @@ export function initializeRuleRegistry(
     createMainSingletonPageRule(),
     createMainChildrenPageRule(),
   ]);
-  ruleRegistry.registerRules([createChildGroupKeyMatchRule()]);
+  const childGroupRule = createChildGroupKeyMatchRule();
+  console.log(`[DEBUG] Registering child group rule:`, {
+    id: childGroupRule.id,
+    enabled: childGroupRule.enabled,
+    severity: childGroupRule.severity,
+    hasAnalyzeElement: typeof childGroupRule.analyzeElement === "function"
+  });
+  ruleRegistry.registerRules([childGroupRule]);
 
   // 3) apply opinion mode adjustments
   applyOpinionMode(ruleRegistry, mode);

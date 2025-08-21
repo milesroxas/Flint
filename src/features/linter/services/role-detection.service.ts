@@ -32,7 +32,8 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
   };
 
   function detectRolesForPage(
-    elements: ElementWithClassNames[]
+    elements: ElementWithClassNames[],
+    graph?: import("@/features/linter/model/linter.types").ElementGraphApi
   ): RolesByElement {
     const threshold = Math.max(0, Math.min(1, effectiveConfig.threshold));
     const result: RolesByElement = {};
@@ -115,6 +116,19 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       { best: number; role: RolesByElement[string] }
     > = {};
 
+    console.log(
+      "[DEBUG] Starting single-pass role detection with full context"
+    );
+
+    // Build complete detection context with all available information
+    const detectionContext = {
+      allElements: snapshots,
+      styleInfo: [],
+      pageInfo: {},
+      rolesByElement: result, // Incrementally built as we go
+      graph, // Full graph context available from start
+    } as const;
+
     for (const item of elements) {
       const element = item.element as WebflowElement | undefined;
       const elementId = toElementKey(element);
@@ -125,13 +139,6 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
 
       let bestRole: RolesByElement[string] | null = null;
       let bestScore = -1;
-
-      // Prepare shared detection context (currently no style/page signals wired)
-      const detectionContext = {
-        allElements: snapshots,
-        styleInfo: [],
-        pageInfo: {},
-      } as const;
 
       for (const detector of detectors) {
         try {
@@ -154,7 +161,7 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
         }
       }
 
-      // Thresholding
+      // Thresholding and assignment
       result[elementId] =
         bestRole && bestScore >= threshold ? bestRole : "unknown";
       scoresByElement[elementId] = { best: bestScore, role: result[elementId] };

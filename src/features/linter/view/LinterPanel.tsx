@@ -13,6 +13,7 @@ import { usePageLint } from "@/features/linter/store/pageLint.store";
 import SeverityFilter, {
   type SeverityFilterValue,
 } from "@/features/linter/ui/controls/SeverityFilter";
+import { StructuralContextToggle } from "@/features/linter/ui/controls/StructuralContextToggle";
 
 export function LinterPanel() {
   const { results, passedClassNames, loading, error, hasRun, lintPage } =
@@ -37,6 +38,8 @@ export function LinterPanel() {
     classNames: elementClassNames,
     loading: elementLoading,
     refresh: refreshElementLint,
+    structuralContext,
+    setStructuralContext,
   } = useElementLint();
 
   const activeViolations: RuleResult[] = useMemo(
@@ -103,12 +106,22 @@ export function LinterPanel() {
                   : "opacity-100 translate-y-0 h-auto mb-4"
               )}
             >
-              <ModeToggle
-                mode={mode}
-                onChange={(next) => {
-                  setMode(next);
-                }}
-              />
+              <div className="flex gap-3 items-center justify-between">
+                <ModeToggle
+                  mode={mode}
+                  onChange={(next) => {
+                    setMode(next);
+                  }}
+                />
+                {mode === "element" && (
+                  <div className="flex pr-2">
+                    <StructuralContextToggle
+                      enabled={structuralContext}
+                      onChange={setStructuralContext}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {mode === "page" && !loading && !hasRun ? (
