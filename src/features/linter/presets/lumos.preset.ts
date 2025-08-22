@@ -7,6 +7,11 @@ import * as lumosRules from "@/features/linter/rules/lumos";
 
 import { lumosRoleDetectors } from "@/features/linter/detectors/lumos.detectors";
 
+import {
+  createDuplicateOfUtilityRule,
+  createColorVariableRule,
+} from "@/features/linter/rules/shared/property";
+
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
   grammar: lumosGrammar,
@@ -21,5 +26,9 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     lumosRules.createLumosClassOrderRule(),
     lumosRules.createLumosVariantRequiresBaseRule(),
     lumosRules.createLumosComboLimitRule(),
+
+    // Shared Property rules
+    createDuplicateOfUtilityRule(),
+    createColorVariableRule(),
   ],
 };

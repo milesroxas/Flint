@@ -29,14 +29,6 @@ const DEFAULT_CONFIG: DuplicateOfUtilityConfig = {
   normalizeValues: true,
 };
 
-/** Normalize a CSS value for stable comparison. */
-const normalizeValue = (value: string): string => {
-  // Collapse whitespace and normalize zeros such as "0px" -> "0"
-  const trimmed = value.trim().replace(/\s+/g, " ");
-  if (/^0(?:[a-z%]*)$/i.test(trimmed)) return "0";
-  return trimmed;
-};
-
 /** Build a normalized declaration map according to config. */
 const buildComparableDecls = (
   decls: Record<string, string>,
@@ -51,11 +43,11 @@ const buildComparableDecls = (
     : null;
 
   for (const [prop, raw] of Object.entries(decls)) {
-    if (cfg.ignoreCustomProperties && prop.startsWith("--")) continue;
+    if (cfg.ignoreCustomProperties) continue;
     if (allow && !allow.has(prop)) continue;
     if (block && block.has(prop)) continue;
 
-    out[prop] = cfg.normalizeValues ? normalizeValue(raw) : raw;
+    out[prop] = raw;
   }
 
   return out;

@@ -10,6 +10,10 @@ Rules are organized into the following categories:
 
 - **Structure**
 
+- **Properties**
+
+  - Missing color variable
+
 - **Performance**
 
 ### Presets
