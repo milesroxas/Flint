@@ -180,6 +180,7 @@ export interface PageAnalysisArgs {
     customSettings: T;
   };
   getTagName(id: string): string | null;
+  getElementType(id: string): string | null;
 }
 
 // -------------------------
@@ -211,6 +212,8 @@ export interface ElementAnalysisArgs {
 
   getClassNamesForElement?: (elementId: string) => string[];
   parseClass?: (name: string) => ParsedClass;
+  getTagName?: (elementId: string) => string | null;
+  getElementType?: (elementId: string) => string | null;
 }
 
 export interface RuleConfiguration {

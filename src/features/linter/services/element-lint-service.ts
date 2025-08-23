@@ -105,6 +105,7 @@ export function createElementLintService(deps: {
       context.parseClass,
       { getTag: context.graph.getTag },
       (id: string) => context.tagByElementId.get(id) ?? null,
+      (id: string) => context.elementTypeByElementId.get(id) ?? null,
       !pageContext // Skip page rules when no page context available
     );
 

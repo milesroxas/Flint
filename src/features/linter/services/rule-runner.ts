@@ -98,6 +98,7 @@ export const createRuleRunner = (
     parseClass?: (name: string) => ParsedClass,
     graph?: { getTag?: (id: string) => Promise<string | null> },
     getTagName?: (id: string) => string | null,
+    getElementType?: (id: string) => string | null,
     skipPageRules: boolean = false
   ): RuleResult[] => {
     const results: RuleResult[] = [];
@@ -166,6 +167,7 @@ export const createRuleRunner = (
             customSettings: {} as any,
           }),
           getTagName: getTagName ?? (() => null),
+          getElementType: getElementType ?? (() => null),
         });
         // normalize severity from config
         const cfg = ruleRegistry.getRuleConfiguration(pr.id);
@@ -242,6 +244,8 @@ export const createRuleRunner = (
               return classNames;
             },
             parseClass,
+            getTagName,
+            getElementType,
           });
 
           for (const r of elementResults) {

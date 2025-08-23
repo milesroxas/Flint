@@ -35,7 +35,8 @@ export function createPageLintService(deps: {
       context.graph.getAncestorIds,
       context.parseClass,
       { getTag: context.graph.getTag },
-      (id: string) => context.tagByElementId.get(id) ?? null
+      (id: string) => context.tagByElementId.get(id) ?? null,
+      (id: string) => context.elementTypeByElementId.get(id) ?? null
     );
 
     return results;

@@ -69,6 +69,7 @@ function runRule(
       customSettings: {} as any,
     }),
     getTagName: () => null, // Not used by this rule
+    getElementType: () => null, // Not used by this rule
   });
 }
 
@@ -266,6 +267,7 @@ describe("canonical:main-children.page", () => {
         customSettings: {} as any,
       }),
       getTagName: () => null,
+      getElementType: () => null,
     });
 
     expect(out).toHaveLength(1);

@@ -42,6 +42,7 @@ export interface LintContext {
   activePreset: ReturnType<typeof resolvePresetOrFallback>;
   parseClass: (name: string) => any;
   tagByElementId: Map<string, string | null>;
+  elementTypeByElementId: Map<string, string | null>;
 }
 
 export interface LintContextService {
@@ -176,7 +177,7 @@ export function createLintContextService(deps: {
       graph
     );
 
-    // 11) Collect tag information
+    // 11) Collect tag information (for semantic HTML validation)
     const tagByElementId = new Map<string, string | null>();
     await Promise.all(
       elementStylePairs.map(async ({ element }) => {
@@ -190,7 +191,20 @@ export function createLintContextService(deps: {
       })
     );
 
-    // 12) Create element style map for quick lookup
+    // 12) Collect element type information (for Webflow element type checks)
+    const elementTypeByElementId = new Map<string, string | null>();
+    for (const { element } of elementStylePairs) {
+      const id = toElementKey(element);
+      try {
+        // Use element.type from Webflow API
+        const elementType = (element as any)?.type || null;
+        elementTypeByElementId.set(id, elementType);
+      } catch (error) {
+        elementTypeByElementId.set(id, null);
+      }
+    }
+
+    // 13) Create element style map for quick lookup
     const elementStyleMap = new Map<string, StyleWithElement[]>();
     for (const pair of elementStylePairs) {
       const elementId = toElementKey(pair.element);
@@ -207,6 +221,7 @@ export function createLintContextService(deps: {
       activePreset,
       parseClass,
       tagByElementId,
+      elementTypeByElementId,
     };
 
     // Cache for future use
@@ -304,10 +319,11 @@ export function createLintContextService(deps: {
     const elementsWithClassNames: ElementWithClassNames[] = [];
     for (const id of lightweightContext.availableElements) {
       const el = lightweightContext.elementById.get(id) ?? ({} as any);
-      const classNames = (elementStyles
-        .filter((s) => s.elementId === id)
-        .map((s) => s.name) || lightweightContext.elementClassNames.get(id) || [])
-        .filter((n) => n && n.trim() !== "");
+      const classNames = (
+        elementStyles.filter((s) => s.elementId === id).map((s) => s.name) ||
+        lightweightContext.elementClassNames.get(id) ||
+        []
+      ).filter((n) => n && n.trim() !== "");
       elementsWithClassNames.push({ element: el, classNames });
     }
 
@@ -441,9 +457,11 @@ export function createLintContextService(deps: {
       elementStyleMap.set(s.elementId, list);
     }
 
-    // Create tag map (minimal for performance)
+    // Create element type maps (minimal for performance)
     const tagByElementId = new Map<string, string | null>();
     tagByElementId.set(elementId, null); // Don't fetch tags in lightweight mode
+    const elementTypeByElementId = new Map<string, string | null>();
+    elementTypeByElementId.set(elementId, null); // Don't fetch types in lightweight mode
 
     const context: LintContext = {
       allStyles,
@@ -455,6 +473,7 @@ export function createLintContextService(deps: {
       activePreset,
       parseClass,
       tagByElementId,
+      elementTypeByElementId,
     };
 
     console.log(`[DEBUG] Final lightweight context for element ${elementId}:`, {

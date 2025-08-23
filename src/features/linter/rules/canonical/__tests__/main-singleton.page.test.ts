@@ -41,6 +41,7 @@ function runRule(
       customSettings: {} as any,
     }),
     getTagName: (id: string) => tagsByElement?.[id] || null,
+    getElementType: () => null, // Not used by this rule
   });
 }
 

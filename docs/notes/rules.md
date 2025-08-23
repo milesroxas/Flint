@@ -13,6 +13,7 @@ Rules are organized into the following categories:
 - **Properties**
 
   - Missing color variable
+  - No style on element
 
 - **Performance**
 

@@ -12,6 +12,8 @@ import {
   createColorVariableRule,
 } from "@/features/linter/rules/shared/property";
 
+import { createMissingClassOnDivRule } from "@/features/linter/rules/shared/structure";
+
 export const lumosPreset: Preset & { rules: Rule[] } = {
   id: "lumos",
   grammar: lumosGrammar,
@@ -30,5 +32,8 @@ export const lumosPreset: Preset & { rules: Rule[] } = {
     // Shared Property rules
     createDuplicateOfUtilityRule(),
     createColorVariableRule(),
+
+    // Shared Structure rules
+    createMissingClassOnDivRule(),
   ],
 };
