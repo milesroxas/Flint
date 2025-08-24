@@ -48,6 +48,56 @@ export const createUtilityClassAnalyzer = (
   const getPropertyToClassesMap = () => propertyToClassesMap;
   const getExactPropertiesToClassesMap = () => exactPropertiesToClassesMap;
 
+  // Enhanced getPropertyToClassesMap that returns structured data for property/value analysis
+  const getPropertyToClassesStructuredMap = (): Map<
+    string,
+    Map<string, Set<string>>
+  > => {
+    const structuredMap = new Map<string, Map<string, Set<string>>>();
+
+    propertyToClassesMap.forEach((classSet, propKey) => {
+      const [property, valueJson] = propKey.split(":", 2);
+      if (!property || valueJson === undefined) return;
+
+      if (!structuredMap.has(property)) {
+        structuredMap.set(property, new Map<string, Set<string>>());
+      }
+
+      const propertyMap = structuredMap.get(property)!;
+      if (!propertyMap.has(valueJson)) {
+        propertyMap.set(valueJson, new Set<string>());
+      }
+
+      // Copy all classes from the original set
+      classSet.forEach((className) => {
+        propertyMap.get(valueJson)!.add(className);
+      });
+    });
+
+    return structuredMap;
+  };
+
+  // Helper to get formatted single property info for utility classes
+  const getFormattedSinglePropertyInfo = (
+    className: string
+  ): { property: string; value: string } | null => {
+    const entries = utilityClassPropertiesMap.get(className);
+    if (!entries || entries.length === 0) return null;
+
+    // Get the first entry (should only be one for utility classes)
+    const entry = entries[0];
+    const propEntries = Object.entries(entry.properties ?? {});
+
+    // Only return info if this is a single-property utility
+    if (propEntries.length !== 1) return null;
+
+    const [property, value] = propEntries[0];
+    return {
+      property,
+      value: typeof value === "string" ? value : stableStringify(value),
+    };
+  };
+
   const computeStylesHash = (styles: StyleInfo[]): string => {
     // Only include data that affects mappings
     const payload = styles.map((s) => ({
@@ -197,6 +247,7 @@ export const createUtilityClassAnalyzer = (
     getUtilityClassPropertiesMap,
     getPropertyToClassesMap,
     getExactPropertiesToClassesMap,
+    getPropertyToClassesStructuredMap,
 
     // lifecycle
     buildPropertyMaps,
@@ -205,6 +256,7 @@ export const createUtilityClassAnalyzer = (
 
     // analysis
     analyzeDuplicates,
+    getFormattedSinglePropertyInfo,
   } as const;
 };
 

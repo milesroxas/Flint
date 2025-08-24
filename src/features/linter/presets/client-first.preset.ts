@@ -8,6 +8,7 @@ import { getClientFirstKnownElements } from "@/features/linter/rules/client-firs
 import {
   createDuplicateOfUtilityRule,
   createColorVariableRule,
+  createUtilityDuplicatePropertyRule,
 } from "@/features/linter/rules/shared/property";
 import { createMissingClassOnDivRule } from "@/features/linter/rules/shared/structure";
 
@@ -30,7 +31,10 @@ export const clientFirstElementsConfig: PresetElementsConfig = {
   },
 };
 
-export const clientFirstPreset: Preset & { rules: Rule[]; elementsConfig: PresetElementsConfig } = {
+export const clientFirstPreset: Preset & {
+  rules: Rule[];
+  elementsConfig: PresetElementsConfig;
+} = {
   id: "client-first",
   grammar: clientFirstGrammar,
   roleDetectors: clientFirstRoleDetectors,
@@ -44,6 +48,7 @@ export const clientFirstPreset: Preset & { rules: Rule[]; elementsConfig: Preset
     // Shared Property rules
     createDuplicateOfUtilityRule(),
     createColorVariableRule(),
+    createUtilityDuplicatePropertyRule(),
 
     // Shared Structure rules
     createMissingClassOnDivRule(),

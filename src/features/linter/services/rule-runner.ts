@@ -73,7 +73,8 @@ export const createRuleRunner = (
           className,
           properties,
           effectiveSeverity,
-          allStyles
+          allStyles,
+          getClassType
         );
       }
       return [];

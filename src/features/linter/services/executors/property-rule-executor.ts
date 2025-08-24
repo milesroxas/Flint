@@ -14,7 +14,11 @@ export type ExecutePropertyRule = (
   className: string,
   properties: Record<string, unknown>,
   severity: Severity,
-  allStyles: StyleInfo[]
+  allStyles: StyleInfo[],
+  getClassType?: (
+    className: string,
+    isCombo?: boolean
+  ) => import("@/features/linter/model/rule.types").ClassType
 ) => RuleResult[];
 
 /**
@@ -31,7 +35,8 @@ export const createPropertyRuleExecutor = (
     className,
     properties,
     severity,
-    allStyles
+    allStyles,
+    getClassType
   ): RuleResult[] {
     // Build/ensure property maps once for this run
     if (typeof (utilityAnalyzer as any).ensureBuilt === "function") {
@@ -44,6 +49,9 @@ export const createPropertyRuleExecutor = (
       allStyles,
       utilityClassPropertiesMap: utilityAnalyzer.getUtilityClassPropertiesMap(),
       propertyToClassesMap: utilityAnalyzer.getPropertyToClassesMap(),
+      // Add utility analyzer and class type resolver to context
+      utilityAnalyzer,
+      getClassType,
       // Rule-specific options (from configuration service)
       config: ruleRegistry.getRuleConfiguration(rule.id)?.customSettings,
     };

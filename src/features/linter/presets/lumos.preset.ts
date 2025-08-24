@@ -11,6 +11,7 @@ import { lumosRoleDetectors } from "@/features/linter/detectors/lumos.detectors"
 import {
   createDuplicateOfUtilityRule,
   createColorVariableRule,
+  createUtilityDuplicatePropertyRule,
 } from "@/features/linter/rules/shared/property";
 
 import { createMissingClassOnDivRule } from "@/features/linter/rules/shared/structure";
@@ -67,6 +68,7 @@ export const lumosPreset: Preset & {
     // Shared Property rules
     createDuplicateOfUtilityRule(),
     createColorVariableRule(),
+    createUtilityDuplicatePropertyRule(),
 
     // Shared Structure rules
     createMissingClassOnDivRule(),
