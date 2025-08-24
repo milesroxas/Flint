@@ -2,30 +2,35 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center leading-none rounded-sm border-none px-1.5 py-0.5 text-xs font-medium w-fit min-w-0 max-w-full [&>svg]:self-center [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  "inline-flex items-center justify-center leading-none rounded-xs px-2 py-0.5 text-xs font-medium w-fit min-w-0 max-w-full gap-1 [&>svg]:pointer-events-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-colors overflow-hidden",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover focus-visible:ring-destructive/20",
         outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "border border-input text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
+        error:
+          "bg-error text-error-foreground hover:bg-error-hover active:bg-error-active",
+        warning:
+          "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active",
+        suggestion:
+          "bg-suggestion text-suggestion-foreground hover:bg-suggestion-hover active:bg-suggestion-active",
         inheritedProperty:
-          "bg-warning/20 rounded-xs px-2 font-mono text-warning",
+          "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         newProperty:
-          "bg-suggestion/20 rounded-xs px-2 font-mono text-suggestion",
+          "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
       },
       isCombo: {
-        true: "bg-accent/10 text-accent text-xs rounded-xs",
-        false: "bg-muted text-foreground text-xs rounded-xs",
+        true: "bg-accent/10 text-foreground text-xs rounded-xs",
+        false: "",
       },
       copyable: {
         true: "cursor-pointer hover:opacity-90 active:opacity-75",
@@ -104,14 +109,7 @@ function Badge({
     <Comp
       ref={ref}
       data-slot="badge"
-      className={cn(
-        badgeVariants({
-          variant,
-          isCombo,
-          copyable,
-        }),
-        className
-      )}
+      className={cn(badgeVariants({ variant, isCombo, copyable }), className)}
       onClick={copyable ? handleCopy : undefined}
       {...props}
     >

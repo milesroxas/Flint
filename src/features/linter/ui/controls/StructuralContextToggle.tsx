@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 
 interface StructuralContextToggleProps {
@@ -11,15 +12,13 @@ export const StructuralContextToggle: React.FC<
   StructuralContextToggleProps
 > = ({ enabled, onChange, className }) => {
   return (
-    <button
-      type="button"
+    <Button
+      variant={enabled ? "default" : "outline"}
+      size="sm"
       onClick={() => onChange(!enabled)}
       className={cn(
-        "inline-flex cursor-pointer py-0 items-center gap-2 px-2 h-7 rounded-none text-xs transition-all duration-200",
-        "outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        enabled
-          ? "bg-accent text-accent-foreground hover:bg-slate-800 border-l-2 border-green-500"
-          : "bg-background text-muted-foreground hover:bg-accent/50 border border-input hover:text-accent-foreground",
+        "h-6 text-xs transition-colors",
+        enabled && "border-l-2 border-l-primary-hover",
         className
       )}
       aria-label={`${
@@ -31,7 +30,7 @@ export const StructuralContextToggle: React.FC<
           : "Structural context disabled - wrapper detection uses naming only"
       }
     >
-      <span className="font-medium">Structure</span>
-    </button>
+      Structure
+    </Button>
   );
 };

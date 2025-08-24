@@ -83,14 +83,14 @@ export function LinterPanel() {
     <section className="h-full flex flex-col">
       <div className="pl-4 pr-0 pb-14 flex-1 min-h-0 flex flex-col">
         {error && (
-          <div className="flex items-center gap-2 py-2 text-sm text-error">
+          <div className="flex items-center gap-2 py-2 text-sm text-destructive">
             <AlertCircle className="h-3 w-3" />
             {error}
           </div>
         )}
 
         {!error && !loading && hasRun && count === 0 && mode === "page" && (
-          <div className="flex items-center gap-2 px-3 py-2 text-sm text-green-600">
+          <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
             <CheckCircle2 className="h-3 w-3" />
             No issues found
           </div>

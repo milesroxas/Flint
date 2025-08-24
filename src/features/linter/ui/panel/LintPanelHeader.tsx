@@ -37,18 +37,18 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
               </span>
             )}
             <span className="inline-flex items-center gap-1 flex-wrap">
-              <span className="inline-flex items-center rounded-full bg-destructive/10 text-destructive px-1.5 py-0.5 text-[10px]">
+              <Badge variant="secondary" className="text-[10px]">
                 {errors}
                 <span className="ml-1 opacity-80">errors</span>
-              </span>
-              <span className="inline-flex items-center rounded-full bg-warning/20 text-warning-foreground px-1.5 py-0.5 text-[10px]">
+              </Badge>
+              <Badge variant="secondary" className="text-[10px]">
                 {warnings}
                 <span className="ml-1 opacity-80">warnings</span>
-              </span>
-              <span className="inline-flex items-center rounded-full bg-muted text-foreground/80 px-1.5 py-0.5 text-[10px]">
+              </Badge>
+              <Badge variant="secondary" className="text-[10px]">
                 {suggestions}
                 <span className="ml-1 opacity-80">suggestions</span>
-              </span>
+              </Badge>
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">

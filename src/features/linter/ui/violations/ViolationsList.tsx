@@ -83,7 +83,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
           />
           {passedOnly.length > 0 && (
             <div className="mt-2 space-y-1">
-              <div className="text-[11px] text-green-700">
+              <div className="text-[11px] text-muted-foreground">
                 Passed ({passedOnly.length})
               </div>
               <div className="grid grid-cols-1 gap-1 pr-2">

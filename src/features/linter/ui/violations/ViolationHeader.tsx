@@ -18,11 +18,6 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
     warning: "bg-warning",
     suggestion: "bg-suggestion",
   };
-  const textBySeverity: Record<Severity, string> = {
-    error: "text-error",
-    warning: "text-warning",
-    suggestion: "text-suggestion",
-  };
 
   const role = violation.metadata?.role as string | undefined;
   const isDuplicateRole = false;
@@ -39,12 +34,7 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
         aria-hidden
         title={sevForUiLabel}
       />
-      <span
-        className={cn(
-          "font-medium text-xs min-w-0 whitespace-normal break-words",
-          textBySeverity[sevForUi]
-        )}
-      >
+      <span className="font-medium text-xs min-w-0 whitespace-normal break-words text-foreground">
         {violation.name}
       </span>
       {violation.metadata?.unrecognizedElement && (

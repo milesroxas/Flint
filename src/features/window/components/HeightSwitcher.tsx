@@ -7,17 +7,17 @@ import {
   CollapsibleTrigger,
 } from "@/shared/ui/collapsible";
 
-type HeightPreset = "default" | "medium" | "large";
+type HeightPreset = "large" | "medium" | "compact";
 
 const PRESETS: Record<HeightPreset, { label: string; height: number }> = {
-  default: { label: "Default", height: 360 },
-  medium: { label: "Medium", height: 560 },
   large: { label: "Large", height: 800 },
+  compact: { label: "Compact", height: 360 },
+  medium: { label: "Medium", height: 560 },
 };
 
 export const HeightSwitcher: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [preset, setPreset] = useState<HeightPreset>("default");
+  const [preset, setPreset] = useState<HeightPreset>("large");
 
   const presetLabel = PRESETS[preset].label;
 

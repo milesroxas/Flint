@@ -18,10 +18,10 @@ export default function ExtensionWrapper({
     async function resizeExtension() {
       try {
         // custom size (clamped to min 240×360, max 1200×800)
-        await webflow.setExtensionSize({ width: 400, height: 360 });
+        await webflow.setExtensionSize({ width: 400, height: 800 });
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
-          console.log("Extension UI resized to 400×360");
+          console.log("Extension UI resized to 400×800");
         }
       } catch (err) {
         if (import.meta.env.DEV) {
@@ -37,7 +37,7 @@ export default function ExtensionWrapper({
   // Maintain a concrete pixel height so descendant h-full/min-h-0 and
   // ScrollArea measurements remain stable for animations and sticky UI.
   const [height, setHeight] = useState<number>(() => {
-    const h = typeof window !== "undefined" ? window.innerHeight || 360 : 360;
+    const h = typeof window !== "undefined" ? window.innerHeight || 800 : 800;
     return Math.max(360, Math.min(800, h));
   });
 
