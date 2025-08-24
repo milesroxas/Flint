@@ -6,12 +6,12 @@ This document provides a comprehensive overview of all rules implemented in the 
 
 The Lumos preset enforces a custom class naming convention and structural patterns for Webflow projects. It consists of **8 rules** across 4 categories:
 
-- **5 Lumos-specific rules** (3 naming, 2 composition)
+- **5 Lumos-specific rules** (2 naming, 3 composition)
 - **3 shared rules** (2 property, 1 structure)
 
 ## Rule Categories
 
-### 1. Naming Rules (3 rules)
+### 1. Naming Rules (2 rules)
 
 #### `lumos:naming:class-format`
 
@@ -52,6 +52,8 @@ The Lumos preset enforces a custom class naming convention and structural patter
 }
 ```
 
+**Auto-fix**: ❌ (Provides suggestions for manual fixes)
+
 ---
 
 #### `lumos:naming:combo-class-format`
@@ -78,15 +80,9 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 **Auto-fix**: ✅ Normalizes invalid format to correct variant/utility syntax
 
-**Implementation Notes**:
-
-- Uses shared normalization utilities for consistent format validation
-- Component classes are rejected as combos regardless of format
-- Validation logic simplified to rely on normalization function results
-
 ---
 
-### 2. Composition Rules (2 rules)
+### 2. Composition Rules (3 rules)
 
 #### `lumos:composition:class-order`
 
@@ -237,8 +233,8 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 **Detected Color Formats**:
 
-- HSL/HSLA: `hsla(0, 100.00%, 66.00%, 1.00)`
-- RGB/RGBA: `rgba(255, 0, 0, 1)`
+- HSL/HSLA: `hsla(0, 100%, 66%, 1)` → `#ff4444`
+- RGB/RGBA: `rgba(255, 0, 0, 1)` → `#ff0000`
 - Hex: `#ff0000`
 - Named colors: `red`, `blue`, etc.
 
@@ -258,7 +254,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 **Examples**:
 
 - ✅ Using Webflow color variable
-- ❌ `color: hsla(0, 100.00%, 66.00%, 1.00)` (hardcoded color)
+- ❌ `color: hsla(0, 100%, 66%, 1)` → `#ff4444` (hardcoded color)
 - ❌ `background-color: #ff0000` (hardcoded color)
 
 **Auto-fix**: ❌ (Manual replacement with variable required)
@@ -294,7 +290,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 | Rule ID                                   | Name                                           | Type        | Severity | Auto-fix | Configurable |
 | ----------------------------------------- | ---------------------------------------------- | ----------- | -------- | -------- | ------------ |
-| `lumos:naming:class-format`               | Lumos Custom Class Format                      | Naming      | Error    | ✅       | ✅           |
+| `lumos:naming:class-format`               | Lumos Custom Class Format                      | Naming      | Error    | ❌       | ✅           |
 | `lumos:naming:combo-class-format`         | Combo class format                             | Naming      | Error    | ✅       | ❌           |
 | `lumos:composition:class-order`           | Base class must precede variants and utilities | Structure   | Error    | ✅       | ❌           |
 | `lumos:composition:variant-requires-base` | Variant requires a base class                  | Composition | Error    | ❌       | ✅           |

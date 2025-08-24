@@ -14,6 +14,7 @@ import {
   parseDuplicateMessage,
   ParsedDuplicateMessage,
 } from "@/features/linter/lib/message-parser";
+import { formatViolationMessage } from "@/features/linter/lib/message-formatter";
 import { ViolationMessage } from "./ViolationMessage";
 
 interface ViolationDetailsProps {
@@ -274,7 +275,13 @@ interface DefaultMessageProps {
 const DefaultMessage: React.FC<DefaultMessageProps> = ({
   message,
   example,
-}) => <ViolationMessage variant="plain" message={message} example={example} />;
+}) => (
+  <ViolationMessage
+    variant="plain"
+    message={formatViolationMessage(message)}
+    example={example}
+  />
+);
 
 export interface ClassBadgeProps {
   violation: RuleResult;

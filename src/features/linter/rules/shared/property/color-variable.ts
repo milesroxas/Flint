@@ -4,6 +4,7 @@ import type {
   RuleResult,
   RuleContext,
 } from "@/features/linter/model/rule.types";
+import { convertColorToHex } from "@/features/linter/lib/color-utils";
 
 interface ColorVariableConfig {
   targetProperties: string[];
@@ -45,7 +46,7 @@ export const createColorVariableRule = (): PropertyRule => ({
   name: "Use Color Variables",
   description:
     "Color properties should use Webflow variables instead of hardcoded color values for better maintainability and design system consistency.",
-  example: "Use a variable instead of hsla(0, 100.00%, 66.00%, 1.00)",
+  example: "Use a variable instead of #ff4444",
   severity: "error",
   category: "maintainability",
   type: "property",
@@ -95,13 +96,15 @@ export const createColorVariableRule = (): PropertyRule => ({
             results.push({
               ruleId: "shared:property:color-variable",
               name: "Use Color Variables",
-              message: `Property "${propertyName}" uses hardcoded color "${propertyValue}". Consider using a Webflow color variable for better maintainability.`,
+              message: `Property "${propertyName}" uses hardcoded color "${convertColorToHex(
+                propertyValue
+              )}". Consider using a Webflow color variable for better maintainability.`,
               severity: "warning",
               className,
               isCombo: false, // Will be set correctly by the rule runner
               metadata: {
                 propertyName,
-                currentValue: propertyValue,
+                currentValue: convertColorToHex(propertyValue),
                 suggestion: "Replace with a Webflow color variable",
               },
             });

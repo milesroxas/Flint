@@ -61,8 +61,8 @@ Shared rules provide common functionality that can be reused across multiple pre
 
 **Detected Color Formats**:
 
-- HSL/HSLA: `hsla(0, 100.00%, 66.00%, 1.00)`
-- RGB/RGBA: `rgba(255, 0, 0, 1)`
+- HSL/HSLA: `hsla(0, 100%, 66%, 1)` → `#ff4444`
+- RGB/RGBA: `rgba(255, 0, 0, 1)` → `#ff0000`
 - Hex: `#ff0000`
 - Named colors: `red`, `blue`, etc.
 
@@ -82,7 +82,7 @@ Shared rules provide common functionality that can be reused across multiple pre
 **Examples**:
 
 - ✅ Using Webflow color variable
-- ❌ `color: hsla(0, 100.00%, 66.00%, 1.00)` (hardcoded color)
+- ❌ `color: hsla(0, 100%, 66%, 1)` → `#ff4444` (hardcoded color)
 - ❌ `background-color: #ff0000` (hardcoded color)
 
 **Auto-fix**: ❌ (Manual replacement with variable required)
@@ -116,11 +116,11 @@ Shared rules provide common functionality that can be reused across multiple pre
 
 ## Rule Summary
 
-| Rule ID                                   | Name                                           | Type        | Severity | Auto-fix | Configurable |
-| ----------------------------------------- | ---------------------------------------------- | ----------- | -------- | -------- | ------------ |
-| `shared:property:duplicate-of-utility`    | Avoid duplicate of existing utility            | Structure   | Warning  | ❌       | ✅           |
-| `shared:property:color-variable`          | Use Color Variables                            | Property    | Warning  | ❌       | ✅           |
-| `shared:structure:missing-class-on-div`   | Block elements must have style classes         | Structure   | Warning  | ❌       | ❌           |
+| Rule ID                                 | Name                                   | Type      | Severity | Auto-fix | Configurable |
+| --------------------------------------- | -------------------------------------- | --------- | -------- | -------- | ------------ |
+| `shared:property:duplicate-of-utility`  | Avoid duplicate of existing utility    | Structure | Warning  | ❌       | ✅           |
+| `shared:property:color-variable`        | Use Color Variables                    | Property  | Warning  | ❌       | ✅           |
+| `shared:structure:missing-class-on-div` | Block elements must have style classes | Structure | Warning  | ❌       | ❌           |
 
 ## Usage Across Presets
 
