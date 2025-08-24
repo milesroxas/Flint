@@ -4,6 +4,45 @@ import type {
   RuleResult,
 } from "@/features/linter/model/rule.types";
 
+/**
+ * Gets the known elements for client-first preset
+ * This is the single source of truth for client-first recognized elements
+ */
+function getClientFirstKnownElements(): string[] {
+  return [
+    // Layout elements
+    "wrapper",
+    "container",
+    "inner",
+    "section",
+    // Content elements
+    "text",
+    "title",
+    "heading",
+    "subtitle",
+    "label",
+    // Component elements
+    "card",
+    "button",
+    "link",
+    "form",
+    "nav",
+    // Media elements
+    "image",
+    "icon",
+    "video",
+    // Utility elements
+    "spacer",
+    "divider",
+    "overlay",
+  ];
+}
+
+/**
+ * Export the known elements for use by other services
+ */
+export { getClientFirstKnownElements };
+
 const customClassConfig: RuleConfigSchema = {
   projectDefinedElements: {
     label: "Project-defined element terms",

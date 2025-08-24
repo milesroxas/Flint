@@ -9,6 +9,8 @@ export interface ViolationsSectionProps {
   items: RuleResult[];
   showHighlight?: boolean;
   defaultOpenIds?: string[];
+  hasUnrecognizedElements?: boolean;
+  onOpenExpandedView?: (contentType: string, data?: unknown) => void;
 }
 
 export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
@@ -16,6 +18,8 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   items,
   showHighlight = true,
   defaultOpenIds = [],
+  hasUnrecognizedElements = false,
+  onOpenExpandedView,
 }) => {
   const prevOpenSetRef = React.useRef<Set<string>>(new Set<string>());
   const [openValues, setOpenValues] = React.useState<string[]>(defaultOpenIds);
@@ -91,6 +95,8 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
             violation={violation}
             index={index}
             showHighlight={showHighlight}
+            hasUnrecognizedElements={hasUnrecognizedElements}
+            onOpenExpandedView={onOpenExpandedView}
           />
         ))}
       </Accordion>

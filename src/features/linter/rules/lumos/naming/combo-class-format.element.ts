@@ -2,11 +2,98 @@
 import type {
   NamingRule,
   RuleResult,
+  QuickFix,
 } from "@/features/linter/model/rule.types";
+import {
+  normalizeUtilityClass,
+  normalizeVariantClass,
+} from "@/features/linter/lib/string-normalization";
+
+// Rule metadata constants
+const RULE_ID = "lumos:naming:combo-class-format";
+const RULE_NAME = "Combo class format";
+
+/**
+ * Creates a quick fix for renaming a class
+ */
+function createRenameFix(from: string, to: string): QuickFix {
+  return {
+    kind: "rename-class",
+    from,
+    to,
+    scope: "element",
+  } as const;
+}
+
+/**
+ * Creates a rule result with common fields populated
+ */
+function createRuleResult(
+  className: string,
+  message: string,
+  isCombo: boolean,
+  example?: string,
+  fix?: QuickFix
+): RuleResult {
+  return {
+    ruleId: RULE_ID,
+    name: RULE_NAME,
+    message,
+    severity: "error",
+    className,
+    isCombo,
+    example,
+    fix,
+  };
+}
+
+/**
+ * Validates and processes utility classes
+ */
+function validateUtilityClass(className: string): RuleResult | null {
+  const normalizedClass = normalizeUtilityClass(className);
+
+  // If normalization returns the same class, it's already valid
+  if (normalizedClass === className) return null;
+
+  const fix = normalizedClass
+    ? createRenameFix(className, normalizedClass)
+    : undefined;
+
+  return createRuleResult(
+    className,
+    "Utility classes used in the combo position must be lowercase, hyphen-separated, and start with u-.",
+    false,
+    "base_custom is-active u-hidden",
+    fix
+  );
+}
+
+/**
+ * Validates and processes variant classes
+ */
+function validateVariantClass(className: string): RuleResult | null {
+  const normalizedClass = normalizeVariantClass(className);
+
+  // If normalization returns the same class, it's already valid
+  if (normalizedClass === className) return null;
+
+  const fix = normalizedClass
+    ? createRenameFix(className, normalizedClass)
+    : undefined;
+
+  return createRuleResult(
+    className,
+    "Combo custom classes must be lowercase variant tokens starting with is- or be valid utilities starting with u-.",
+    true,
+    "base_custom is-active",
+    fix
+  );
+}
 
 export const createLumosComboClassFormatRule = (): NamingRule => ({
-  id: "lumos:naming:combo-class-format",
-  name: "Combo class format",
+  id: RULE_ID,
+  name: RULE_NAME,
   description:
     "After the base custom class, combos must be either a variant (is-) or a utility (u-). Component bases (c-*) are not valid combos.",
   example: "base_custom is-active u-hidden",
@@ -17,99 +104,44 @@ export const createLumosComboClassFormatRule = (): NamingRule => ({
   targetClassTypes: ["combo", "utility"],
 
   test: (className: string): boolean => {
-    if (!className) return false;
-    return (
-      /^is-/.test(className) || /^u-/.test(className) || /^c-/.test(className)
-    );
+    // Only test classes that could potentially be combo classes
+    // This includes is-, u-, c-, and any other potential combo classes
+    return Boolean(className && className.length > 2);
   },
 
   evaluate: (className: string): RuleResult | null => {
-    const VARIANT_RE = /^is-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    const UTILITY_RE = /^u-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    // Use charAt for faster prefix checking than startsWith
+    const firstChar = className.charAt(0);
+    const prefix = className.slice(0, 2);
 
-    if (className.startsWith("c-")) {
-      return {
-        ruleId: "lumos:naming:combo-class-format",
-        name: "Combo class format",
-        message:
-          "Component base classes (c-*) cannot be used as a combo. Use a variant (is-) or a utility (u-).",
-        severity: "error",
+    // Component classes are not valid combos
+    if (firstChar === "c" && prefix === "c-") {
+      return createRuleResult(
         className,
-        isCombo: true,
-        example: "base_custom is-active",
-      };
+        "Component base classes (c-*) cannot be used as a combo. Use a variant (is-) or a utility (u-).",
+        true,
+        "base_custom is-active",
+        undefined // No fix available for component classes
+      );
     }
 
-    if (className.startsWith("u-")) {
-      if (UTILITY_RE.test(className)) return null;
-
-      const candidate = (() => {
-        const lower = className.trim().toLowerCase();
-        const noPrefix = lower.replace(/^u[_-]?/, "");
-        const normalized = noPrefix
-          .replace(/[^a-z0-9-]/g, "")
-          .replace(/_+/g, "-")
-          .replace(/--+/g, "-")
-          .replace(/^-+|-+$/g, "");
-        const proposed = `u-${normalized}`;
-        return UTILITY_RE.test(proposed) ? proposed : null;
-      })();
-
-      return {
-        ruleId: "lumos:naming:combo-class-format",
-        name: "Combo class format",
-        message:
-          "Utility classes used in the combo position must be lowercase, hyphen-separated, and start with u-.",
-        severity: "error",
-        className,
-        isCombo: false,
-        example: "base_custom is-active u-hidden",
-        ...(candidate
-          ? {
-              fix: {
-                kind: "rename-class",
-                from: className,
-                to: candidate,
-                scope: "element",
-              } as const,
-            }
-          : {}),
-      };
+    // Validate utility classes
+    if (firstChar === "u" && prefix === "u-") {
+      return validateUtilityClass(className);
     }
 
-    if (VARIANT_RE.test(className)) return null;
+    // Validate variant classes (is- prefix)
+    if (firstChar === "i" && prefix === "is") {
+      return validateVariantClass(className);
+    }
 
-    const suggested = (() => {
-      const lower = className.trim().toLowerCase();
-      const stripped = lower.replace(/^is[_-]?/, "");
-      const normalized = stripped
-        .replace(/[^a-z0-9-]/g, "")
-        .replace(/_+/g, "-")
-        .replace(/--+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      const candidate = `is-${normalized}`;
-      return VARIANT_RE.test(candidate) ? candidate : null;
-    })();
-
-    return {
-      ruleId: "lumos:naming:combo-class-format",
-      name: "Combo class format",
-      message:
-        "Combo custom classes must be lowercase variant tokens starting with is- or be valid utilities starting with u-.",
-      severity: "error",
+    // If not u-, c-, or is-, it's not a valid combo class format
+    return createRuleResult(
       className,
-      isCombo: true,
-      example: "base_custom is-active",
-      ...(suggested
-        ? {
-            fix: {
-              kind: "rename-class",
-              from: className,
-              to: suggested,
-              scope: "element",
-            } as const,
-          }
-        : {}),
-    };
+      "Combo classes must be either a variant (is-) or a utility (u-). Component bases (c-*) are not valid combos.",
+      true,
+      "base_custom is-active u-hidden",
+      undefined // No specific fix for unknown formats
+    );
   },
 });

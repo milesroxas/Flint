@@ -7,18 +7,23 @@ import {
 import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import { ViolationHeader } from "./ViolationHeader";
 import { ViolationDetails, ClassBadge } from "./ViolationDetails";
+import { ExpandViewButton } from "../controls/ExpandViewButton";
 import { cn } from "@/lib/utils";
 
 interface ViolationItemProps {
   violation: RuleResult;
   index: number;
   showHighlight?: boolean;
+  hasUnrecognizedElements?: boolean;
+  onOpenExpandedView?: (contentType: string, data?: unknown) => void;
 }
 
 export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
   showHighlight = true,
+  hasUnrecognizedElements = false,
+  onOpenExpandedView,
 }) => {
   const id = `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
 
@@ -46,6 +51,17 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
         <ViolationDetails violation={violation} showHighlight={showHighlight} />
+        {/* Show expand button for unrecognized elements */}
+        {violation.metadata?.unrecognizedElement &&
+          hasUnrecognizedElements &&
+          onOpenExpandedView && (
+            <div className="flex justify-end mt-2">
+              <ExpandViewButton
+                onClick={() => onOpenExpandedView("recognized-elements")}
+                isExpanded={false}
+              />
+            </div>
+          )}
       </AccordionContent>
     </AccordionItem>
   );

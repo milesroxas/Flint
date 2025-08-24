@@ -66,7 +66,12 @@ export const usePageLintStore = create<PageLintStore>()(
       },
 
       clearResults: () => {
-        set({ results: [], passedClassNames: [], error: null, hasRun: false });
+        set({
+          results: [],
+          passedClassNames: [],
+          error: null,
+          hasRun: false,
+        });
       },
     }),
     {

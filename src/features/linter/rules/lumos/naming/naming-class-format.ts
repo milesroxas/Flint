@@ -4,6 +4,54 @@ import {
   RuleConfigSchema,
   RuleContext,
 } from "@/features/linter/model/rule.types";
+import { normalizeToUnderscoreFormat } from "@/features/linter/lib/string-normalization";
+
+/**
+ * Gets the known elements for lumos preset
+ * This is the single source of truth for lumos recognized elements
+ */
+function getLumosKnownElements(): string[] {
+  return [
+    // Layout elements
+    "wrap",
+    "main",
+    "contain",
+    "container",
+    "layout",
+    "inner",
+    "content",
+    "section",
+    // Content elements
+    "text",
+    "title",
+    "heading",
+    "eyebrow",
+    "label",
+    "marker",
+    // Media elements
+    "icon",
+    "img",
+    "image",
+    // Interactive elements
+    "button",
+    "link",
+    "field",
+    // Structure elements
+    "group",
+    "item",
+    "list",
+    "card",
+    // Testing elements
+    "x",
+    "y",
+    "z",
+  ];
+}
+
+/**
+ * Export the known elements for use by other services
+ */
+export { getLumosKnownElements };
 
 const customClassConfig: RuleConfigSchema = {
   projectDefinedElements: {
@@ -43,14 +91,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
     // Check basic format requirements
     const pattern = /^[a-z0-9_]+$/;
     if (!pattern.test(className)) {
-      const suggested = className
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_")
-        .replace(/-/g, "_")
-        .replace(/[^a-z0-9_]/g, "")
-        .replace(/_+/g, "_")
-        .replace(/^_+|_+$/g, "");
+      const suggested = normalizeToUnderscoreFormat(className);
 
       return {
         ruleId: "lumos:naming:class-format",
@@ -60,14 +101,9 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         className,
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
-        fix:
+        metadata:
           suggested && /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(suggested)
-            ? {
-                kind: "rename-class",
-                from: className,
-                to: suggested,
-                scope: "element",
-              }
+            ? { suggestedName: suggested }
             : undefined,
       };
     }
@@ -76,6 +112,8 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
 
     // Must have at least 2 segments
     if (segments.length < 2) {
+      const suggestedFix = `${className}_wrap`; // Common fallback element
+
       return {
         ruleId: "lumos:naming:class-format",
         name: "Lumos Custom Class Format",
@@ -84,11 +122,18 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         className,
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
+        metadata: { suggestedName: suggestedFix },
       };
     }
 
     // Check for empty segments
     if (segments.some((s) => !s)) {
+      const cleanedSegments = segments.filter((s) => s.length > 0);
+      const suggestedFix =
+        cleanedSegments.length >= 2
+          ? cleanedSegments.join("_")
+          : `${cleanedSegments[0] || "element"}_wrap`;
+
       return {
         ruleId: "lumos:naming:class-format",
         name: "Lumos Custom Class Format",
@@ -97,42 +142,14 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         className,
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
+        metadata: { suggestedName: suggestedFix },
       };
     }
 
     const finalElement = segments[segments.length - 1];
 
-    // Known element terms that are considered valid
-    const knownElements = [
-      "wrap",
-      "main",
-      "contain",
-      "container",
-      "layout",
-      "text",
-      "title",
-      "icon",
-      "img",
-      "image",
-      "eyebrow",
-      "marker",
-      "group",
-      "label",
-      "heading",
-      "button",
-      "link",
-      "field",
-      "inner",
-      "content",
-      "section",
-      "item",
-      "list",
-      "card",
-      // Short generic elements for testing/demos
-      "x",
-      "y",
-      "z",
-    ];
+    // Get known elements from centralized service
+    const knownElements = getLumosKnownElements();
 
     const projectTerms: string[] =
       (context?.config?.projectDefinedElements as string[]) ??
@@ -156,6 +173,9 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
     }
 
     // Unrecognized element - suggest consideration
+    const baseSegments = segments.slice(0, -1);
+    const suggestedFix = `${baseSegments.join("_")}_wrap`; // Common fallback element
+
     return {
       ruleId: "lumos:naming:class-format",
       name: "Lumos Custom Class Format",
@@ -163,7 +183,10 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
       severity: "suggestion",
       className,
       isCombo: false,
-      metadata: { unrecognizedElement: finalElement },
+      metadata: {
+        unrecognizedElement: finalElement,
+        suggestedName: suggestedFix,
+      },
     };
   },
 });

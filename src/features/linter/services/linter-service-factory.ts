@@ -5,6 +5,7 @@ import { createRuleRunner } from "@/features/linter/services/rule-runner";
 import { createElementLintService } from "@/features/linter/services/element-lint-service";
 import { createPageLintService } from "@/features/linter/services/page-lint-service";
 import { createLintContextService } from "@/features/linter/services/lint-context.service";
+import { createPresetElementsService } from "@/features/linter/services/preset-elements.service";
 import {
   getRuleRegistry,
   getCurrentPreset,
@@ -20,6 +21,7 @@ export function createLinterServices() {
   const styleService = createStyleService();
   const analyzer = createUtilityClassAnalyzer();
   const contextService = createLintContextService({ styleService });
+  const presetElementsService = createPresetElementsService();
 
   // Get active preset for grammar-aware rule runner
   const activePreset = resolvePresetOrFallback(getCurrentPreset());
@@ -51,6 +53,7 @@ export function createLinterServices() {
     ruleRunner,
     elementLintService,
     pageLintService,
+    presetElementsService,
     activePreset,
     activeGrammar,
   } as const;
