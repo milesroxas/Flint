@@ -1,5 +1,5 @@
 import "./styles/globals.css";
-import React, { useState } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import Header from "@/app/ui/Header";
 import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
@@ -7,35 +7,11 @@ import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
 import { LinterPanel } from "@/features/linter/view/LinterPanel";
 import { ExpandedContent } from "@/features/linter/ui/expanded/ExpandedContent";
 import { RecognizedElementsView } from "@/features/linter/ui/expanded/RecognizedElementsView";
-import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { cn } from "@/lib/utils";
 
 const Root: React.FC = () => {
-  const [expandedView, setExpandedView] = useState<{
-    isActive: boolean;
-    contentType: string | null;
-    data: unknown;
-  }>({
-    isActive: false,
-    contentType: null,
-    data: null,
-  });
-
-  const openExpandedView = (contentType: string, data?: unknown) => {
-    setExpandedView({
-      isActive: true,
-      contentType,
-      data: data || null,
-    });
-  };
-
-  const closeExpandedView = () => {
-    setExpandedView({
-      isActive: false,
-      contentType: null,
-      data: null,
-    });
-  };
+  const { isActive, content, closeExpandedView } = useExpandedView();
 
   return (
     <ExtensionWrapper>
@@ -44,14 +20,14 @@ const Root: React.FC = () => {
         <div
           className={cn(
             "flex h-full flex-col transition-all duration-300 ease-in-out",
-            expandedView.isActive
+            isActive
               ? "translate-x-[-100%] opacity-0"
               : "translate-x-0 opacity-100"
           )}
         >
           <Header />
           <div className="flex-1 min-h-0">
-            <LinterPanel onOpenExpandedView={openExpandedView} />
+            <LinterPanel />
           </div>
         </div>
 
@@ -59,21 +35,23 @@ const Root: React.FC = () => {
         <div
           className={cn(
             "absolute inset-0 flex flex-col transition-all duration-300 ease-in-out",
-            expandedView.isActive
+            isActive
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0"
           )}
         >
-          {expandedView.isActive && (
+          {isActive && content && (
             <>
-              {expandedView.contentType === "recognized-elements" && (
+              {content.type === "recognized-elements" && (
                 <ExpandedContent
-                  title="Recognized Elements"
+                  title={content.title}
                   onClose={closeExpandedView}
                 >
                   <RecognizedElementsView
-                    presetId={getCurrentPreset()}
-                    projectElements={[]}
+                    presetId={(content.data as any)?.presetId || ""}
+                    projectElements={
+                      (content.data as any)?.projectElements || []
+                    }
                   />
                 </ExpandedContent>
               )}

@@ -11,7 +11,6 @@ interface ViolationsListProps {
   showHighlight?: boolean; // controls highlight element button in items
   onScrollStateChange?: (isScrolled: boolean) => void; // notify parent when list scrolled from top
   onScrollDirectionChange?: (direction: "up" | "down") => void; // notify parent of scroll direction
-  onOpenExpandedView: (contentType: string, data?: unknown) => void;
 }
 
 export const ViolationsList: React.FC<ViolationsListProps> = ({
@@ -20,7 +19,6 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   showHighlight = true,
   onScrollStateChange,
   onScrollDirectionChange,
-  onOpenExpandedView,
 }) => {
   const errors = useMemo(
     () => violations.filter((v) => v.severity === "error"),
@@ -57,11 +55,6 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     [passedClassNames, failedSet]
   );
 
-  // Check if we should show unrecognized elements hint
-  const hasUnrecognizedElements = useMemo(() => {
-    return violations.some((v) => v.metadata?.unrecognizedElement);
-  }, [violations]);
-
   return (
     <div className="h-full flex flex-col min-h-0 pt-2">
       <ScrollArea
@@ -75,24 +68,18 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             items={errors}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
-            hasUnrecognizedElements={hasUnrecognizedElements}
-            onOpenExpandedView={onOpenExpandedView}
           />
           <ViolationsSection
             title="Warnings"
             items={warnings}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
-            hasUnrecognizedElements={hasUnrecognizedElements}
-            onOpenExpandedView={onOpenExpandedView}
           />
           <ViolationsSection
             title="Suggestions"
             items={suggestions}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
-            hasUnrecognizedElements={hasUnrecognizedElements}
-            onOpenExpandedView={onOpenExpandedView}
           />
           {passedOnly.length > 0 && (
             <div className="mt-2 space-y-1">

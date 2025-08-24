@@ -8,24 +8,24 @@ import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import { ViolationHeader } from "./ViolationHeader";
 import { ViolationDetails, ClassBadge } from "./ViolationDetails";
 import { ExpandViewButton } from "../controls/ExpandViewButton";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
+import { expandedViewCapabilitiesService } from "@/features/linter/services/expanded-view-capabilities.service";
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 import { cn } from "@/lib/utils";
 
 interface ViolationItemProps {
   violation: RuleResult;
   index: number;
   showHighlight?: boolean;
-  hasUnrecognizedElements?: boolean;
-  onOpenExpandedView?: (contentType: string, data?: unknown) => void;
 }
 
 export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
   showHighlight = true,
-  hasUnrecognizedElements = false,
-  onOpenExpandedView,
 }) => {
   const id = `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
+  const { openExpandedView } = useExpandedView();
 
   const sev = violation.severity as Severity;
   const severityLeftBorder: Record<Severity, string> = {
@@ -34,6 +34,30 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
     suggestion: "border-l-suggestion",
   };
   const borderColorClass = severityLeftBorder[sev];
+
+  // Check if this violation has expanded view capabilities
+  const primaryCapability =
+    expandedViewCapabilitiesService.getPrimaryCapability(violation);
+
+  const handleExpandedViewClick = () => {
+    if (!primaryCapability) return;
+
+    // Create appropriate content based on the capability type
+    let contentData: unknown;
+    if (primaryCapability.contentType === "recognized-elements") {
+      contentData = {
+        presetId: getCurrentPreset(),
+        projectElements: [], // TODO: Get from configuration
+      };
+    }
+
+    openExpandedView({
+      type: primaryCapability.contentType,
+      title: primaryCapability.title,
+      data: contentData,
+      sourceRuleId: violation.ruleId,
+    });
+  };
 
   return (
     <AccordionItem key={id} value={id} className="border-b last:border-b-0">
@@ -51,17 +75,15 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
         <ViolationDetails violation={violation} showHighlight={showHighlight} />
-        {/* Show expand button for unrecognized elements */}
-        {violation.metadata?.unrecognizedElement &&
-          hasUnrecognizedElements &&
-          onOpenExpandedView && (
-            <div className="flex justify-end mt-2">
-              <ExpandViewButton
-                onClick={() => onOpenExpandedView("recognized-elements")}
-                isExpanded={false}
-              />
-            </div>
-          )}
+        {/* Show expand button only when violation has expanded view capabilities */}
+        {primaryCapability && (
+          <div className="flex justify-end mt-2">
+            <ExpandViewButton
+              onClick={handleExpandedViewClick}
+              isExpanded={false}
+            />
+          </div>
+        )}
       </AccordionContent>
     </AccordionItem>
   );

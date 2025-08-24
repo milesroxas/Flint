@@ -15,11 +15,7 @@ import SeverityFilter, {
 } from "@/features/linter/ui/controls/SeverityFilter";
 import { StructuralContextToggle } from "@/features/linter/ui/controls/StructuralContextToggle";
 
-interface LinterPanelProps {
-  onOpenExpandedView: (contentType: string, data?: unknown) => void;
-}
-
-export function LinterPanel({ onOpenExpandedView }: LinterPanelProps) {
+export function LinterPanel() {
   const { results, passedClassNames, loading, error, hasRun, lintPage } =
     usePageLint();
   // const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
@@ -164,7 +160,6 @@ export function LinterPanel({ onOpenExpandedView }: LinterPanelProps) {
                           }
                         : undefined
                     }
-                    onOpenExpandedView={onOpenExpandedView}
                   />
                 </div>
                 {/* <div className="mt-2 text-[10px] text-muted-foreground px-4">

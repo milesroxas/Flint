@@ -87,6 +87,8 @@ export const createNamingRuleExecutor = (): NamingRuleExecutor => {
           },
           // example is optional in many shapes; include only if present
           ...(evaluated.example ? { example: evaluated.example } : {}),
+          // preserve expanded view capabilities from rule evaluation
+          ...(evaluated.expandedViewCapabilities ? { expandedViewCapabilities: evaluated.expandedViewCapabilities } : {}),
         };
         return [result];
       }

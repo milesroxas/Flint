@@ -187,6 +187,15 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         unrecognizedElement: finalElement,
         suggestedName: suggestedFix,
       },
+      expandedViewCapabilities: [
+        {
+          contentType: "recognized-elements",
+          title: "View Recognized Elements",
+          description: "See all recognized element names for this preset",
+          isRelevantFor: (violation) =>
+            Boolean(violation.metadata?.unrecognizedElement),
+        },
+      ],
     };
   },
 });

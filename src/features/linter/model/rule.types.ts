@@ -12,6 +12,23 @@ import {
 
 export type Severity = "suggestion" | "warning" | "error";
 
+// -------------------------
+// Expanded View Support
+// -------------------------
+export type ExpandedViewContentType =
+  | "recognized-elements"
+  | "rule-documentation"
+  | "diagnostic-details"
+  | "suggested-fixes";
+
+export interface ExpandedViewCapability {
+  contentType: ExpandedViewContentType;
+  title: string;
+  description?: string;
+  /** Predicate to determine if this expansion is relevant for a given violation */
+  isRelevantFor?: (violation: RuleResult) => boolean;
+}
+
 export interface RuleResult {
   ruleId: string;
   name: string;
@@ -24,6 +41,8 @@ export interface RuleResult {
   example?: string;
   metadata?: Record<string, any>;
   fix?: QuickFix;
+  /** Declares what expanded view capabilities this result supports */
+  expandedViewCapabilities?: ExpandedViewCapability[];
 }
 
 // -------------------------

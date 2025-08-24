@@ -60,6 +60,10 @@ export const createPropertyRuleExecutor = (
       example: rule.example,
       metadata: v.metadata,
       fix: v.fix,
+      // preserve expanded view capabilities from rule results
+      ...(v.expandedViewCapabilities
+        ? { expandedViewCapabilities: v.expandedViewCapabilities }
+        : {}),
     }));
   };
 };
