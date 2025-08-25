@@ -179,9 +179,9 @@ export const createRuleRegistry = () => {
     getClassScopeRules,
 
     // getters (page)
-    getPageRules, // NEW
-    getEnabledPageRules, // NEW
-    getPageRulesSorted, // NEW
+    getPageRules,
+    getEnabledPageRules,
+    getPageRulesSorted,
 
     // configuration
     updateRuleConfiguration,

@@ -5,7 +5,7 @@
  API is unavailable. Designed for use in UI click handlers.
 */
 
-const DEBUG_SELECT_ELEMENT = true;
+const DEBUG_SELECT_ELEMENT = false;
 const dbg = (...args: unknown[]) => {
   if (DEBUG_SELECT_ELEMENT && import.meta.env.DEV) {
     // eslint-disable-next-line no-console

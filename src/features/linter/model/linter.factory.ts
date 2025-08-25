@@ -18,7 +18,6 @@ export function ensureLinterInitialized(
   isInitialized = true;
   currentMode = mode;
   currentPreset = preset;
-  // Invalidate style cache and services when registry (and potentially preset) changes
   void (async () => {
     try {
       const styleCacheMod = await import(
