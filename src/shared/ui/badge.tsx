@@ -27,6 +27,14 @@ const badgeVariants = cva(
           "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         newProperty:
           "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
+        webflowClass:
+          "bg-webflow-class text-webflow-class-foreground hover:bg-webflow-class-hover active:bg-webflow-class-active rounded-xs px-2 font-mono",
+        errorContent:
+          "bg-error-content text-error-content-foreground hover:bg-error-content-hover active:bg-error-content-active rounded-xs px-2 font-mono",
+        suggestionContent:
+          "bg-suggestion-content text-suggestion-content-foreground hover:bg-suggestion-content-hover active:bg-suggestion-content-active rounded-xs px-2 font-mono",
+        dynamicProperty:
+          "bg-dynamic-property text-dynamic-property-foreground hover:bg-dynamic-property-hover active:bg-dynamic-property-active rounded-xs px-2 font-mono",
       },
       isCombo: {
         true: "bg-accent/10 text-foreground text-xs rounded-xs",

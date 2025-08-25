@@ -87,6 +87,21 @@ src/features/linter/rules/
 - Page‑scope rules (e.g., main singleton) live under `canonical/*.page.ts` and are executed by the page rule runner in `page-lint-service.ts` before element rules
 - Each violation has `metadata.elementId` and, when available, `metadata.role` to power UI labels and grouping
 
+## ✨ Enhanced Message Formatting
+
+The linter now features intelligent message formatting that automatically applies appropriate color coding:
+
+- **Message Analysis**: The `message-formatter.ts` analyzes violation messages to detect content types
+- **Pattern Recognition**: Automatically identifies message structures like "Child group key X does not match root key Y. Rename to Z"
+- **Smart Color Coding**: Applies context-appropriate colors based on message position and content type
+- **Visual Hierarchy**: Creates clear distinction between errors, suggestions, and reference content
+
+**Example**: In the message "Child group key component*error does not match root key component_group. Rename to component_group*[element]\_wrap":
+
+- `component_error` → Error content (orange-red)
+- `component_group` → Webflow class (blue)
+- `component_group_[element]_wrap` → Suggestion (green)
+
 ---
 
 ## Canonical Rules (Preset‑agnostic)
@@ -108,6 +123,7 @@ Do not duplicate these in presets. If a preset needs stronger/different behavior
 
 - `color-variable.ts`: Detects color values that should use CSS variables
 - `utility-duplicate-properties.ts`: Identifies duplicate CSS properties from utility classes
+- `utility-duplicate-property.ts`: Identifies single utility property duplicates
 
 ### Structure Rules
 

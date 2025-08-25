@@ -60,6 +60,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
             Suggested Fix:
           </span>
           <Badge
+            variant="suggestionContent"
             isCombo={false}
             copyable
             className="whitespace-normal break-words max-w-full align-middle"
@@ -97,7 +98,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
           <div className="mb-2">
             <Badge
               className="whitespace-normal break-words max-w-full"
-              variant="newProperty"
+              variant="webflowClass"
             >
               <span className="text-left flex items-center">
                 <code className="font-mono text-xs px-1 break-all ">
@@ -210,7 +211,7 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
           <CollapsibleContent className="mt-2 space-y-1 pl-2 border-l pb-4">
             {property.classes.map((cls, clsIdx) => (
               <div key={clsIdx} className="flex flex-col gap-2">
-                <Badge isCombo={false} copyable>
+                <Badge variant="webflowClass" isCombo={false} copyable>
                   {cls}
                 </Badge>
               </div>
@@ -239,7 +240,7 @@ const ExactMatchesMessage: React.FC<ExactMatchesMessageProps> = ({
     <div className="mt-1 space-y-1">
       {classes.map((cls, idx) => (
         <div className="flex flex-col gap-2" key={idx}>
-          <Badge isCombo={false} copyable>
+          <Badge variant="webflowClass" isCombo={false} copyable>
             {cls}
           </Badge>
         </div>
@@ -288,7 +289,7 @@ export const ClassBadge: React.FC<ClassBadgeProps> = ({ violation }) => (
   <div className="mt-1.5 pl-2">
     <Badge
       isCombo={violation.isCombo}
-      variant="newProperty"
+      variant="webflowClass"
       className="whitespace-normal break-words max-w-full"
     >
       <span className="text-left flex items-center">

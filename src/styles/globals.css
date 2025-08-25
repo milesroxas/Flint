@@ -62,6 +62,27 @@
   --suggestion-foreground: oklch(0.985 0 0);
   --suggestion-hover: oklch(0.50 0.08 250);
   --suggestion-active: oklch(0.45 0.08 250);
+
+  /* Enhanced message color tokens */
+  --webflow-class: oklch(0.45 0.214 259.815);  /* Matching your primary blue */
+  --webflow-class-foreground: oklch(0.97 0.014 254.604);
+  --webflow-class-hover: oklch(0.32 0.214 259.815);
+  --webflow-class-active: oklch(0.28 0.214 259.815);
+
+  --error-content: oklch(0.55 0.18 15);  /* More orange-red for errors */
+  --error-content-foreground: oklch(0.985 0 0);
+  --error-content-hover: oklch(0.50 0.18 15);
+  --error-content-active: oklch(0.45 0.18 15);
+
+  --suggestion-content: oklch(0.50 0.14 145);  /* Distinct green for suggestions */
+  --suggestion-content-foreground: oklch(0.985 0 0);
+  --suggestion-content-hover: oklch(0.45 0.14 145);
+  --suggestion-content-active: oklch(0.40 0.14 145);
+
+  --dynamic-property: oklch(0.52 0.12 290);  /* Purple for dynamic properties */
+  --dynamic-property-foreground: oklch(0.985 0 0);
+  --dynamic-property-hover: oklch(0.47 0.12 290);
+  --dynamic-property-active: oklch(0.42 0.12 290);
 }
 
 .dark {
@@ -121,6 +142,27 @@
   --suggestion-foreground: oklch(0.985 0 0);
   --suggestion-hover: oklch(0.65 0.08 250);
   --suggestion-active: oklch(0.60 0.08 250);
+
+  /* Enhanced message color tokens (dark) */
+  --webflow-class: oklch(0.546 0.245 262.881);  /* Matching your primary blue (dark) */
+  --webflow-class-foreground: oklch(0.985 0 0);
+  --webflow-class-hover: oklch(0.60 0.245 262.881);
+  --webflow-class-active: oklch(0.65 0.245 262.881);
+
+  --error-content: oklch(0.70 0.16 15);  /* More orange-red for errors (dark) */
+  --error-content-foreground: oklch(0.985 0 0);
+  --error-content-hover: oklch(0.65 0.16 15);
+  --error-content-active: oklch(0.60 0.16 15);
+
+  --suggestion-content: oklch(0.65 0.12 145);  /* Distinct green for suggestions (dark) */
+  --suggestion-content-foreground: oklch(0.985 0 0);
+  --suggestion-content-hover: oklch(0.70 0.12 145);
+  --suggestion-content-active: oklch(0.75 0.12 145);
+
+  --dynamic-property: oklch(0.67 0.10 290);  /* Purple for dynamic properties (dark) */
+  --dynamic-property-foreground: oklch(0.985 0 0);
+  --dynamic-property-hover: oklch(0.72 0.10 290);
+  --dynamic-property-active: oklch(0.77 0.10 290);
 }
 
 @theme inline {
@@ -184,6 +226,27 @@
   --color-suggestion-foreground: var(--suggestion-foreground);
   --color-suggestion-hover: var(--suggestion-hover);
   --color-suggestion-active: var(--suggestion-active);
+
+  /* Enhanced message theme tokens for Tailwind */
+  --color-webflow-class: var(--webflow-class);
+  --color-webflow-class-foreground: var(--webflow-class-foreground);
+  --color-webflow-class-hover: var(--webflow-class-hover);
+  --color-webflow-class-active: var(--webflow-class-active);
+
+  --color-error-content: var(--error-content);
+  --color-error-content-foreground: var(--error-content-foreground);
+  --color-error-content-hover: var(--error-content-hover);
+  --color-error-content-active: var(--error-content-active);
+
+  --color-suggestion-content: var(--suggestion-content);
+  --color-suggestion-content-foreground: var(--suggestion-content-foreground);
+  --color-suggestion-content-hover: var(--suggestion-content-hover);
+  --color-suggestion-content-active: var(--suggestion-content-active);
+
+  --color-dynamic-property: var(--dynamic-property);
+  --color-dynamic-property-foreground: var(--dynamic-property-foreground);
+  --color-dynamic-property-hover: var(--dynamic-property-hover);
+  --color-dynamic-property-active: var(--dynamic-property-active);
 }
 
 @layer base {

@@ -26,6 +26,7 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 - Role identification from the first custom class per preset
 - Presets and opinion modes with persisted rule configuration
 - Page and selected‑element scanning, highlighting in Designer
+- **🎨 Enhanced Message Color Coding**: Intelligent color coding system that automatically applies appropriate colors to different content types in lint messages for improved readability
 
 ### Quick start
 
@@ -60,9 +61,11 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 - See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
 - **Core Services**: `src/features/linter/services/` contains the shared context service architecture with intelligent caching and redundancy elimination.
+- **Enhanced UI**: `src/shared/ui/` contains enhanced components with intelligent color coding for improved message readability.
 - Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
   - Auto-highlight on violation open in page mode is implemented in `src/features/linter/ui/violations/ViolationsSection.tsx` via `selectElementById` with a fallback `flowlint:highlight` event.
   - **New**: Context service (`lint-context.service.ts`) centralizes bootstrap logic with 57% overall code reduction in linting services.
+  - **New**: Enhanced message formatter (`message-formatter.ts`) provides intelligent color coding based on message structure and content type.
 
 ### Documentation index
 
@@ -79,6 +82,8 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
   - Linter (feature overview): `src/features/linter/README.md`
   - **Linter services**: `src/features/linter/services/README.md` ✨ _Updated with context service architecture_
+  - **Shared UI components**: `src/shared/ui/README.md` ✨ _New documentation for enhanced Badge component and color coding_
+  - **Linter library functions**: `src/features/linter/lib/README.md` ✨ _New documentation for enhanced message formatter and color coding system_
   - Linter grammar adapters: `src/features/linter/grammar/README.md`
   - Linter role resolvers: `src/features/linter/roles/README.md`
   - Linter store: `src/features/linter/store/README.md`
@@ -128,20 +133,26 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 ```
 src/
+  app/
   entities/
     element/model/
     style/model/
   features/
-      linter/
-        model/ services/ grammar/ roles/ store/ view/
-        ui/
-          controls/
-          violations/
-          panel/
+    linter/
+      model/ services/ grammar/ roles/ store/ view/
+      ui/
+        controls/
+        violations/
+        panel/
+      lib/
     window/
+  lib/
   presets/
   processes/scan/
   rules/
+  shared/
+    ui/
+    utils/
 styles/
 docs/
 ```

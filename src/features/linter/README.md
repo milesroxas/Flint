@@ -2,6 +2,18 @@
 
 A linting system for Webflow Designer that validates class naming, flags duplicate utility properties, and applies context-aware rules to elements within the current page or the currently selected element. This document reflects the current implementation across services, rules, UI, and state.
 
+### ✨ **Enhanced Message Color Coding System**
+
+The linter now features an intelligent color coding system that enhances message readability and maintains your product design style:
+
+- **🔵 Webflow Class**: Uses your signature blue (`oklch(0.45 0.214 259.815)`) for class names
+- **🔴 Error Content**: Orange-red highlighting for problematic values
+- **🟢 Suggestion Content**: Green highlighting for recommended fixes
+- **🟣 Dynamic Properties**: Purple for placeholders like `[element]`, `{property}`
+- **⚪ Inherited Properties**: Default styling for other content
+
+**Smart Pattern Recognition**: The system automatically detects message structures like "Child group key X does not match root key Y. Rename to Z" and applies appropriate colors based on position and context.
+
 ### Key capabilities
 
 - **Class type detection**: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to `is-` prefix)
@@ -49,18 +61,16 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - Streamlined from 200 to 45 lines by delegating bootstrap logic to context service
   - All caching and optimization handled by shared context service
 
-- **`lightweight-context.service.ts`** 🆕 _Structural Element Support_
-
-  - Creates subtree contexts starting from selected element as component boundary
-  - Gathers all descendants via `getChildren()` API and builds parent-child maps
-  - Provides `elementById` lookup for style resolution and `getDescendantIds` for complete subtree coverage
-  - Enables structural role detection within element boundaries
-
-- `utility-class-analyzer.ts`
+- **`utility-class-analyzer.ts`** (in `services/analyzers/`)
 
   - Builds a utility class → properties map and a property → classes map
   - Detects exact duplicates (single-property) and overlapping properties
   - Exposes formatted property metadata for exact matches (used by UI)
+
+- **`executors/`** directory
+
+  - `naming-rule-executor.ts` - Handles naming rule execution
+  - `property-rule-executor.ts` - Handles property rule execution
 
 - `rule-registry.ts`
 
@@ -97,8 +107,12 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - `grammar/lumos.grammar.ts`, `roles/lumos.roles.ts`
   - `grammar/client-first.grammar.ts`, `roles/client-first.roles.ts`
 
-- `message-parser.ts`, `severity-styles.ts`
-  - Parse duplicate-properties messages and map severities to CSS classes for UI
+- **Library functions** (in `lib/`)
+
+  - `message-parser.ts` - Parse duplicate-properties messages
+  - `message-formatter.ts` - Enhanced message formatting with color coding
+  - `color-utils.ts` - Color utility functions
+  - `labels.ts` - Centralized label management
 
 ### Rules
 
@@ -130,6 +144,12 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 - `ui/controls/PresetSwitcher.tsx`: preset picker wired to registry re-init and cache reset.
 - `ui/controls/ActionBar.tsx` and `ui/controls/LintPageButton.tsx`: bottom toolbar and primary actions.
 - `ui/panel/LintPanelHeader.tsx` (LintSummary): shared header for counts and roles.
+
+#### Message Formatting & Color Coding
+
+- `lib/message-formatter.ts`: **Enhanced intelligent message formatter** that automatically detects content types and applies appropriate color coding
+- `lib/color-utils.ts`: Color utility functions for consistent styling
+- **Smart Badge Variants**: New badge variants (`webflowClass`, `errorContent`, `suggestionContent`, `dynamicProperty`) for enhanced visual hierarchy
 
 #### Hooks
 
@@ -189,14 +209,17 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 ## File map (key files)
 
-- `services/element-lint-service.ts`, `services/utility-class-analyzer.ts`, `services/rule-runner.ts`
+- `services/element-lint-service.ts`, `services/analyzers/utility-class-analyzer.ts`, `services/rule-runner.ts`
 - `services/rule-registry.ts`, `services/rule-configuration-service.ts`, `services/registry.ts`
-- `services/lightweight-context.service.ts`, `services/lint-context.service.ts`
+- `services/lint-context.service.ts`
+- `services/executors/naming-rule-executor.ts`, `services/executors/property-rule-executor.ts`
 - `entities/style/model/style.service.ts`
 - `rules/*` (naming, property, context-aware, canonical)
 - `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
 - `store/usePageLintStore.ts`, `store/elementLint.store.ts`
 - `view/LinterPanel.tsx`, `ui/controls/LintPageButton.tsx`, `ui/controls/StructuralContextToggle.tsx`, `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx`, `ui/controls/ModeToggle.tsx`, `ui/controls/PresetSwitcher.tsx`, `ui/controls/ActionBar.tsx`, `ui/panel/LintPanelHeader.tsx`
+- **Message Formatting**: `lib/message-formatter.ts`, `lib/color-utils.ts`
+- **Enhanced Badges**: `shared/ui/badge.tsx` (with new color variants)
 
 ## Notes and limitations
 
