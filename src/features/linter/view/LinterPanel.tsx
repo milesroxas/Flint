@@ -149,7 +149,10 @@ export function LinterPanel() {
                   <ViolationsList
                     violations={filteredViolations}
                     passedClassNames={activePassedClassNames}
-                    showHighlight={mode === "page"}
+                    showHighlight={
+                      mode === "page" ||
+                      (mode === "element" && structuralContext)
+                    }
                     onScrollStateChange={
                       mode === "page" ? setFiltersCondensed : undefined
                     }

@@ -5,7 +5,7 @@ import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center leading-none rounded-xs px-2 py-0.5 text-xs font-medium w-fit min-w-0 max-w-full gap-1 [&>svg]:pointer-events-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-colors overflow-hidden",
+  "inline-flex items-center justify-center leading-none rounded-xs px-2 py-0.5 my-0.5 text-xs font-medium w-fit min-w-0 max-w-full gap-1 [&>svg]:pointer-events-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-colors overflow-hidden",
   {
     variants: {
       variant: {

@@ -25,29 +25,31 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
   const isUnknownRole = role === "unknown";
 
   return (
-    <div className="flex flex-wrap min-w-0 items-center gap-2 gap-y-1 w-full overflow-hidden">
+    <div className="flex min-w-0 w-full overflow-hidden">
       <span
         className={cn(
-          "h-2 w-2 rounded-full flex-shrink-0",
+          "h-2 w-2 rounded-full flex-shrink-0 mt-1.5 mr-2",
           dotBySeverity[sevForUi]
         )}
         aria-hidden
         title={sevForUiLabel}
       />
-      <span className="font-medium text-xs min-w-0 whitespace-normal break-words text-foreground">
-        {violation.name}
-      </span>
-      {violation.metadata?.unrecognizedElement && (
-        <Badge variant="secondary" className="ml-2 text-[10px]">
-          Unknown
-        </Badge>
-      )}
-      {/* Context badges removed; roles only */}
-      {!isDuplicateRole && role && !isUnknownRole && (
-        <Badge variant="secondary" className="ml-1 text-[10px]">
-          {roleToLabel(role as any)}
-        </Badge>
-      )}
+      <div className="flex flex-wrap min-w-0 items-center gap-2 gap-y-1 flex-1">
+        <span className="font-medium text-xs min-w-0 whitespace-normal break-words text-foreground">
+          {violation.name}
+        </span>
+        {violation.metadata?.unrecognizedElement && (
+          <Badge variant="secondary" className="ml-2 text-[10px]">
+            Unknown
+          </Badge>
+        )}
+        {/* Context badges removed; roles only */}
+        {!isDuplicateRole && role && !isUnknownRole && (
+          <Badge variant="secondary" className="ml-1 text-[10px]">
+            {roleToLabel(role as any)}
+          </Badge>
+        )}
+      </div>
     </div>
   );
 };

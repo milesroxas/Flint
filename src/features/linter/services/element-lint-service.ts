@@ -31,7 +31,7 @@ export function createElementLintService(deps: {
     );
 
     // 2) Collect styles to analyze
-    //    - Structural ON: analyze target + its structural context (children, etc.)
+    //    - Structural ON: analyze ALL styles in the section (like page lint but scoped)
     //    - Structural OFF: analyze only the selected element (original behavior)
     const elementId = toElementKey(element);
     const elementStyles = context.elementStyleMap.get(elementId) || [];
@@ -41,55 +41,22 @@ export function createElementLintService(deps: {
     let rolesForRun = context.rolesByElement;
 
     if (useStructuralContext) {
-      // Collect all descendants via graph API and include the element itself
-      let descendantIds: string[] = [];
-      const hasGetDesc =
-        typeof (context.graph as any).getDescendantIds === "function";
-      if (hasGetDesc) {
-        descendantIds = [
-          elementId,
-          ...((context.graph as any).getDescendantIds(elementId) || []),
-        ];
-      } else {
-        // Fallback BFS using getChildrenIds
-        const visited = new Set<string>();
-        const queue: string[] = [elementId];
-        while (queue.length > 0) {
-          const currentId = queue.shift() as string;
-          if (visited.has(currentId)) continue;
-          visited.add(currentId);
-          descendantIds.push(currentId);
-          const children = context.graph.getChildrenIds(currentId) || [];
-          for (const childId of children)
-            if (!visited.has(childId)) queue.push(childId);
-        }
-      }
+      // When structural context is enabled, analyze ALL styles in the section
+      // This makes it work like page lint but scoped to the component boundary
+      stylesToAnalyze = Array.from(context.elementStyleMap.values()).flat();
 
-      // Gather styles for target + descendants only
-      const collected: (typeof elementStyles)[number][] = [];
-      for (const id of descendantIds) {
-        const styles = context.elementStyleMap.get(id);
-        if (styles && styles.length > 0) collected.push(...styles);
-      }
-      stylesToAnalyze =
-        collected.length > 0
-          ? collected
-          : Array.from(context.elementStyleMap.values()).flat();
+      // Use all roles in the context (no restriction needed for section-scoped linting)
+      rolesForRun = context.rolesByElement;
 
-      // Also include ancestors of each collected element so structural rules can resolve roles
-      const includeIds = new Set<string>(descendantIds);
-      for (const id of descendantIds) {
-        const ancestors = context.graph.getAncestorIds(id) || [];
-        for (const anc of ancestors) includeIds.add(anc);
-      }
-
-      // Restrict roles map to only included ids (descendants + ancestors)
-      const limitedRoles: Record<string, (typeof rolesForRun)[string]> =
-        {} as any;
-      for (const [id, role] of Object.entries(context.rolesByElement)) {
-        if (includeIds.has(id)) limitedRoles[id] = role;
-      }
-      rolesForRun = limitedRoles;
+      console.log(
+        `[ElementLint] Structural context: analyzing ${
+          stylesToAnalyze.length
+        } styles across ${Object.keys(rolesForRun).length} elements in section`
+      );
+    } else {
+      console.log(
+        `[ElementLint] Standard context: analyzing ${elementStyles.length} styles for element ${elementId}`
+      );
     }
 
     // 3) Execute rules via the same runner API used by page scans

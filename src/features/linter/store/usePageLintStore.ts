@@ -4,7 +4,7 @@ import { devtools } from "zustand/middleware";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
-import { invalidatePageContextCache } from "@/features/linter/services/lightweight-context.service";
+import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Process orchestrator handles service setup per scan

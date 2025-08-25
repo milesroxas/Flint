@@ -236,43 +236,14 @@ export const createWrapperDetector = (config: {
   detect: (element: ElementSnapshot, context: DetectionContext) => {
     const firstClass = element.classes[0];
 
-    // DEBUG: Log all wrapper detector calls for rule_sample classes
-    if (firstClass && firstClass.includes("rule_sample")) {
-      console.log(`[DEBUG] Wrapper detector called for ${element.id}:`, {
-        firstClass,
-        endsWithWrap: endsWithWrap(firstClass),
-        allClasses: element.classes,
-      });
-    }
-
     if (!firstClass || !endsWithWrap(firstClass)) return null;
 
     // Step 1: Get naming-based classification
     const namedRole = config.classifyNaming(firstClass);
-
-    // DEBUG: Log naming classification result
-    if (firstClass.includes("rule_sample")) {
-      console.log(`[DEBUG] Naming classification for ${firstClass}:`, {
-        namedRole,
-        detectorId: config.id,
-      });
-    }
-
     if (!namedRole) return null;
 
     // Step 2: If we have structural context, validate the classification
     if (context.rolesByElement && context.graph) {
-      // DEBUG: Always log wrapper detection decisions
-      if (firstClass.includes("rule_sample")) {
-        console.log(
-          `[DEBUG] Wrapper detector processing ${element.id} with class ${firstClass}:`,
-          {
-            namedRole,
-            hasStructuralContext: true,
-          }
-        );
-      }
-
       if (namedRole === "componentRoot") {
         const canBeRoot = canBeComponentRoot(element.id, context);
         console.log(`[DEBUG] ComponentRoot validation for ${element.id}:`, {

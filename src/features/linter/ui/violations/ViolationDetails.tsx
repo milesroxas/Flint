@@ -100,7 +100,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
               variant="newProperty"
             >
               <span className="text-left flex items-center">
-                <code className="font-mono text-xs px-1 break-all">
+                <code className="font-mono text-xs px-1 break-all ">
                   {(violation.metadata as any)?.baseCustomClass ||
                     violation.className ||
                     "—"}
@@ -113,10 +113,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
             {violation.metadata.combos.map((c: string, i: number) => (
               <div className="mb-2">
                 <div className="flex items-center" key={`${c}-${i}`}>
-                  <Badge
-                    className="ml-1 whitespace-normal break-words"
-                    isCombo={true}
-                  >
+                  <Badge className="ml-1  break-words" isCombo={true}>
                     {c}
                   </Badge>
                 </div>

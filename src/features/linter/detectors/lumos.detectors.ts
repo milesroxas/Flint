@@ -98,21 +98,6 @@ export const lumosRoleDetectors: RoleDetector[] = [
       const rootMatch = componentRootPattern.test(firstClass);
       const childMatch = childGroupPattern.test(firstClass);
 
-      // DEBUG: Log pattern matching for wrapper classes
-      if (firstClass.includes("rule_sample_wrap")) {
-        console.log(`[DEBUG] Lumos naming classification for ${firstClass}:`, {
-          componentRootPattern: componentRootPattern.toString(),
-          childGroupPattern: childGroupPattern.toString(),
-          rootMatch,
-          childMatch,
-          finalDecision: childMatch
-            ? "childGroup"
-            : rootMatch
-            ? "componentRoot"
-            : "fallback",
-        });
-      }
-
       if (childMatch) {
         // Child groups have more segments: name_variant_element_wrap
         return "childGroup";
