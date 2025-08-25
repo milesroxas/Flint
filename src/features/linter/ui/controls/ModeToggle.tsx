@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import { File, SquareSlash } from "lucide-react";
 
 export type LintViewMode = "element" | "page";

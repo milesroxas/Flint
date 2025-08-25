@@ -1,7 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 
 interface ExpandedContentProps {
   title: string;

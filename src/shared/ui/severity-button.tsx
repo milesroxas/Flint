@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import type { Severity } from "@/features/linter/model/rule.types";
 
 const severityDot: Record<Severity, string> = {

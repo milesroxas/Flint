@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import { roleToLabel } from "@/features/linter/lib/labels";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import type { Severity } from "@/features/linter/model/rule.types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import { SeverityButton } from "@/shared/ui/severity-button";
 
 export type SeverityFilterValue = Severity | "all";

@@ -7,11 +7,10 @@ import {
 import { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import { ViolationHeader } from "./ViolationHeader";
 import { ViolationDetails, ClassBadge } from "./ViolationDetails";
-import { ExpandViewButton } from "../controls/ExpandViewButton";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { expandedViewCapabilitiesService } from "@/features/linter/services/expanded-view-capabilities.service";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 
 interface ViolationItemProps {
   violation: RuleResult;
@@ -74,16 +73,20 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-2 pb-2 pt-0 w-full overflow-hidden">
-        <ViolationDetails violation={violation} showHighlight={showHighlight} />
-        {/* Show expand button only when violation has expanded view capabilities */}
-        {primaryCapability && (
-          <div className="flex justify-end mt-2">
-            <ExpandViewButton
-              onClick={handleExpandedViewClick}
-              isExpanded={false}
-            />
-          </div>
-        )}
+        <ViolationDetails
+          violation={violation}
+          showHighlight={showHighlight}
+          onExpandedViewClick={handleExpandedViewClick}
+          expandedViewConfig={
+            primaryCapability
+              ? {
+                  showButton: true,
+                  buttonText: primaryCapability.title || "View Details",
+                  buttonClassName: "cursor-pointer w-full",
+                }
+              : undefined
+          }
+        />
       </AccordionContent>
     </AccordionItem>
   );

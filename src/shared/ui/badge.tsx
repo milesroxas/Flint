@@ -2,7 +2,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 
 const badgeVariants = cva(
   "inline-flex items-center justify-center leading-none rounded-xs px-2 py-0.5 my-0.5 text-xs font-medium w-fit min-w-0 max-w-full gap-1 [&>svg]:pointer-events-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-colors overflow-hidden",
@@ -29,6 +29,8 @@ const badgeVariants = cva(
           "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         webflowClass:
           "bg-webflow-class text-webflow-class-foreground hover:bg-webflow-class-hover active:bg-webflow-class-active rounded-xs px-2 font-mono",
+        webflowClassMuted:
+          "bg-webflow-class/20 text-webflow-class-foreground hover:bg-webflow-class-hover active:bg-webflow-class-active/50 rounded-xs px-2 font-mono",
         errorContent:
           "bg-error-content text-error-content-foreground hover:bg-error-content-hover active:bg-error-content-active rounded-xs px-2 font-mono",
         suggestionContent:

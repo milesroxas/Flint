@@ -9,7 +9,7 @@ import { LinterPanel } from "@/features/linter/view/LinterPanel";
 import { ExpandedContent } from "@/features/linter/ui/expanded/ExpandedContent";
 import { RecognizedElementsView } from "@/features/linter/ui/expanded/RecognizedElementsView";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 
 const Root: React.FC = () => {
   const { isActive, content, closeExpandedView } = useExpandedView();

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
