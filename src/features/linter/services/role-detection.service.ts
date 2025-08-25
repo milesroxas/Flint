@@ -117,7 +117,8 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
     > = {};
 
     console.log(
-      "[DEBUG] Starting single-pass role detection with full context"
+      "[DEBUG] Starting single-pass role detection with full context",
+      `Processing ${elements.length} elements`
     );
 
     // Build complete detection context with all available information
@@ -127,9 +128,33 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       pageInfo: {},
       rolesByElement: result, // Incrementally built as we go
       graph, // Full graph context available from start
-    } as const;
+    };
 
-    for (const item of elements) {
+    // Sort elements to detect structural roles first (main, section) before component roles
+    // This ensures componentRoot detection can rely on section ancestors being already detected
+    const sortedElements = [...elements].sort((a, b) => {
+      const aClasses = a.classNames || [];
+      const bClasses = b.classNames || [];
+
+      // Priority order: main > section > others
+      const getTypePriority = (classes: string[]) => {
+        if (
+          classes.some((c) => c === "page_main") ||
+          classes.some((c) => /^main/i.test(c))
+        )
+          return 1; // main first
+        if (
+          classes.some((c) => c === "u-section") ||
+          classes.some((c) => /^section/i.test(c))
+        )
+          return 2; // section second
+        return 3; // everything else last
+      };
+
+      return getTypePriority(aClasses) - getTypePriority(bClasses);
+    });
+
+    for (const item of sortedElements) {
       const element = item.element as WebflowElement | undefined;
       const elementId = toElementKey(element);
       if (!elementId) {
@@ -175,9 +200,15 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
           bestScore,
           threshold,
           finalRole: result[elementId],
+          detectionOrder: `sorted by priority`,
         });
       }
     }
+
+    console.log(
+      "[DEBUG] Role detection completed. Final role assignments:",
+      Object.entries(result).filter(([, role]) => role !== "unknown")
+    );
 
     // Enforce singleton `main`: keep highest-scoring, demote others to unknown
     const mainCandidates = Object.entries(scoresByElement)

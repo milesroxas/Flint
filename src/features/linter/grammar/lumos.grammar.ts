@@ -33,18 +33,21 @@ function parseCustom(name: string): ParsedClass {
     parsed.elementToken = tokens[tokens.length - 1];
   }
 
-  // Extract componentKey: for wrapper patterns, exclude the wrapper suffix
-  // e.g., "hero_primary_wrap" -> "hero_primary", "hero_primary_cta_wrap" -> "hero_primary"
+  // Extract componentKey consistently for both componentRoot and childGroup
+  // componentRoot: name_variant_wrap → componentKey: name_variant
+  // childGroup: name_variant_element_wrap → componentKey: name_variant
   if (tokens.length >= 2) {
     const lastToken = tokens[tokens.length - 1]?.toLowerCase();
     if (lastToken === "wrap" || lastToken === "wrapper") {
-      // Remove wrapper suffix and use the remaining tokens as componentKey
-      const keyTokens = tokens.slice(0, -1);
+      const keyTokens = tokens.slice(0, -1); // Remove wrapper suffix
+
       if (keyTokens.length >= 2) {
-        // For child groups like "hero_primary_cta_wrap", use the first two tokens
+        // Always use first two tokens for componentKey (name_variant)
+        // This ensures both "hero_primary_wrap" and "hero_primary_cta_wrap"
+        // have the same componentKey: "hero_primary"
         parsed.componentKey = keyTokens.slice(0, 2).join("_");
       } else if (keyTokens.length === 1) {
-        // For simple wrappers like "hero_wrap", use the single token
+        // Single token case (e.g., "hero_wrap")
         parsed.componentKey = keyTokens[0];
       } else {
         parsed.componentKey = null;

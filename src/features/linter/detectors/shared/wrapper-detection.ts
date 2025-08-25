@@ -118,6 +118,21 @@ export const isStructuralChildGroup = (
   );
 
   if (!componentRootId) {
+    // Check if this element could be a componentRoot itself based on its section ancestry
+    const hasSection = ancestors.some(
+      (ancestorId) =>
+        rolesByElement?.[ancestorId] === "section" ||
+        rolesByElement?.[ancestorId] === "main"
+    );
+
+    if (hasSection) {
+      return {
+        isChildGroup: false,
+        reason:
+          "Element is nested under a section but has no componentRoot ancestor - likely a componentRoot itself",
+      };
+    }
+
     return {
       isChildGroup: false,
       reason: "Element is not nested inside a componentRoot",
@@ -128,6 +143,83 @@ export const isStructuralChildGroup = (
     isChildGroup: true,
     reason: `Structural child group: has ${children.length} children, nested in componentRoot ${componentRootId}`,
     componentRootId,
+  };
+};
+
+/**
+ * Validates if an element can be a componentRoot based on its position in the DOM
+ */
+export const canBeComponentRoot = (
+  elementId: string,
+  context: DetectionContext
+): { canBe: boolean; reason: string } => {
+  const { rolesByElement, graph } = context;
+
+  if (!graph) {
+    return {
+      canBe: true,
+      reason: "No graph context - allowing based on naming",
+    };
+  }
+
+  // Check if element is directly under a section/main (ideal componentRoot position)
+  const parentId = graph.getParentId(elementId);
+  if (parentId) {
+    const parentRole = rolesByElement?.[parentId];
+    if (parentRole === "section" || parentRole === "main") {
+      return {
+        canBe: true,
+        reason: `Direct child of ${parentRole} - ideal componentRoot position`,
+      };
+    }
+  }
+
+  // Check if element is nested under a section/main via intermediate elements
+  const ancestors = graph.getAncestorIds(elementId);
+  const hasSection = ancestors.some(
+    (ancestorId) =>
+      rolesByElement?.[ancestorId] === "section" ||
+      rolesByElement?.[ancestorId] === "main"
+  );
+
+  if (hasSection) {
+    // Check if there's a componentRoot ancestor WITHIN the same section
+    // (page-level componentRoots shouldn't prevent section-level componentRoots)
+    const sectionAncestorId = ancestors.find(
+      (ancestorId) =>
+        rolesByElement?.[ancestorId] === "section" ||
+        rolesByElement?.[ancestorId] === "main"
+    );
+
+    if (sectionAncestorId) {
+      // Get the path from this element up to the section
+      const sectionIndex = ancestors.indexOf(sectionAncestorId);
+      const ancestorsWithinSection = ancestors.slice(0, sectionIndex);
+
+      // Check if there's a componentRoot between this element and the section
+      const hasComponentRootInSection = ancestorsWithinSection.some(
+        (ancestorId) => rolesByElement?.[ancestorId] === "componentRoot"
+      );
+
+      if (hasComponentRootInSection) {
+        return {
+          canBe: false,
+          reason:
+            "Has componentRoot ancestor within same section - should be childGroup",
+        };
+      }
+    }
+
+    return {
+      canBe: true,
+      reason:
+        "Nested under section with no componentRoot ancestor in same section - can be componentRoot",
+    };
+  }
+
+  return {
+    canBe: true,
+    reason: "No clear structural constraints - allowing based on naming",
   };
 };
 
@@ -143,36 +235,77 @@ export const createWrapperDetector = (config: {
   description: config.description,
   detect: (element: ElementSnapshot, context: DetectionContext) => {
     const firstClass = element.classes[0];
+
+    // DEBUG: Log all wrapper detector calls for rule_sample classes
+    if (firstClass && firstClass.includes("rule_sample")) {
+      console.log(`[DEBUG] Wrapper detector called for ${element.id}:`, {
+        firstClass,
+        endsWithWrap: endsWithWrap(firstClass),
+        allClasses: element.classes,
+      });
+    }
+
     if (!firstClass || !endsWithWrap(firstClass)) return null;
 
     // Step 1: Get naming-based classification
     const namedRole = config.classifyNaming(firstClass);
+
+    // DEBUG: Log naming classification result
+    if (firstClass.includes("rule_sample")) {
+      console.log(`[DEBUG] Naming classification for ${firstClass}:`, {
+        namedRole,
+        detectorId: config.id,
+      });
+    }
+
     if (!namedRole) return null;
 
     // Step 2: If we have structural context, validate the classification
     if (context.rolesByElement && context.graph) {
-      const structural = isStructuralChildGroup(element.id, context);
-
-      console.log(`[DEBUG] Wrapper detection for ${element.id}:`, {
-        firstClass,
-        namedRole,
-        structural: structural.reason,
-        isStructuralChildGroup: structural.isChildGroup,
-      });
-
-      // Apply structural override logic
-      if (structural.isChildGroup && namedRole === "componentRoot") {
-        // Naming suggests componentRoot, but structurally it's a childGroup
+      // DEBUG: Always log wrapper detection decisions
+      if (firstClass.includes("rule_sample")) {
         console.log(
-          `[DEBUG] Structural override: ${element.id} ${namedRole} → childGroup`
+          `[DEBUG] Wrapper detector processing ${element.id} with class ${firstClass}:`,
+          {
+            namedRole,
+            hasStructuralContext: true,
+          }
         );
-        return { role: "childGroup", score: 0.95 };
-      } else if (!structural.isChildGroup && namedRole === "childGroup") {
-        // Naming suggests childGroup, but structurally it's not (likely componentRoot)
-        console.log(
-          `[DEBUG] Structural override: ${element.id} ${namedRole} → componentRoot`
-        );
+      }
+
+      if (namedRole === "componentRoot") {
+        const canBeRoot = canBeComponentRoot(element.id, context);
+        console.log(`[DEBUG] ComponentRoot validation for ${element.id}:`, {
+          firstClass,
+          namedRole,
+          canBeRoot: canBeRoot.canBe,
+          reason: canBeRoot.reason,
+        });
+
+        if (!canBeRoot.canBe) {
+          // Naming suggests componentRoot, but structure suggests childGroup
+          console.log(
+            `[DEBUG] OVERRIDE: ComponentRoot → childGroup for ${element.id}`
+          );
+          return { role: "childGroup", score: 0.95 };
+        }
+
         return { role: "componentRoot", score: 0.9 };
+      } else if (namedRole === "childGroup") {
+        const structural = isStructuralChildGroup(element.id, context);
+        console.log(`[DEBUG] ChildGroup validation for ${element.id}:`, {
+          firstClass,
+          namedRole,
+          structural: structural.reason,
+          isStructuralChildGroup: structural.isChildGroup,
+        });
+
+        if (!structural.isChildGroup) {
+          // Naming suggests childGroup, but structurally it's not (likely componentRoot)
+          return { role: "componentRoot", score: 0.9 };
+        }
+
+        return { role: "childGroup", score: 0.95 };
       }
     }
 
