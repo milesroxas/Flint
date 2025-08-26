@@ -5,6 +5,7 @@ import type { RuleResult } from "@/features/linter/model/rule.types";
 import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
+import { useAnimationStore } from "./animation.store";
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Process orchestrator handles service setup per scan
@@ -40,6 +41,9 @@ export const usePageLintStore = create<PageLintStore>()(
       lintPage: async () => {
         if (get().loading) return;
 
+        // Coordinate with animation store
+        useAnimationStore.getState().startLinting();
+
         // Mark that we've run at least once
         set({ hasRun: true, loading: true, error: null });
 
@@ -54,6 +58,19 @@ export const usePageLintStore = create<PageLintStore>()(
             elements
           );
           set({ results, passedClassNames: classNames, loading: false });
+          console.log(
+            "[PageLintStore] Linting completed, results:",
+            results.length,
+            "triggering animation..."
+          );
+
+          // Trigger severity tiles animation after results are ready
+          requestAnimationFrame(() => {
+            console.log(
+              "[PageLintStore] Calling showSeverityTiles in requestAnimationFrame"
+            );
+            useAnimationStore.getState().showSeverityTiles();
+          });
         } catch (error) {
           console.error("[PageLintStore] Error during linting:", error);
           set({
@@ -62,6 +79,8 @@ export const usePageLintStore = create<PageLintStore>()(
             results: [],
             loading: false,
           });
+          // Reset animation state on error
+          useAnimationStore.getState().reset();
         }
       },
 

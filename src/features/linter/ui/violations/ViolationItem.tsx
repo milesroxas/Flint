@@ -16,15 +16,28 @@ interface ViolationItemProps {
   violation: RuleResult;
   index: number;
   showHighlight?: boolean;
+  animationDelay?: number;
+  shouldAnimate?: boolean;
 }
 
 export const ViolationItem: React.FC<ViolationItemProps> = ({
   violation,
   index,
   showHighlight = true,
+  animationDelay = 0,
+  shouldAnimate = false,
 }) => {
   const id = `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
   const { openExpandedView } = useExpandedView();
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    if (shouldAnimate) {
+      setIsVisible(true);
+    } else {
+      setIsVisible(false);
+    }
+  }, [shouldAnimate]);
 
   const sev = violation.severity as Severity;
   const severityLeftBorder: Record<Severity, string> = {
@@ -59,7 +72,15 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   };
 
   return (
-    <AccordionItem key={id} value={id} className="border-b last:border-b-0">
+    <AccordionItem
+      key={id}
+      value={id}
+      className={cn(
+        "border-b last:border-b-0 transition-all duration-700 ease-spring",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      )}
+      style={{ transitionDelay: `${animationDelay}ms` }}
+    >
       <AccordionTrigger className="py-2 px-1.5 w-full">
         <div className="flex flex-col items-start gap-1 w-full min-w-0">
           <ViolationHeader violation={violation} />

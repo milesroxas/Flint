@@ -108,6 +108,9 @@ interface SeverityButtonProps
   severity: Severity;
   count: number;
   expandedLabel: string;
+  shouldStartCounting?: boolean;
+  staggerDelay?: number;
+  onCountAnimationComplete?: () => void;
 }
 
 export const SeverityButton: React.FC<SeverityButtonProps> = ({
@@ -118,27 +121,100 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
   expandedLabel,
   onClick,
   className,
+  shouldStartCounting = false,
+  staggerDelay = 0,
+  onCountAnimationComplete,
   ...props
 }) => {
+  const [animatedCount, setAnimatedCount] = React.useState(0);
+  const [isCountingComplete, setIsCountingComplete] = React.useState(false);
+  const countRef = React.useRef<HTMLSpanElement>(null);
+  const expandedCountRef = React.useRef<HTMLSpanElement>(null);
+
+  // Animated count-up effect
+  React.useEffect(() => {
+    if (shouldStartCounting && count > 0) {
+      const duration = 800;
+      const increment = count / (duration / 16); // 60fps
+      let currentCount = 0;
+
+      const animate = () => {
+        currentCount += increment;
+        if (currentCount >= count) {
+          setAnimatedCount(count);
+          if (!isCountingComplete) {
+            setIsCountingComplete(true);
+            // Use a slight delay before calling completion to ensure animation visibility
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                onCountAnimationComplete?.();
+              });
+            });
+          }
+        } else {
+          setAnimatedCount(Math.floor(currentCount));
+          requestAnimationFrame(animate);
+        }
+      };
+
+      // Add stagger delay before starting animation
+      const startAnimation = () => {
+        requestAnimationFrame(animate);
+      };
+
+      if (staggerDelay > 0) {
+        const timer = setTimeout(startAnimation, staggerDelay);
+        return () => clearTimeout(timer);
+      } else {
+        startAnimation();
+      }
+    }
+  }, [
+    shouldStartCounting,
+    count,
+    staggerDelay,
+    onCountAnimationComplete,
+    isCountingComplete,
+  ]);
+
+  // Re-arm counting on each cycle start regardless of count changes
+  React.useEffect(() => {
+    if (shouldStartCounting) {
+      setAnimatedCount(0);
+      setIsCountingComplete(false);
+    }
+  }, [shouldStartCounting]);
+
+  // Reset state when count changes (for new linting cycles)
+  React.useEffect(() => {
+    if (count === 0) {
+      setAnimatedCount(0);
+      setIsCountingComplete(false);
+    }
+  }, [count]);
+
+  // Avoid flashing from final count to 0 by not showing the target count
+  // until counting actually starts. Show 0 pre-count, animate to target.
+  const displayCount =
+    shouldStartCounting || isCountingComplete ? animatedCount : 0;
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         severityButtonVariants({ severity, condensed, active }),
+        "transition-all duration-300 ease-gentle",
+        shouldStartCounting && "animate-count-up",
         className
       )}
       {...props}
     >
       <span
         className={cn(
-          "absolute inset-0 flex items-center justify-center gap-1 text-xs transition-[opacity] duration-300 ease-in-out",
+          "absolute inset-0 flex items-center justify-center gap-1 text-xs transition-[opacity,transform] duration-500 ease-gentle",
           condensed ? "opacity-100" : "opacity-0"
         )}
-        style={{
-          transform: condensed ? "translateY(0)" : "translateY(-4px)",
-          transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
-        }}
       >
         <span
           className={cn(
@@ -146,21 +222,27 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
             active ? severityDotActive[severity] : severityDot[severity]
           )}
         />
-        {count}
+        <span
+          ref={expandedCountRef}
+          className="transition-all duration-300 ease-gentle tabular-nums"
+        >
+          {displayCount}
+        </span>
         <span>{expandedLabel}</span>
       </span>
 
       <span
         className={cn(
-          "absolute inset-0 flex flex-col items-center justify-center transition-[opacity] duration-300 ease-in-out",
+          "absolute inset-0 flex flex-col items-center justify-center transition-[opacity,transform] duration-500 ease-gentle",
           condensed ? "opacity-0" : "opacity-100"
         )}
-        style={{
-          transform: condensed ? "translateY(4px)" : "translateY(0)",
-          transition: "opacity 300ms ease-in-out, transform 300ms ease-in-out",
-        }}
       >
-        <span className="text-lg font-semibold leading-none">{count}</span>
+        <span
+          ref={countRef}
+          className="text-lg font-semibold leading-none transition-all duration-300 ease-gentle tabular-nums"
+        >
+          {displayCount}
+        </span>
         <span className="mt-1 text-xs">{expandedLabel}</span>
       </span>
 

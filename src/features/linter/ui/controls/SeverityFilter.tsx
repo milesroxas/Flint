@@ -1,7 +1,8 @@
-import React from "react";
-import type { Severity } from "@/features/linter/model/rule.types";
+import React, { useEffect, useState, useRef } from "react";
 import { cn } from "@/shared/utils";
+import type { Severity } from "@/features/linter/model/rule.types";
 import { SeverityButton } from "@/shared/ui/severity-button";
+import { useAnimationStore } from "@/features/linter/store/animation.store";
 
 export type SeverityFilterValue = Severity | "all";
 
@@ -20,41 +21,126 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
   className,
   condensed = false,
 }) => {
+  // Subscribe to animation store
+  const severityTilesVisible = useAnimationStore(
+    (state) => state.severityTilesVisible
+  );
+  const severityCountsAnimating = useAnimationStore(
+    (state) => state.severityCountsAnimating
+  );
+  const startSeverityCounts = useAnimationStore(
+    (state) => state.startSeverityCounts
+  );
+  const completeSeverityAnimation = useAnimationStore(
+    (state) => state.completeSeverityAnimation
+  );
+  const showViolations = useAnimationStore((state) => state.showViolations);
+
+  const [displayCounts, setDisplayCounts] = useState({
+    error: 0,
+    warning: 0,
+    suggestion: 0,
+  });
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const tilesAnimationRef = useRef<HTMLDivElement>(null);
+  const countAnimationCompleteRef = useRef(0);
+
+  // React to animation store changes
+  useEffect(() => {
+    // Reset hasAnimated when tiles become invisible (new lint cycle)
+    if (!severityTilesVisible) {
+      setHasAnimated(false);
+      // Also clear visible counts for next cycle
+      setDisplayCounts({ error: 0, warning: 0, suggestion: 0 });
+    }
+  }, [
+    severityTilesVisible,
+    severityCountsAnimating,
+    counts,
+    hasAnimated,
+    startSeverityCounts,
+  ]);
+
+  // Handle tile entrance animation complete
+  const handleTileAnimationEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
+    // Only respond to the container's own transition end, not children
+    if (e.target !== e.currentTarget) return;
+    if (severityTilesVisible && !severityCountsAnimating && !hasAnimated) {
+      setHasAnimated(true);
+      setDisplayCounts(counts);
+      countAnimationCompleteRef.current = 0;
+      startSeverityCounts();
+    }
+  };
+
+  // Handle count animation complete
+  const handleCountAnimationComplete = () => {
+    countAnimationCompleteRef.current += 1;
+    console.log(
+      `[SeverityFilter] Count animation complete: ${countAnimationCompleteRef.current}/3`
+    );
+    // Wait for all three tiles to complete their count animation
+    if (countAnimationCompleteRef.current >= 3) {
+      console.log(
+        "[SeverityFilter] All count animations complete, triggering violations"
+      );
+      completeSeverityAnimation();
+      // Trigger violations animation
+      requestAnimationFrame(() => {
+        showViolations();
+      });
+    }
+  };
+
   const toggle = (level: Severity) => {
     onChange(filter === level ? "all" : level);
   };
 
   return (
     <div
+      ref={tilesAnimationRef}
       className={cn(
-        "grid grid-cols-3 transition-all duration-300 ease-in-out",
+        "grid grid-cols-3 transition-all duration-500 ease-gentle",
+        severityTilesVisible
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-2",
         condensed ? "gap-2" : "gap-3",
         className
       )}
+      onTransitionEnd={handleTileAnimationEnd}
     >
       <SeverityButton
         severity="error"
-        count={counts.error}
+        count={displayCounts.error}
         condensed={condensed}
         active={filter === "error"}
         expandedLabel={condensed ? "Errors" : "Issues"}
         onClick={() => toggle("error")}
+        shouldStartCounting={severityCountsAnimating}
+        staggerDelay={0}
+        onCountAnimationComplete={handleCountAnimationComplete}
       />
       <SeverityButton
         severity="warning"
-        count={counts.warning}
+        count={displayCounts.warning}
         condensed={condensed}
         active={filter === "warning"}
         expandedLabel="Warnings"
         onClick={() => toggle("warning")}
+        shouldStartCounting={severityCountsAnimating}
+        staggerDelay={150}
+        onCountAnimationComplete={handleCountAnimationComplete}
       />
       <SeverityButton
         severity="suggestion"
-        count={counts.suggestion}
+        count={displayCounts.suggestion}
         condensed={condensed}
         active={filter === "suggestion"}
         expandedLabel="Suggestions"
         onClick={() => toggle("suggestion")}
+        shouldStartCounting={severityCountsAnimating}
+        staggerDelay={300}
+        onCountAnimationComplete={handleCountAnimationComplete}
       />
     </div>
   );

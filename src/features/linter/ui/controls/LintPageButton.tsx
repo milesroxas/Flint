@@ -2,6 +2,7 @@
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface LintPageButtonProps {
   onClick: () => void;
@@ -20,6 +21,16 @@ export function LintPageButton({
   className = "",
   label,
 }: LintPageButtonProps) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [prevIssueCount, setPrevIssueCount] = useState(issueCount);
+
+  useEffect(() => {
+    if (prevIssueCount !== issueCount) {
+      setIsAnimating(true);
+      setPrevIssueCount(issueCount);
+    }
+  }, [issueCount, prevIssueCount]);
+
   const isDestructive = issueCount > 0;
   const computedLabel =
     label ??
@@ -32,9 +43,19 @@ export function LintPageButton({
       aria-disabled={loading}
       aria-busy={loading}
       size="sm"
-      className={cn(fullWidth && "w-full", className)}
+      className={cn(
+        fullWidth && "w-full",
+        "transition-all duration-300 ease-out",
+        isAnimating && "scale-105",
+        className
+      )}
       variant={isDestructive ? "destructive" : "default"}
       title={computedLabel}
+      onTransitionEnd={() => {
+        if (isAnimating) {
+          setIsAnimating(false);
+        }
+      }}
     >
       {loading ? (
         <>

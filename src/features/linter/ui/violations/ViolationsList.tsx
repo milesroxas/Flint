@@ -1,9 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/utils";
 
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsSection } from "./ViolationsSection";
+import { useAnimationStore } from "@/features/linter/store/animation.store";
 
 interface ViolationsListProps {
   violations: RuleResult[];
@@ -20,6 +22,22 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   onScrollStateChange,
   onScrollDirectionChange,
 }) => {
+  // Subscribe to animation store
+  const violationsVisible = useAnimationStore(
+    (state) => state.violationsVisible
+  );
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    console.log("[ViolationsList] violationsVisible:", violationsVisible);
+    if (violationsVisible) {
+      console.log("[ViolationsList] Setting isVisible to true");
+      setIsVisible(true);
+    } else {
+      setIsVisible(false);
+    }
+  }, [violationsVisible]);
+
   const errors = useMemo(
     () => violations.filter((v) => v.severity === "error"),
     [violations]
@@ -56,7 +74,12 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   );
 
   return (
-    <div className="h-full flex flex-col min-h-0 pt-2">
+    <div
+      className={cn(
+        "h-full flex flex-col min-h-0 pt-2 transition-all duration-700 ease-spring",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
       <ScrollArea
         className="h-full flex-1 min-h-0"
         onIsScrolledChange={onScrollStateChange}
@@ -68,21 +91,35 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             items={errors}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
+            animationDelay={0}
+            shouldAnimate={isVisible}
           />
           <ViolationsSection
             title="Warnings"
             items={warnings}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
+            animationDelay={200}
+            shouldAnimate={isVisible}
           />
           <ViolationsSection
             title="Suggestions"
             items={suggestions}
             showHighlight={showHighlight}
             defaultOpenIds={defaultOpenIds}
+            animationDelay={400}
+            shouldAnimate={isVisible}
           />
           {passedOnly.length > 0 && (
-            <div className="mt-2 space-y-1">
+            <div
+              className={cn(
+                "mt-2 space-y-1 transition-all duration-700 ease-spring",
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              )}
+              style={{ transitionDelay: "600ms" }}
+            >
               <div className="text-[11px] text-muted-foreground">
                 Passed ({passedOnly.length})
               </div>

@@ -21,17 +21,27 @@ export function LinterPanel() {
   // const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("page");
+
+  // Debug mode changes
+  useEffect(() => {
+    console.log("[LinterPanel] Mode changed to:", mode);
+  }, [mode]);
   const [severityFilter, setSeverityFilter] =
     useState<SeverityFilterValue>("all");
   const [filtersCondensed, setFiltersCondensed] = useState(false);
   const [hideModeToggle, setHideModeToggle] = useState(false);
-
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
   // Ensure element mode never auto-hides the mode toggle.
   useEffect(() => {
     if (mode !== "page") {
       setHideModeToggle(false);
     }
   }, [mode]);
+
+  // Panel entrance animation
+  useEffect(() => {
+    setIsPanelVisible(true);
+  }, []);
 
   const {
     results: elementResults,
@@ -80,7 +90,12 @@ export function LinterPanel() {
   );
 
   return (
-    <section className="h-full flex flex-col">
+    <section
+      className={cn(
+        "h-full flex flex-col transition-all duration-700 ease-spring",
+        isPanelVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
       <div className="pl-4 pr-0 pb-14 flex-1 min-h-0 flex flex-col">
         {error && (
           <div className="flex items-center gap-2 py-2 text-sm text-destructive">
@@ -100,7 +115,7 @@ export function LinterPanel() {
           <div className="flex flex-col min-h-0 ">
             <div
               className={cn(
-                "pt-4 transition-[opacity,transform,height,margin] duration-300 ease-in-out will-change-[opacity,transform]",
+                "pt-4 transition-[opacity,transform,height,margin] duration-300 ease-gentle will-change-[opacity,transform]",
                 hideModeToggle
                   ? "opacity-0 -translate-y-2 h-0 -mb-2"
                   : "opacity-100 translate-y-0 h-auto mb-4"

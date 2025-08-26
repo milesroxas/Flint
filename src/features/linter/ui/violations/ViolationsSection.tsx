@@ -9,6 +9,8 @@ export interface ViolationsSectionProps {
   items: RuleResult[];
   showHighlight?: boolean;
   defaultOpenIds?: string[];
+  animationDelay?: number;
+  shouldAnimate?: boolean;
 }
 
 export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
@@ -16,12 +18,15 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   items,
   showHighlight = true,
   defaultOpenIds = [],
+  animationDelay = 0,
+  shouldAnimate = false,
 }) => {
   const prevOpenSetRef = React.useRef<Set<string>>(new Set<string>());
   const [openValues, setOpenValues] = React.useState<string[]>(defaultOpenIds);
   const prevDefaultOpenSetRef = React.useRef<Set<string>>(
     new Set(defaultOpenIds)
   );
+  const [isVisible, setIsVisible] = React.useState(false);
 
   // Keep open state in sync when the caller provides a new default set
   // This restores the auto-open behavior when switching modes or lists change
@@ -45,13 +50,27 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
     }
   }, [defaultOpenIds]);
 
+  // Trigger animation based on shouldAnimate prop
+  React.useEffect(() => {
+    if (shouldAnimate && items.length > 0) {
+      setIsVisible(true);
+    } else if (!shouldAnimate) {
+      setIsVisible(false);
+    }
+  }, [shouldAnimate, items.length]);
+
   const getItemId = (violation: RuleResult, index: number): string =>
     `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
 
   if (items.length === 0) return null;
 
   return (
-    <div className="mb-2 pt-2">
+    <div
+      className={`mb-2 pt-2 transition-all duration-700 ease-spring ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+      style={{ transitionDelay: `${animationDelay}ms` }}
+    >
       {/* <div className="text-xs text-muted-foreground mb-1">
         {title} ({items.length})
       </div> */}
@@ -91,6 +110,8 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
             violation={violation}
             index={index}
             showHighlight={showHighlight}
+            animationDelay={animationDelay + index * 80} // Stagger each item by 80ms
+            shouldAnimate={isVisible}
           />
         ))}
       </Accordion>

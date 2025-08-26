@@ -86,7 +86,7 @@
 }
 
 .dark {
-  --background: oklch(0.2185 0.00665 28.9);
+  --background: oklch(0.2068 0.0105 260.69);
    --foreground: oklch(0.985 0 0);
    --card: oklch(0.21 0.006 285.885);
    --card-foreground: oklch(0.985 0 0);
@@ -249,6 +249,19 @@
   --color-dynamic-property-active: var(--dynamic-property-active);
 }
 
+/* Modern easing curves */
+@property --ease-spring {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --ease-gentle {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
 @layer base {
   * {
     @apply border-border outline-none; /* stop the permanent outline */
@@ -260,7 +273,66 @@
     @apply bg-background text-foreground;
   }
   
+  /* Modern animation easing curves */
+  .ease-spring {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .ease-gentle {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .ease-smooth {
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
 
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fade-in 600ms var(--ease-gentle, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+  }
+  
+  .duration-600 {
+    transition-duration: 600ms;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 700ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  }
+  
+  .animate-count-up {
+    animation: count-up 800ms var(--ease-gentle, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes count-up {
+    from {
+      transform: scale(0.95);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
 }
 
 #root {
