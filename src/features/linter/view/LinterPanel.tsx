@@ -22,9 +22,9 @@ export function LinterPanel() {
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("page");
 
-  // Debug mode changes
+  // Track mode internally without noisy logging
   useEffect(() => {
-    console.log("[LinterPanel] Mode changed to:", mode);
+    void mode;
   }, [mode]);
   const [severityFilter, setSeverityFilter] =
     useState<SeverityFilterValue>("all");
@@ -168,6 +168,7 @@ export function LinterPanel() {
                       mode === "page" ||
                       (mode === "element" && structuralContext)
                     }
+                    bypassAnimation={mode === "element"}
                     onScrollStateChange={
                       mode === "page" ? setFiltersCondensed : undefined
                     }

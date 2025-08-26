@@ -13,6 +13,7 @@ interface ViolationsListProps {
   showHighlight?: boolean; // controls highlight element button in items
   onScrollStateChange?: (isScrolled: boolean) => void; // notify parent when list scrolled from top
   onScrollDirectionChange?: (direction: "up" | "down") => void; // notify parent of scroll direction
+  bypassAnimation?: boolean; // when true, show immediately (used in element mode)
 }
 
 export const ViolationsList: React.FC<ViolationsListProps> = ({
@@ -21,6 +22,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   showHighlight = true,
   onScrollStateChange,
   onScrollDirectionChange,
+  bypassAnimation = false,
 }) => {
   // Subscribe to animation store
   const violationsVisible = useAnimationStore(
@@ -29,14 +31,8 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    console.log("[ViolationsList] violationsVisible:", violationsVisible);
-    if (violationsVisible) {
-      console.log("[ViolationsList] Setting isVisible to true");
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-  }, [violationsVisible]);
+    setIsVisible(bypassAnimation || violationsVisible);
+  }, [bypassAnimation, violationsVisible]);
 
   const errors = useMemo(
     () => violations.filter((v) => v.severity === "error"),

@@ -34,9 +34,6 @@ export const useAnimationStore = create<AnimationState>()(
       ...initialState,
 
       reset: () => {
-        console.log(
-          "[Animation Store] RESET called - all animations reset to initial state"
-        );
         set(initialState);
       },
 
@@ -51,7 +48,6 @@ export const useAnimationStore = create<AnimationState>()(
       },
 
       showSeverityTiles: () => {
-        console.log("[Animation Store] Showing severity tiles");
         set({
           severityTilesVisible: true,
           isLinting: false,
@@ -59,14 +55,12 @@ export const useAnimationStore = create<AnimationState>()(
       },
 
       startSeverityCounts: () => {
-        console.log("[Animation Store] Starting severity counts");
         set({
           severityCountsAnimating: true,
         });
       },
 
       completeSeverityAnimation: () => {
-        console.log("[Animation Store] Completing severity animation");
         set({
           severityAnimationComplete: true,
           severityCountsAnimating: false,
@@ -76,7 +70,6 @@ export const useAnimationStore = create<AnimationState>()(
       showViolations: () => {
         const state = get();
         if (state.severityAnimationComplete) {
-          console.log("[Animation Store] Showing violations");
           set({
             violationsVisible: true,
           });

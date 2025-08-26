@@ -44,6 +44,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
   const [hasAnimated, setHasAnimated] = useState(false);
   const tilesAnimationRef = useRef<HTMLDivElement>(null);
   const countAnimationCompleteRef = useRef(0);
+  const targetAnimationCountRef = useRef(0);
 
   // React to animation store changes
   useEffect(() => {
@@ -69,21 +70,61 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
       setHasAnimated(true);
       setDisplayCounts(counts);
       countAnimationCompleteRef.current = 0;
-      startSeverityCounts();
+      const target =
+        (counts.error > 0 ? 1 : 0) +
+        (counts.warning > 0 ? 1 : 0) +
+        (counts.suggestion > 0 ? 1 : 0);
+      targetAnimationCountRef.current = target;
+      if (target === 0) {
+        // No counts to animate; immediately complete and reveal violations
+        completeSeverityAnimation();
+        requestAnimationFrame(() => {
+          showViolations();
+        });
+      } else {
+        startSeverityCounts();
+      }
     }
   };
+
+  // If tiles are already visible (no transition end fires), initialize counts
+  useEffect(() => {
+    if (severityTilesVisible && !severityCountsAnimating && !hasAnimated) {
+      setHasAnimated(true);
+      setDisplayCounts(counts);
+      countAnimationCompleteRef.current = 0;
+      const target =
+        (counts.error > 0 ? 1 : 0) +
+        (counts.warning > 0 ? 1 : 0) +
+        (counts.suggestion > 0 ? 1 : 0);
+      targetAnimationCountRef.current = target;
+      if (target === 0) {
+        completeSeverityAnimation();
+        requestAnimationFrame(() => {
+          showViolations();
+        });
+      } else {
+        startSeverityCounts();
+      }
+    }
+  }, [
+    severityTilesVisible,
+    severityCountsAnimating,
+    hasAnimated,
+    counts,
+    completeSeverityAnimation,
+    showViolations,
+    startSeverityCounts,
+  ]);
 
   // Handle count animation complete
   const handleCountAnimationComplete = () => {
     countAnimationCompleteRef.current += 1;
-    console.log(
-      `[SeverityFilter] Count animation complete: ${countAnimationCompleteRef.current}/3`
-    );
     // Wait for all three tiles to complete their count animation
-    if (countAnimationCompleteRef.current >= 3) {
-      console.log(
-        "[SeverityFilter] All count animations complete, triggering violations"
-      );
+    if (
+      targetAnimationCountRef.current > 0 &&
+      countAnimationCompleteRef.current >= targetAnimationCountRef.current
+    ) {
       completeSeverityAnimation();
       // Trigger violations animation
       requestAnimationFrame(() => {

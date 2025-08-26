@@ -18,7 +18,7 @@ export const StructuralContextToggle: React.FC<
       onClick={() => onChange(!enabled)}
       className={cn(
         "h-6 text-xs transition-colors",
-        enabled && "border-l-2 border-l-primary-hover",
+        enabled && "border-l-2 border-l-primary-hover ",
         className
       )}
       aria-label={`${

@@ -58,17 +58,9 @@ export const usePageLintStore = create<PageLintStore>()(
             elements
           );
           set({ results, passedClassNames: classNames, loading: false });
-          console.log(
-            "[PageLintStore] Linting completed, results:",
-            results.length,
-            "triggering animation..."
-          );
 
           // Trigger severity tiles animation after results are ready
           requestAnimationFrame(() => {
-            console.log(
-              "[PageLintStore] Calling showSeverityTiles in requestAnimationFrame"
-            );
             useAnimationStore.getState().showSeverityTiles();
           });
         } catch (error) {

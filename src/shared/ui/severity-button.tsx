@@ -130,10 +130,11 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
   const [isCountingComplete, setIsCountingComplete] = React.useState(false);
   const countRef = React.useRef<HTMLSpanElement>(null);
   const expandedCountRef = React.useRef<HTMLSpanElement>(null);
+  const shouldAnimateCount = shouldStartCounting && count > 0;
 
   // Animated count-up effect
   React.useEffect(() => {
-    if (shouldStartCounting && count > 0) {
+    if (shouldAnimateCount) {
       const duration = 800;
       const increment = count / (duration / 16); // 60fps
       let currentCount = 0;
@@ -170,7 +171,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
       }
     }
   }, [
-    shouldStartCounting,
+    shouldAnimateCount,
     count,
     staggerDelay,
     onCountAnimationComplete,
@@ -195,8 +196,11 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
 
   // Avoid flashing from final count to 0 by not showing the target count
   // until counting actually starts. Show 0 pre-count, animate to target.
-  const displayCount =
-    shouldStartCounting || isCountingComplete ? animatedCount : 0;
+  const displayCount = shouldAnimateCount
+    ? isCountingComplete
+      ? count
+      : animatedCount
+    : count;
 
   return (
     <button
@@ -205,7 +209,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
       className={cn(
         severityButtonVariants({ severity, condensed, active }),
         "transition-all duration-300 ease-gentle",
-        shouldStartCounting && "animate-count-up",
+        shouldAnimateCount && "animate-count-up",
         className
       )}
       {...props}

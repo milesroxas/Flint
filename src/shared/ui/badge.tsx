@@ -39,7 +39,7 @@ const badgeVariants = cva(
           "bg-dynamic-property text-dynamic-property-foreground hover:bg-dynamic-property-hover active:bg-dynamic-property-active rounded-xs px-2 font-mono",
       },
       isCombo: {
-        true: "bg-accent/10 text-foreground text-xs rounded-xs",
+        true: "bg-dynamic-property/50 text-dynamic-property-foreground text-xs rounded-xs border-l-2 border-l-dynamic-property hover:bg-dynamic-property-hover/50",
         false: "",
       },
       copyable: {
