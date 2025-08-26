@@ -1,273 +1,262 @@
-# Linter Stores
+# Animation Store
 
-This README describes the Zustand stores for linting Webflow pages and elements. It applies modern best practices in 2025, including middleware for debugging, selective subscriptions, and immutable updates.
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [File Locations](#file-locations)
-3. [Installation](#installation)
-4. [Usage](#usage)
-
-   - [Importing the Stores](#importing-the-stores)
-   - [Reading State](#reading-state)
-   - [Invoking Actions](#invoking-actions)
-
-5. [State Shapes](#state-shapes)
-6. [Middleware](#middleware)
-7. [Services](#services)
-8. [Examples](#examples)
-9. [TypeScript Types](#typescript-types)
-10. [Contributing](#contributing)
-11. [License](#license)
-
----
+The animation store manages complex, multi-phase animation sequences throughout the linting process using Zustand for state management.
 
 ## Overview
 
-### PageLintStore
+The animation store orchestrates the entire linting animation sequence, from initial state through completion. It ensures animations happen in the correct order with proper timing and prevents conflicts between different animation phases.
 
-`PageLintStore` uses Zustand to manage:
+## State Structure
 
-- Lint results (`RuleResult[]`)
-- Loading status (`boolean`)
-- Error messages (`string | null`)
-- An async action `lintPage` to perform the lint scan
+```typescript
+interface AnimationState {
+  // Animation phases
+  isLinting: boolean; // Initial linting state
+  severityTilesVisible: boolean; // Severity tiles are visible
+  severityCountsAnimating: boolean; // Count animations are running
+  severityAnimationComplete: boolean; // All severity animations done
+  violationsVisible: boolean; // Violations are visible
 
-It integrates with Webflow Designer API to fetch elements, then delegates to `pageLintService` to run the configured lint rules.
-
-### ElementLintStore
-
-`ElementLintStore` manages element-specific linting:
-
-- Lint results for the currently selected element (`RuleResult[]`)
-- Structural context toggle (`boolean`) - enables subtree analysis vs. single-element analysis
-- Loading status and error handling
-- Auto-refresh on Designer selection events
-- Async action `refresh` to re-lint the selected element
-
-When structural context is enabled, it analyzes the selected element and all its descendants using the same logic as page scans.
-
-## File Locations
-
-```text
-src/features/linter/store/usePageLintStore.ts
-src/features/linter/store/elementLint.store.ts
+  // Actions
+  reset: () => void; // Reset to initial state
+  startLinting: () => void; // Begin linting sequence
+  showSeverityTiles: () => void; // Show severity tiles
+  startSeverityCounts: () => void; // Start count animations
+  completeSeverityAnimation: () => void; // Mark severity complete
+  showViolations: () => void; // Show violations
+}
 ```
 
-## Installation
+## Animation Sequence
 
-Already included in this project. If needed in isolation:
+### **Phase 1: Linting Start**
 
-```bash
-pnpm add zustand
+```typescript
+startLinting() → {
+  isLinting: true,
+  severityTilesVisible: false,
+  severityCountsAnimating: false,
+  severityAnimationComplete: false,
+  violationsVisible: false
+}
 ```
 
-## Usage
+**Duration**: Immediate state change
+**Purpose**: Prepare UI for linting process
 
-### Importing the Stores
+### **Phase 2: Severity Tiles Reveal**
 
-```ts
-import { usePageLintStore } from "@/features/linter/store/usePageLintStore";
-import { useElementLintStore } from "@/features/linter/store/elementLint.store";
+```typescript
+showSeverityTiles() → {
+  severityTilesVisible: true,
+  isLinting: false
+}
 ```
 
-### Reading State
+**Duration**: 500ms with `ease-gentle` timing
+**Animation**: Tiles slide up from below with opacity transition
+**Purpose**: Display severity breakdown tiles
 
-Use selective subscriptions to avoid unnecessary re-renders.
+### **Phase 3: Count Animations**
 
-**Page Lint:**
-
-```ts
-const results = usePageLintStore((state) => state.results);
-const loading = usePageLintStore((state) => state.loading);
-const error = usePageLintStore((state) => state.error);
+```typescript
+startSeverityCounts() → {
+  severityCountsAnimating: true
+}
 ```
 
-**Element Lint:**
+**Duration**: 800ms with staggered delays (0ms, 150ms, 300ms)
+**Animation**: Count-up effect with `ease-gentle` timing
+**Purpose**: Animate severity counts from 0 to final values
 
-```ts
-const results = useElementLintStore((state) => state.results);
-const structuralContext = useElementLintStore(
-  (state) => state.structuralContext
-);
-const loading = useElementLintStore((state) => state.loading);
+### **Phase 4: Severity Complete**
+
+```typescript
+completeSeverityAnimation() → {
+  severityAnimationComplete: true,
+  severityCountsAnimating: false
+}
 ```
 
-### Invoking Actions
+**Duration**: Immediate state change
+**Purpose**: Signal completion of severity phase
 
-**Page Lint:**
+### **Phase 5: Violations Reveal**
+
+```typescript
+showViolations() → {
+  violationsVisible: true
+}
+```
+
+**Duration**: 700ms with `ease-spring` timing
+**Animation**: Violations slide up with staggered delays (80ms per item)
+**Purpose**: Display violation details
+
+## Usage in Components
+
+### **SeverityFilter Component**
 
 ```tsx
-<button onClick={() => usePageLintStore.getState().lintPage()}>
-  Lint Page
-</button>
+const {
+  severityTilesVisible,
+  severityCountsAnimating,
+  completeSeverityAnimation,
+  showViolations,
+} = useAnimationStore();
+
+// Handle count animation completion
+const handleCountAnimationComplete = () => {
+  countAnimationCompleteRef.current += 1;
+  if (countAnimationCompleteRef.current >= targetAnimationCountRef.current) {
+    completeSeverityAnimation();
+    // Trigger violations animation
+    requestAnimationFrame(() => {
+      showViolations();
+    });
+  }
+};
 ```
 
-**Element Lint:**
+### **ViolationsSection Component**
 
 ```tsx
-// Toggle structural context
-const setStructuralContext = useElementLintStore(
-  (state) => state.setStructuralContext
-);
-<button onClick={() => setStructuralContext(!structuralContext)}>
-  Toggle Structure
-</button>;
+const { violationsVisible } = useAnimationStore();
 
-// Refresh element lint
-const refresh = useElementLintStore((state) => state.refresh);
-<button onClick={refresh}>Refresh Element</button>;
+// Apply animation with stagger
+<div
+  className={cn(
+    "transition-all duration-700 ease-spring",
+    violationsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+  )}
+  style={{ transitionDelay: `${animationDelay}ms` }}
+>
+  {/* Violation items with staggered animation */}
+</div>;
 ```
 
-## State Shapes
+## Timing Coordination
 
-### PageLintStore
+### **Stagger Delays**
 
-| Key              | Type                  | Description                                   |
-| ---------------- | --------------------- | --------------------------------------------- |
-| results          | `RuleResult[]`        | Array of lint violations and suggestions      |
-| passedClassNames | `string[]`            | Unique class names encountered during the run |
-| loading          | `boolean`             | True while lint is in progress                |
-| error            | `string \| null`      | Error message if lint fails                   |
-| hasRun           | `boolean`             | Indicates if at least one run has occurred    |
-| lintPage         | `() => Promise<void>` | Async action to run the page lint             |
-| clearResults     | `() => void`          | Clears results and resets flags               |
+- **Severity tiles**: 0ms (all appear simultaneously)
+- **Count animations**: 0ms, 150ms, 300ms (sequential counting)
+- **Violation items**: 80ms per item (cascading reveal)
 
-### ElementLintStore
+### **Animation Durations**
 
-| Key                  | Type                         | Description                                   |
-| -------------------- | ---------------------------- | --------------------------------------------- |
-| results              | `RuleResult[]`               | Array of lint violations for selected element |
-| classNames           | `string[]`                   | Class names of selected element (legacy)      |
-| roles                | `ElementRole[]`              | Detected roles of selected element (legacy)   |
-| loading              | `boolean`                    | True while lint is in progress                |
-| error                | `string \| null`             | Error message if lint fails                   |
-| structuralContext    | `boolean`                    | Whether structural context is enabled         |
-| refresh              | `() => Promise<void>`        | Async action to re-lint selected element      |
-| clear                | `() => void`                 | Clears results and resets flags               |
-| setStructuralContext | `(enabled: boolean) => void` | Toggles structural context mode               |
+- **Severity tiles**: 500ms (`ease-gentle`)
+- **Count animations**: 800ms (`ease-gentle`)
+- **Violations**: 700ms (`ease-spring`)
 
-## Middleware
+### **Total Sequence Time**
 
-Both stores are enhanced with:
+- **Minimum**: ~1.5 seconds
+- **Typical**: 2-3 seconds (depending on violation count)
+- **Maximum**: No hard limit (scales with content)
 
-- `devtools` for Redux DevTools integration
-- `subscribeWithSelector` for selective subscriptions
-- `immer` for concise immutable updates
+## State Transitions
 
-This setup provides performance and debugging benefits.
+```mermaid
+graph TD
+    A[Initial State] --> B[startLinting]
+    B --> C[showSeverityTiles]
+    C --> D[startSeverityCounts]
+    D --> E[completeSeverityAnimation]
+    E --> F[showViolations]
+    F --> G[Complete]
 
-## Services
-
-Singleton instances are initialized outside the stores:
-
-- `StyleService`
-- `UtilityClassAnalyzer`
-- `RuleRegistry` (registered with preset rules)
-- `RuleRunner`
-- `pageLintService` (created via `createPageLintService`)
-- `elementLintService` (created via `createElementLintService`)
-
-These services are reused across lint runs.
-
-## Examples
-
-### Page Lint Button
-
-```tsx
-import React from "react";
-import { usePageLintStore } from "@/features/linter/store/usePageLintStore";
-
-export function LintButton() {
-  const loading = usePageLintStore((state) => state.loading);
-  const lintPage = usePageLintStore((state) => state.lintPage);
-
-  return (
-    <button disabled={loading} onClick={lintPage}>
-      {loading ? "Linting..." : "Lint Page"}
-    </button>
-  );
-}
+    H[reset] --> A
+    H -.->|Can be called| B
+    H -.->|Can be called| C
+    H -.->|Can be called| D
+    H -.->|Can be called| E
+    H -.->|Can be called| F
 ```
 
-### Element Lint with Structural Toggle
+## Error Handling
 
-```tsx
-import React from "react";
-import { useElementLintStore } from "@/features/linter/store/elementLint.store";
+### **Animation Interruption**
 
-export function ElementLintControls() {
-  const { results, structuralContext, loading, refresh, setStructuralContext } =
-    useElementLintStore();
+- Store can be reset at any time
+- State transitions are atomic
+- No partial animation states
 
-  return (
-    <div>
-      <label>
-        <input
-          type="checkbox"
-          checked={structuralContext}
-          onChange={(e) => setStructuralContext(e.target.checked)}
-        />
-        Analyze subtree (selected element + descendants)
-      </label>
+### **Component Cleanup**
 
-      <button disabled={loading} onClick={refresh}>
-        {loading ? "Linting..." : "Lint Element"}
-      </button>
+- Components should unsubscribe from store changes
+- Animation state persists until explicitly reset
+- No automatic cleanup on component unmount
 
-      <div>Found {results.length} violations</div>
-    </div>
-  );
+## Performance Considerations
+
+### **State Updates**
+
+- Zustand batches updates efficiently
+- Minimal re-renders during animation sequences
+- DevTools integration for debugging
+
+### **Animation Timing**
+
+- Uses `requestAnimationFrame` for smooth 60fps
+- CSS transitions for hardware acceleration
+- JavaScript animations only when necessary
+
+## Best Practices
+
+### **DO**
+
+- Use the store for coordinating multi-phase animations
+- Respect the animation sequence order
+- Implement proper completion callbacks
+- Use consistent timing and easing
+
+### **DON'T**
+
+- Modify animation state outside the store
+- Skip animation phases
+- Use arbitrary timing values
+- Block the main thread during animations
+
+## Debugging
+
+### **DevTools Integration**
+
+```typescript
+// Store includes devtools middleware
+{
+  name: "animation-store",
+  serialize: { options: true }
 }
 ```
 
-## TypeScript Types
+### **State Inspection**
 
-### PageLintStore
-
-```ts
-interface PageLintState {
-  results: RuleResult[];
-  passedClassNames: string[];
-  loading: boolean;
-  error: string | null;
-  hasRun: boolean;
-}
-
-interface PageLintActions {
-  lintPage: () => Promise<void>;
-  clearResults: () => void;
-}
-
-type PageLintStore = PageLintState & PageLintActions;
+```typescript
+// Check current animation state
+const state = useAnimationStore.getState();
+console.log("Animation state:", state);
 ```
 
-### ElementLintStore
+### **Common Issues**
 
-```ts
-interface ElementLintState {
-  results: RuleResult[];
-  classNames: string[];
-  roles: ElementRole[];
-  loading: boolean;
-  error: string | null;
-  structuralContext: boolean;
-}
+- **Animations not starting**: Check if `startLinting()` was called
+- **Counts not animating**: Verify `severityCountsAnimating` is true
+- **Violations not showing**: Ensure `severityAnimationComplete` is true
 
-interface ElementLintActions {
-  refresh: () => Promise<void>;
-  clear: () => void;
-  setStructuralContext: (enabled: boolean) => void;
-}
+## Future Enhancements
 
-type ElementLintStore = ElementLintState & ElementLintActions;
-```
+### **Planned Features**
 
-## Auto-refresh Behavior
+- `prefers-reduced-motion` support
+- Animation pause/resume functionality
+- Custom animation timing configuration
+- Animation performance metrics
 
-The `ElementLintStore` automatically subscribes to Webflow Designer's `selectedelement` events and refreshes the lint results when a new element is selected. This ensures the UI always shows violations for the currently selected element.
+### **Accessibility Improvements**
 
-When `structuralContext` is enabled, the store will analyze the selected element and all its descendants, enabling structural rules like `canonical:child-group-key-match` to run on nested children.
+- Respect user motion preferences
+- Provide animation alternatives
+- Screen reader announcements for state changes
+
+This store provides a robust foundation for complex animation sequences while maintaining performance and accessibility standards.
