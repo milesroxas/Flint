@@ -81,7 +81,14 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     const rootKey =
       (parseClass(rootBase) as ParsedClass | null)?.componentKey ?? null;
 
-    if (!childKey || !rootKey || childKey !== rootKey) {
+    // Allow child to extend a single-token root key (e.g., root: "blog" → child: "blog_cms_wrap").
+    // If the root key includes a variant (two tokens, e.g., "blog_main"), enforce exact match.
+    const rootParts = (rootKey ?? "").split("_").filter(Boolean);
+    const isSingleTokenRoot = rootParts.length === 1;
+    const childExtendsSingleTokenRoot =
+      !!childKey && !!rootKey && isSingleTokenRoot && childKey.startsWith(`${rootKey}_`);
+
+    if (!childKey || !rootKey || (childKey !== rootKey && !childExtendsSingleTokenRoot)) {
       const baseName = baseChild?.className ?? "";
       const msg = !childKey
         ? `Could not extract component key from "${baseName}". Use "<name>_<variant>_<group>_wrap".`
