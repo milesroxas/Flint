@@ -25,6 +25,8 @@ const badgeVariants = cva(
           "bg-suggestion text-suggestion-foreground hover:bg-suggestion-hover active:bg-suggestion-active",
         inheritedProperty:
           "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
+        propertyName:
+          "bg-property-name text-property-name-foreground hover:bg-property-name-hover active:bg-property-name-active rounded-xs px-2 font-mono",
         newProperty:
           "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         webflowClass:

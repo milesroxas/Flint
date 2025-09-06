@@ -116,10 +116,6 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       { best: number; role: RolesByElement[string] }
     > = {};
 
-    console.log(
-      "[DEBUG] Starting single-pass role detection with full context",
-      `Processing ${elements.length} elements`
-    );
 
     // Build complete detection context with all available information
     const detectionContext = {
@@ -158,7 +154,6 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
       const element = item.element as WebflowElement | undefined;
       const elementId = toElementKey(element);
       if (!elementId) {
-        console.log("[DEBUG] Skipping element with no ID:", item);
         continue;
       }
 
@@ -178,10 +173,6 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
             bestRole = scored.role;
           }
         } catch (error) {
-          console.error(
-            `[DEBUG] Detector ${detector.id} error for element ${elementId}:`,
-            error
-          );
           // detector errors are non-fatal; continue
         }
       }
@@ -191,24 +182,7 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
         bestRole && bestScore >= threshold ? bestRole : "unknown";
       scoresByElement[elementId] = { best: bestScore, role: result[elementId] };
 
-      // DEBUG: Log role detection results
-      if (bestRole === "section" || bestRole === "main" || bestScore > 0) {
-        const snapshot = snapshotById.get(elementId);
-        console.log(`[DEBUG] Role detection for ${elementId}:`, {
-          classes: snapshot?.classes || [],
-          bestRole,
-          bestScore,
-          threshold,
-          finalRole: result[elementId],
-          detectionOrder: `sorted by priority`,
-        });
-      }
     }
-
-    console.log(
-      "[DEBUG] Role detection completed. Final role assignments:",
-      Object.entries(result).filter(([, role]) => role !== "unknown")
-    );
 
     // Enforce singleton `main`: keep highest-scoring, demote others to unknown
     const mainCandidates = Object.entries(scoresByElement)

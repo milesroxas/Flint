@@ -80,7 +80,20 @@ export interface LintContextService {
  * Filters elements to only those that support getStyles() method
  */
 function filterValidElements(elements: WebflowElement[]): WebflowElement[] {
-  return elements.filter((el: any) => el && typeof el.getStyles === "function");
+  const filtered = elements.filter((el: any) => {
+    const hasGetStyles = el && typeof el.getStyles === "function";
+    
+    // Also include page slots (no element type but has component+element ID structure)
+    const hasComponentElementId = el?.id?.component && el?.id?.element;
+    const hasNoType = !el.type || el.type === "";
+    const isPageSlot = hasComponentElementId && hasNoType;
+    
+    const shouldInclude = hasGetStyles || isPageSlot;
+    
+    return shouldInclude;
+  });
+  
+  return filtered;
 }
 
 /**
@@ -149,8 +162,16 @@ export function createLintContextService(deps: {
     // 4) Collect applied styles with normalized element ids
     const elementStylePairs = await Promise.all(
       validElements.map(async (element) => {
-        const applied = await styleService.getAppliedStyles(element);
         const elementId = toElementKey(element);
+        
+        // For elements without getStyles (like page slots), return empty styles
+        let applied: StyleInfo[];
+        if (typeof (element as any).getStyles === "function") {
+          applied = await styleService.getAppliedStyles(element);
+        } else {
+          applied = []; // Page slots typically have no styles
+        }
+        
         const styles: StyleWithElement[] = applied.map((s) => ({
           ...s,
           elementId,
@@ -291,31 +312,18 @@ export function createLintContextService(deps: {
 
     // For structural context without page context, we need to create a page-like context
     // since we can't traverse parent relationships from a single element
-    console.log(
-      "[LintContext] Structural mode requires page context - getting all page elements"
-    );
 
     try {
       // Get all elements on the page via Webflow API
       const wf = (window as any).webflow;
       if (!wf || typeof wf.getAllElements !== "function") {
-        console.log(
-          "[LintContext] Webflow API not available, falling back to isolated context"
-        );
         return await createContext([element]);
       }
 
       const allElements = await wf.getAllElements();
       if (!Array.isArray(allElements) || allElements.length === 0) {
-        console.log(
-          "[LintContext] No elements found on page, falling back to isolated context"
-        );
         return await createContext([element]);
       }
-
-      console.log(
-        `[LintContext] Found ${allElements.length} elements on page, creating full context`
-      );
 
       // Create full page context and then scope it down to the section
       const fullPageContext = await createContext(allElements);
@@ -332,20 +340,12 @@ export function createLintContextService(deps: {
         fullPageContext
       );
       if (!sectionId) {
-        console.log(
-          `[LintContext] No section found containing element ${elementId}, using full page context`
-        );
         return fullPageContext;
       }
-
-      console.log(
-        `[LintContext] Found section ${sectionId} containing element ${elementId}, scoping context`
-      );
 
       // Create scoped context for just the section
       return createScopedContextForSection(sectionId, fullPageContext);
     } catch (error) {
-      console.warn("[LintContext] Failed to create structural context:", error);
       return await createContext([element]);
     }
   }
@@ -405,11 +405,6 @@ export function createLintContextService(deps: {
         sectionElementIds.has(toElementKey(item.element))
       );
 
-    console.log(
-      `[LintContext] Scoped context: ${sectionElementIds.size} elements, ${
-        Array.from(sectionStyles.values()).flat().length
-      } styles`
-    );
 
     // Return scoped context
     return {

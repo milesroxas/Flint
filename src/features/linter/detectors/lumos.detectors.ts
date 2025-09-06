@@ -1,5 +1,3 @@
-// src/features/linter/presets/lumos/lumos.role-detectors.ts
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import type {
   RoleDetector,
   ElementSnapshot,
@@ -16,15 +14,31 @@ export const lumosRoleDetectors: RoleDetector[] = [
   {
     id: "lumos-main-detector",
     description: "Detects main elements using Lumos naming conventions",
-    detect: (element: ElementSnapshot, _context: DetectionContext) => {
-      // Strong naming signal per Lumos
-      if (element.classes?.some((n) => n === "page_main")) {
-        return { role: "main", score: 0.95 };
+    detect: (element: ElementSnapshot, context: DetectionContext) => {
+      // Lumos main should be exactly "page_main"
+      if (!element.classes?.some((n) => n === "page_main")) {
+        // Remove soft tag fallback since Webflow doesn't expose native HTML tags reliably
+        return null;
       }
-      // Soft tag fallback if available
-      const tag = element.tagName?.toLowerCase();
-      if (tag === "main") return { role: "main", score: 0.6 };
-      return null;
+
+      // If we have structural context, validate parent relationship
+      if (context?.graph && context?.rolesByElement) {
+        const parentId = context.graph.getParentId(element.id);
+        if (parentId) {
+          // Check if parent is page_wrap (or elements ending with page_wrap)
+          const parentElement = context.allElements?.find(el => el.id === parentId);
+          const hasPageWrap = parentElement?.classes.some(cls => 
+            cls === "page_wrap" || cls.endsWith("_page_wrap")
+          );
+          
+          if (!hasPageWrap) {
+            // Not a child of page_wrap, lower confidence
+            return { role: "main", score: 0.7 };
+          }
+        }
+      }
+
+      return { role: "main", score: 0.95 };
     },
   },
 
@@ -32,7 +46,7 @@ export const lumosRoleDetectors: RoleDetector[] = [
   {
     id: "lumos-section-detector",
     description: "Detects section elements using Lumos naming conventions",
-    detect: (element: ElementSnapshot, _context: DetectionContext) => {
+    detect: (element: ElementSnapshot) => {
       // Check for utility classes that indicate sections
       const sectionUtilities = [
         "u-section", // Standard section utility
@@ -110,4 +124,46 @@ export const lumosRoleDetectors: RoleDetector[] = [
       return classifyWrapName(firstClass);
     },
   }),
+
+  // Fallback: detect page slots as main when no proper main class found
+  {
+    id: "lumos-page-slot-main-fallback",
+    description: "Fallback detection for page slots as main elements when no page_main class found",
+    detect: (element: ElementSnapshot, context: DetectionContext) => {
+      // Only run this fallback if no main role has been detected yet
+      if (context?.rolesByElement && Object.values(context.rolesByElement).includes("main")) {
+        return null; // Main already detected, don't interfere
+      }
+
+      // First, check if this element is under page_wrap (page slots are children of page_wrap)
+      if (!context?.graph) return null;
+      
+      const parentId = context.graph.getParentId(element.id);
+      if (!parentId) return null;
+      
+      const parentElement = context.allElements?.find(el => el.id === parentId);
+      const isUnderPageWrap = parentElement?.classes.some(cls => 
+        cls === "page_wrap" || cls.endsWith("_page_wrap")
+      );
+      
+      if (!isUnderPageWrap) return null; // Not a child of page_wrap
+      
+      // Page slots are children of page_wrap that have:
+      // 1. Minimal/no classes (they're structural containers)
+      // 2. No semantic class names (no page_, section_, component_ patterns)
+      const hasMinimalClasses = element.classes.length <= 1;
+      const hasNoSemanticClasses = !element.classes.some(cls => 
+        cls.includes('page_') || cls.includes('section_') || cls.includes('component_')
+      );
+      
+      const isLikelyPageSlot = hasMinimalClasses && hasNoSemanticClasses;
+      
+      if (!isLikelyPageSlot) return null;
+      return { 
+        role: "main", 
+        score: 0.8,
+        reasoning: "Page slot under page_wrap detected as main (configure with page_main class and <main> tag)"
+      };
+    },
+  },
 ];

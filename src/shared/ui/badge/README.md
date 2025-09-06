@@ -17,6 +17,7 @@ The Badge component provides a flexible, accessible way to display small pieces 
 ### **Specialized Variants**
 
 - `inheritedProperty` - For displaying inherited CSS properties
+- `propertyName` - For displaying CSS property names in messages
 - `newProperty` - For displaying new CSS properties
 - `webflowClass` - For Webflow class names (primary styling)
 - `webflowClassMuted` - For Webflow class names (muted styling)

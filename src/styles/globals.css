@@ -83,6 +83,12 @@
   --dynamic-property-foreground: oklch(0.985 0 0);
   --dynamic-property-hover: oklch(0.47 0.12 290);
   --dynamic-property-active: oklch(0.42 0.12 290);
+
+  /* Property name tokens (light) – tuned for contrast */
+  --property-name: oklch(0.55 0.32 328.23);        /* deeper base for AA */
+  --property-name-foreground: oklch(0.985 0 0);    /* white for stronger contrast */
+  --property-name-hover: oklch(0.60 0.32 328.23);  /* slightly lighter hover */
+  --property-name-active: oklch(0.50 0.32 328.23); /* darker active */
 }
 
 .dark {
@@ -163,6 +169,12 @@
   --dynamic-property-foreground: oklch(0.985 0 0);
   --dynamic-property-hover: oklch(0.72 0.10 290);
   --dynamic-property-active: oklch(0.77 0.10 290);
+
+  /* Property name tokens (dark) */
+  --property-name: oklch(0.55 0.30 328.23);        /* magenta, dark-friendly */
+  --property-name-foreground: oklch(0.985 0 0);     /* white for contrast */
+  --property-name-hover: oklch(0.60 0.30 328.23);   /* lighter hover */
+  --property-name-active: oklch(0.50 0.30 328.23);  /* darker active */
 }
 
 @theme inline {
@@ -247,6 +259,11 @@
   --color-dynamic-property-foreground: var(--dynamic-property-foreground);
   --color-dynamic-property-hover: var(--dynamic-property-hover);
   --color-dynamic-property-active: var(--dynamic-property-active);
+
+  --color-property-name: var(--property-name);
+  --color-property-name-foreground: var(--property-name-foreground);
+  --color-property-name-hover: var(--property-name-hover);
+  --color-property-name-active: var(--property-name-active);
 }
 
 /* Modern easing curves */

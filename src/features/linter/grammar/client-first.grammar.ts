@@ -43,11 +43,29 @@ function parseCustom(name: string): ParsedClass {
         parsed.componentKey = null;
       }
     } else {
-      // For non-wrapper classes, use first two tokens if available
-      if (tokens.length >= 2) {
-        parsed.componentKey = tokens.slice(0, 2).join("_");
+      // Client-First: treat `section_[root]-[variant]` as component root and key = `root_variant`
+      if (tokens[0]?.toLowerCase() === "section") {
+        if (tokens.length >= 3) {
+          parsed.componentKey = tokens.slice(1, 3).join("_");
+        } else if (tokens.length === 2) {
+          parsed.componentKey = tokens[1];
+        } else {
+          parsed.componentKey = null;
+        }
       } else {
-        parsed.componentKey = tokens[0] || null;
+        // For other non-wrapper classes in Client-First:
+        // Component key extraction depends on the element's role:
+        // - Component roots (single or two tokens): use first token only 
+        // - Child groups (3+ tokens): use first two tokens to capture variant
+        if (tokens.length >= 3) {
+          // Likely child group: use first two tokens (name + variant)
+          parsed.componentKey = tokens.slice(0, 2).join("_");
+        } else if (tokens.length >= 1) {
+          // Likely component root: use first token only
+          parsed.componentKey = tokens[0];
+        } else {
+          parsed.componentKey = null;
+        }
       }
     }
   } else {

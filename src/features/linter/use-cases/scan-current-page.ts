@@ -9,9 +9,27 @@ export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   const allStyles = await styleService.getAllStylesWithProperties();
   analyzer.buildPropertyMaps(allStyles);
 
-  const valid = (elements || []).filter(
-    (el: any) => el && typeof el.getStyles === "function"
-  );
+  // Include elements with getStyles() AND potential page slots
+  const valid = (elements || []).filter((el: any) => {
+    if (!el) return false;
+    
+    // Include elements that have getStyles (normal elements)
+    if (typeof el.getStyles === "function") return true;
+    
+    // Also include potential page slots (no element type but has component+element ID structure)
+    const hasComponentElementId = el?.id?.component && el?.id?.element;
+    const hasNoType = !el.type || el.type === "";
+    
+    console.log(`[DEBUG] Element filter check:`, {
+      elementId: (el?.id?.element || el?.id || "unknown"),
+      hasGetStyles: typeof el.getStyles === "function",
+      hasComponentElementId,
+      hasNoType,
+      included: typeof el.getStyles === "function" || (hasComponentElementId && hasNoType)
+    });
+    
+    return hasComponentElementId && hasNoType;
+  });
 
   return pageLintService.lintCurrentPage(valid as any);
 }
@@ -38,9 +56,19 @@ export async function scanCurrentPageWithMeta(
     }
   }
 
-  const valid = (elements || []).filter(
-    (el: any) => el && typeof el.getStyles === "function"
-  );
+  // Include elements with getStyles() AND potential page slots  
+  const valid = (elements || []).filter((el: any) => {
+    if (!el) return false;
+    
+    // Include elements that have getStyles (normal elements)
+    if (typeof el.getStyles === "function") return true;
+    
+    // Also include potential page slots (no element type but has component+element ID structure)
+    const hasComponentElementId = el?.id?.component && el?.id?.element;
+    const hasNoType = !el.type || el.type === "";
+    
+    return hasComponentElementId && hasNoType;
+  });
 
   const results = await pageLintService.lintCurrentPage(valid as any);
   return { results, classNames: Array.from(unique) };

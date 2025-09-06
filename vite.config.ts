@@ -101,10 +101,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
         entryFileNames: 'bundle.js',
-        assetFileNames: 'styles.css',
+        assetFileNames: (assetInfo: any) =>
+          assetInfo.name && assetInfo.name.endsWith('.css')
+            ? 'styles.css'
+            : 'assets/[name]-[hash][extname]',
       },
     },
   },

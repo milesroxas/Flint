@@ -1,4 +1,3 @@
-// features/linter/lib/registry.ts
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 import { resolvePresetOrFallback } from "@/features/linter/presets";
 import {
@@ -35,12 +34,8 @@ export function initializeRuleRegistry(
     createMainChildrenPageRule(),
   ]);
   const childGroupRule = createChildGroupKeyMatchRule();
-  console.log(`[DEBUG] Registering child group rule:`, {
-    id: childGroupRule.id,
-    enabled: childGroupRule.enabled,
-    severity: childGroupRule.severity,
-    hasAnalyzeElement: typeof childGroupRule.analyzeElement === "function"
-  });
+  
+  // 2b) register canonical element rules
   ruleRegistry.registerRules([childGroupRule]);
 
   // 3) apply opinion mode adjustments

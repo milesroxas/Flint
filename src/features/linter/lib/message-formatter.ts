@@ -93,12 +93,23 @@ function analyzeContentByMessageStructure(
   content: string,
   matchIndex: number,
   totalMatches: number
-):
+): 
   | "webflowClass"
   | "errorContent"
   | "suggestionContent"
   | "dynamicProperty"
-  | "inheritedProperty" {
+  | "inheritedProperty"
+  | "propertyName" {
+  // If message clearly refers to a CSS property, style it as a property name
+  // Example: Property "background-color" uses hardcoded color "#FF0000".
+  if (/^Property\s+"[^"]+"/i.test(message) && matchIndex === 0) {
+    return "propertyName";
+  }
+
+  // Detect well-known CSS property names and treat them as properties, not classes
+  if (isCssPropertyName(content)) {
+    return "propertyName";
+  }
   // Handle "Child group key X does not match root key Y. Rename to Z." pattern
   if (
     message.includes("Child group key") &&
@@ -174,4 +185,32 @@ function isDynamicProperty(content: string): boolean {
   ];
 
   return dynamicPatterns.some((pattern) => pattern.test(content));
+}
+
+/**
+ * Detects common CSS property names to avoid misclassifying them as class names.
+ * This is a lightweight heuristic; extend as needed.
+ */
+function isCssPropertyName(content: string): boolean {
+  const commonProps = new Set<string>([
+    "color",
+    "background",
+    "background-color",
+    "border",
+    "border-color",
+    "outline-color",
+    "text-decoration-color",
+    "fill",
+    "stroke",
+  ]);
+
+  if (commonProps.has(content)) return true;
+
+  // Heuristic: lowercase kebab-case without underscores and without spaces
+  // e.g., background-color, border-top-color
+  if (/^[a-z][a-z0-9-]*$/.test(content) && content.includes("-")) {
+    return true;
+  }
+
+  return false;
 }

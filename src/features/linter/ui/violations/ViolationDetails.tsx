@@ -262,13 +262,11 @@ const PropertyDuplicate: React.FC<PropertyDuplicateProps> = ({ property }) => {
           className="w-full"
         >
           <CollapsibleTrigger className="flex items-start gap-1 hover:opacity-80 transition-opacity w-full">
-            <Badge
-              variant="inheritedProperty"
-              className="break-words whitespace-normal"
-            >
-              <span className="text-left">
-                {property.property}: {property.value}
-              </span>
+            <Badge variant="propertyName" className="break-words whitespace-normal">
+              <span className="text-left font-mono">{property.property}</span>
+            </Badge>
+            <Badge variant="inheritedProperty" className="break-words whitespace-normal">
+              <span className="text-left">{property.value}</span>
             </Badge>
             <ChevronDown
               className={cn(
@@ -320,15 +318,14 @@ const ExactMatchesMessage: React.FC<
           {textConfig.propertiesLabel}
         </h3>
         {properties.map((p, i) => (
-          <Badge
-            key={i}
-            variant="inheritedProperty"
-            className="break-words whitespace-normal font-normal text-xs flex gap-1"
-          >
-            <span className="text-left">
-              <strong>{p.property}:</strong> {p.value}
-            </span>
-          </Badge>
+          <div key={i} className="flex items-start gap-1 flex-wrap">
+            <Badge variant="propertyName" className="break-words whitespace-normal font-normal text-xs">
+              <span className="text-left font-mono">{p.property}</span>
+            </Badge>
+            <Badge variant="inheritedProperty" className="break-words whitespace-normal font-normal text-xs">
+              <span className="text-left">{p.value}</span>
+            </Badge>
+          </div>
         ))}
       </div>
     )}

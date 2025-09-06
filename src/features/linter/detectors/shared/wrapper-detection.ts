@@ -111,38 +111,34 @@ export const isStructuralChildGroup = (
     }
   }
 
-  // 4. Must be nested inside a componentRoot (but not directly under a section)
+  // 4. Must be nested inside a componentRoot or section (allowing utility containers in between)
   const ancestors = graph.getAncestorIds(elementId);
   const componentRootId = ancestors.find(
     (ancestorId) => rolesByElement?.[ancestorId] === "componentRoot"
   );
+  
+  // For Client-First: also accept elements nested under sections, since section_* can be component roots
+  const sectionId = ancestors.find(
+    (ancestorId) => 
+      rolesByElement?.[ancestorId] === "section" || 
+      rolesByElement?.[ancestorId] === "main"
+  );
 
-  if (!componentRootId) {
-    // Check if this element could be a componentRoot itself based on its section ancestry
-    const hasSection = ancestors.some(
-      (ancestorId) =>
-        rolesByElement?.[ancestorId] === "section" ||
-        rolesByElement?.[ancestorId] === "main"
-    );
-
-    if (hasSection) {
-      return {
-        isChildGroup: false,
-        reason:
-          "Element is nested under a section but has no componentRoot ancestor - likely a componentRoot itself",
-      };
-    }
-
+  if (!componentRootId && !sectionId) {
     return {
       isChildGroup: false,
-      reason: "Element is not nested inside a componentRoot",
+      reason: "Element is not nested inside a componentRoot or section",
     };
   }
 
+  // If we found a componentRoot, use it; otherwise use the section
+  const containerId = componentRootId || sectionId;
+  const containerType = componentRootId ? "componentRoot" : "section";
+
   return {
     isChildGroup: true,
-    reason: `Structural child group: has ${children.length} children, nested in componentRoot ${componentRootId}`,
-    componentRootId,
+    reason: `Structural child group: has ${children.length} children, nested in ${containerType} ${containerId}`,
+    componentRootId: containerId,
   };
 };
 
@@ -246,31 +242,15 @@ export const createWrapperDetector = (config: {
     if (context.rolesByElement && context.graph) {
       if (namedRole === "componentRoot") {
         const canBeRoot = canBeComponentRoot(element.id, context);
-        console.log(`[DEBUG] ComponentRoot validation for ${element.id}:`, {
-          firstClass,
-          namedRole,
-          canBeRoot: canBeRoot.canBe,
-          reason: canBeRoot.reason,
-        });
-
         if (!canBeRoot.canBe) {
           // Naming suggests componentRoot, but structure suggests childGroup
-          console.log(
-            `[DEBUG] OVERRIDE: ComponentRoot → childGroup for ${element.id}`
-          );
           return { role: "childGroup", score: 0.95 };
         }
 
         return { role: "componentRoot", score: 0.9 };
       } else if (namedRole === "childGroup") {
         const structural = isStructuralChildGroup(element.id, context);
-        console.log(`[DEBUG] ChildGroup validation for ${element.id}:`, {
-          firstClass,
-          namedRole,
-          structural: structural.reason,
-          isStructuralChildGroup: structural.isChildGroup,
-        });
-
+        
         if (!structural.isChildGroup) {
           // Naming suggests childGroup, but structurally it's not (likely componentRoot)
           return { role: "componentRoot", score: 0.9 };
