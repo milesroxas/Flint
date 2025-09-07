@@ -6,6 +6,7 @@ import { cn } from "@/shared/utils";
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationsSection } from "./ViolationsSection";
 import { useAnimationStore } from "@/features/linter/store/animation.store";
+import { selectElementById } from "@/features/window/select-element";
 
 interface ViolationsListProps {
   violations: RuleResult[];
@@ -28,10 +29,14 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const violationsVisible = useAnimationStore(
     (state) => state.violationsVisible
   );
-  const [isVisible, setIsVisible] = useState(false);
+  // Initialize visibility to avoid a mount-time entrance animation in element mode
+  const [isVisible, setIsVisible] = useState<boolean>(
+    bypassAnimation || useAnimationStore.getState().violationsVisible
+  );
 
   useEffect(() => {
-    setIsVisible(bypassAnimation || violationsVisible);
+    const next = bypassAnimation || violationsVisible;
+    setIsVisible((prev) => (prev === next ? prev : next));
   }, [bypassAnimation, violationsVisible]);
 
   const errors = useMemo(
@@ -47,13 +52,62 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     [violations]
   );
 
-  // auto-open when exactly one violation exists across all sections
-  const totalCount = errors.length + warnings.length + suggestions.length;
-  let defaultOpenIds: string[] = [];
-  if (totalCount === 1) {
-    const only = errors[0] || warnings[0] || suggestions[0];
-    defaultOpenIds = [`${only.ruleId}-${only.className || "unknown"}-0`];
-  }
+  // Global single-open id across all sections
+  const [openId, setOpenId] = useState<string | undefined>(undefined);
+  const lastAutoOpenSignatureRef = React.useRef<string | null>(null);
+
+  // Compute id map for selection and list signature
+  const { idToViolation, signature, totalCount, onlyId } = useMemo(() => {
+    const map = new Map<string, RuleResult>();
+    const parts: string[] = [];
+    const add = (arr: RuleResult[]) =>
+      arr.forEach((v, i) => {
+        const id = `${v.ruleId}-${v.className || "unknown"}-${i}`;
+        map.set(id, v);
+        parts.push(id);
+      });
+    add(errors);
+    add(warnings);
+    add(suggestions);
+    const sig = parts.join("|");
+    const total = errors.length + warnings.length + suggestions.length;
+    const only = total === 1 ? errors[0] || warnings[0] || suggestions[0] : undefined;
+    const onlyId = only
+      ? `${only.ruleId}-${only.className || "unknown"}-0`
+      : undefined;
+    return { idToViolation: map, signature: sig, totalCount: total, onlyId };
+  }, [errors, warnings, suggestions]);
+
+  // Clear openId if it no longer exists in the current list
+  useEffect(() => {
+    if (openId && !idToViolation.has(openId)) {
+      setOpenId(undefined);
+    }
+  }, [idToViolation, openId]);
+
+  // Auto-open when exactly one violation exists, but allow manual close.
+  // Triggers only once per unique list signature.
+  useEffect(() => {
+    if (totalCount === 1 && !openId) {
+      if (lastAutoOpenSignatureRef.current !== signature) {
+        if (onlyId) setOpenId(onlyId);
+        lastAutoOpenSignatureRef.current = signature;
+      }
+    }
+  }, [totalCount, signature, onlyId, openId]);
+
+  const handleOpenChange = async (nextId: string | undefined) => {
+    setOpenId(nextId || undefined);
+    if (!nextId) return;
+    const violation = idToViolation.get(nextId);
+    const elementId = violation?.elementId;
+    if (!elementId) return;
+    try {
+      await selectElementById(elementId);
+    } catch {
+      // ignore selection errors
+    }
+  };
 
   // Passed-only list (deduped)
   const failedSet = useMemo(
@@ -86,7 +140,8 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             title="Errors"
             items={errors}
             showHighlight={showHighlight}
-            defaultOpenIds={defaultOpenIds}
+            openId={openId}
+            onOpenChange={handleOpenChange}
             animationDelay={0}
             shouldAnimate={isVisible}
           />
@@ -94,7 +149,8 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             title="Warnings"
             items={warnings}
             showHighlight={showHighlight}
-            defaultOpenIds={defaultOpenIds}
+            openId={openId}
+            onOpenChange={handleOpenChange}
             animationDelay={200}
             shouldAnimate={isVisible}
           />
@@ -102,7 +158,8 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             title="Suggestions"
             items={suggestions}
             showHighlight={showHighlight}
-            defaultOpenIds={defaultOpenIds}
+            openId={openId}
+            onOpenChange={handleOpenChange}
             animationDelay={400}
             shouldAnimate={isVisible}
           />

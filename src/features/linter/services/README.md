@@ -175,7 +175,6 @@ const results = await pageLintService.lintCurrentPage(elements);
   - `upsertRuleCustomSettings(ruleId: string, partial: Record<string, unknown>): RuleConfiguration[]`: Update single rule settings
   - `setRuleEnabled(ruleId: string, enabled: boolean): RuleConfiguration[]`: Enable/disable single rule
 - **Features**:
-  - V1 file format with backward compatibility
   - Configurable storage adapters (localStorage, memory)
   - Schema-driven default seeding and validation
   - Preset-scoped configuration support

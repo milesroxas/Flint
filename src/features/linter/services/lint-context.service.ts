@@ -42,6 +42,7 @@ export function invalidatePageContextCache(): void {
   cachedPageContext = null;
 }
 import { toElementKey } from "@/entities/element/lib/id";
+import { createDebugger } from "@/shared/utils/debug";
 
 import type {
   StyleInfo,
@@ -131,6 +132,7 @@ export function createLintContextService(deps: {
   styleService: StyleService;
 }): LintContextService {
   const { styleService } = deps;
+  const debug = createDebugger("lint-context");
 
   // Cache for page contexts to avoid redundant computation
   let cachedContext: LintContext | null = null;
@@ -143,8 +145,10 @@ export function createLintContextService(deps: {
       throw new Error("Elements must be an array");
     }
 
+    debug.log("createContext: received elements count", elements.length);
     // 1) Filter valid elements
     const validElements = filterValidElements(elements);
+    debug.log("createContext: validElements count", validElements.length);
 
     // 2) Resolve active preset once
     const activePreset = resolvePresetOrFallback(getCurrentPreset());
@@ -158,6 +162,7 @@ export function createLintContextService(deps: {
     // 3) Load site-wide styles
     const allStyles: StyleInfo[] =
       await styleService.getAllStylesWithProperties();
+    debug.log("createContext: loaded allStyles count", allStyles.length);
 
     // 4) Collect applied styles with normalized element ids
     const elementStylePairs = await Promise.all(
@@ -184,12 +189,14 @@ export function createLintContextService(deps: {
     const parentRelationshipService = createParentRelationshipService();
     const parentIdByChildId =
       await parentRelationshipService.buildParentChildMap(validElements);
+    debug.log("createContext: parent map size", Object.keys(parentIdByChildId).length);
 
     // 6) Create signature for caching
     const signature = createSignature(elementStylePairs, parentIdByChildId);
 
     // 7) Check cache
     if (cachedContext && lastSignature === signature) {
+      debug.log("createContext: cache hit", signature);
       return cachedContext;
     }
 
@@ -204,6 +211,7 @@ export function createLintContextService(deps: {
 
     // 9) Create element graph first (needed for structural role detection)
     const graph = createElementGraphService(validElements, parentIdByChildId);
+    debug.log("createContext: graph created with", validElements.length, "nodes");
 
     // 10) Detect roles with graph context for structural analysis
     const roleDetection = createRoleDetectionService({
@@ -268,6 +276,7 @@ export function createLintContextService(deps: {
 
     // Also set in lightweight context cache for page mode performance
     setPageContextCache(context);
+    debug.log("createContext: context created signature", signature);
 
     return context;
   }
@@ -307,21 +316,24 @@ export function createLintContextService(deps: {
 
     if (!useStructural) {
       // Standard isolated context (original behavior)
+      debug.log("createElementContextWithStructural: structural off, isolated context");
       return await createContext([element]);
     }
 
-    // For structural context without page context, we need to create a page-like context
-    // since we can't traverse parent relationships from a single element
+    // For structural context without page context, we need to create a scoped, page-like context.
+    // Note: We do NOT auto-enter component context here. Entering is driven by the UI/store.
 
     try {
-      // Get all elements on the page via Webflow API
+      // Access Webflow Designer API
       const wf = (window as any).webflow;
       if (!wf || typeof wf.getAllElements !== "function") {
+        debug.warn("createElementContextWithStructural: webflow API unavailable or getAllElements missing");
         return await createContext([element]);
       }
 
       const allElements = await wf.getAllElements();
       if (!Array.isArray(allElements) || allElements.length === 0) {
+        debug.warn("createElementContextWithStructural: page getAllElements empty");
         return await createContext([element]);
       }
 
@@ -331,6 +343,7 @@ export function createLintContextService(deps: {
       // Now find the section that contains our target element and scope down
       const elementId = toElementKey(element);
       if (!elementId) {
+        debug.warn("createElementContextWithStructural: toElementKey returned empty for element");
         return await createContext([element]);
       }
 
@@ -340,12 +353,15 @@ export function createLintContextService(deps: {
         fullPageContext
       );
       if (!sectionId) {
+        debug.log("createElementContextWithStructural: section not found, using fullPageContext");
         return fullPageContext;
       }
 
       // Create scoped context for just the section
+      debug.log("createElementContextWithStructural: scoped to section", sectionId);
       return createScopedContextForSection(sectionId, fullPageContext);
     } catch (error) {
+      debug.error("createElementContextWithStructural: unexpected error", error);
       return await createContext([element]);
     }
   }

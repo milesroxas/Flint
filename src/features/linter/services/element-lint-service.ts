@@ -7,6 +7,7 @@ import type {
   LintContext,
 } from "@/features/linter/services/lint-context.service";
 import { toElementKey } from "@/entities/element/lib/id";
+import { createDebugger } from "@/shared/utils/debug";
 
 export type ElementLintService = ReturnType<typeof createElementLintService>;
 
@@ -15,13 +16,25 @@ export function createElementLintService(deps: {
   ruleRunner: RuleRunner;
 }) {
   const { contextService, ruleRunner } = deps;
+  const debug = createDebugger("element-lint");
 
   async function lintElement(
     element: WebflowElement,
     pageContext?: LintContext,
     useStructuralContext: boolean = false
   ): Promise<RuleResult[]> {
-    if (!element || typeof (element as any).getStyles !== "function") return [];
+    if (!element || typeof (element as any).getStyles !== "function") {
+      const isComponentInstance =
+        (element as any)?.type === "ComponentInstance" ||
+        ((element as any)?.id?.component && (element as any)?.id?.element);
+      if (!(useStructuralContext && isComponentInstance)) {
+        debug.warn(
+          "lintElement: element lacks getStyles and is not a component instance in structural mode",
+          (element as any)?.type
+        );
+        return [];
+      }
+    }
 
     // 1) Create or reuse context with optional structural context
     const context = await contextService.createElementContextWithStructural(
@@ -48,14 +61,19 @@ export function createElementLintService(deps: {
       // Use all roles in the context (no restriction needed for section-scoped linting)
       rolesForRun = context.rolesByElement;
 
-      console.log(
-        `[ElementLint] Structural context: analyzing ${
-          stylesToAnalyze.length
-        } styles across ${Object.keys(rolesForRun).length} elements in section`
+      debug.log(
+        "lintElement: structural context analyzing",
+        stylesToAnalyze.length,
+        "styles across",
+        Object.keys(rolesForRun).length,
+        "elements"
       );
     } else {
-      console.log(
-        `[ElementLint] Standard context: analyzing ${elementStyles.length} styles for element ${elementId}`
+      debug.log(
+        "lintElement: standard context analyzing",
+        elementStyles.length,
+        "styles for",
+        elementId
       );
     }
 
@@ -75,6 +93,8 @@ export function createElementLintService(deps: {
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
       !pageContext // Skip page rules when no page context available
     );
+
+    debug.log("lintElement: rule results count", results.length);
 
     return results;
   }

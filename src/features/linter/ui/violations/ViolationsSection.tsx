@@ -2,13 +2,15 @@ import React from "react";
 import { Accordion } from "@/shared/ui/accordion";
 import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationItem } from "./ViolationItem";
-import { selectElementById } from "@/features/window/select-element";
 
 export interface ViolationsSectionProps {
   title: string;
   items: RuleResult[];
   showHighlight?: boolean;
-  defaultOpenIds?: string[];
+  // Controlled open id (global single-open behavior)
+  openId?: string;
+  // Notify parent when open id changes
+  onOpenChange?: (id: string | undefined) => void;
   animationDelay?: number;
   shouldAnimate?: boolean;
 }
@@ -17,45 +19,31 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   // title,
   items,
   showHighlight = true,
-  defaultOpenIds = [],
+  openId,
+  onOpenChange,
   animationDelay = 0,
   shouldAnimate = false,
 }) => {
-  const prevOpenSetRef = React.useRef<Set<string>>(new Set<string>());
-  const [openValues, setOpenValues] = React.useState<string[]>(defaultOpenIds);
-  const prevDefaultOpenSetRef = React.useRef<Set<string>>(
-    new Set(defaultOpenIds)
-  );
-  const [isVisible, setIsVisible] = React.useState(false);
+  // Determine if the controlled openId belongs to this section
+  const sectionIdsRef = React.useRef<Set<string>>(new Set());
+  // Initialize to current animation intent to avoid duplicate entrance animations
+  const [isVisible, setIsVisible] = React.useState<boolean>(shouldAnimate);
 
-  // Keep open state in sync when the caller provides a new default set
-  // This restores the auto-open behavior when switching modes or lists change
+  // Track the ids in this section for quick membership checks
   React.useEffect(() => {
-    const nextDefaultSet = new Set(defaultOpenIds);
-    const prevDefaultSet = prevDefaultOpenSetRef.current;
-    const isSameSize = nextDefaultSet.size === prevDefaultSet.size;
-    let isEqual = isSameSize;
-    if (isEqual) {
-      for (const id of nextDefaultSet) {
-        if (!prevDefaultSet.has(id)) {
-          isEqual = false;
-          break;
-        }
-      }
-    }
-    if (!isEqual) {
-      setOpenValues(defaultOpenIds);
-      prevOpenSetRef.current = new Set(defaultOpenIds);
-      prevDefaultOpenSetRef.current = nextDefaultSet;
-    }
-  }, [defaultOpenIds]);
+    const ids = new Set<string>();
+    items.forEach((violation, index) => {
+      ids.add(`${violation.ruleId}-${violation.className || "unknown"}-${index}`);
+    });
+    sectionIdsRef.current = ids;
+  }, [items]);
 
   // Trigger animation based on shouldAnimate prop
   React.useEffect(() => {
     if (shouldAnimate && items.length > 0) {
-      setIsVisible(true);
+      setIsVisible((prev) => (prev ? prev : true));
     } else if (!shouldAnimate) {
-      setIsVisible(false);
+      setIsVisible((prev) => (prev ? false : prev));
     }
   }, [shouldAnimate, items.length]);
 
@@ -75,34 +63,12 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
         {title} ({items.length})
       </div> */}
       <Accordion
-        type="multiple"
-        value={openValues}
+        type="single"
+        collapsible
+        // Only control value for ids in this section; otherwise keep closed
+        value={openId && sectionIdsRef.current.has(openId) ? openId : undefined}
         className="w-full"
-        onValueChange={async (values: string[]) => {
-          setOpenValues(values);
-
-          if (!showHighlight) return;
-          const prevSet = prevOpenSetRef.current;
-          const newlyOpened = values.filter((v) => !prevSet.has(v));
-          prevOpenSetRef.current = new Set(values);
-          if (newlyOpened.length === 0) return;
-          const lastOpenedId = newlyOpened[newlyOpened.length - 1];
-
-          const indexById = new Map<string, number>();
-          items.forEach((violation, index) => {
-            indexById.set(getItemId(violation, index), index);
-          });
-          const idx = indexById.get(lastOpenedId);
-          if (idx === undefined) return;
-          const violation = items[idx];
-          const elementId = violation?.elementId;
-          if (!elementId) return;
-          try {
-            await selectElementById(elementId);
-          } catch {
-            // ignore highlighting errors
-          }
-        }}
+        onValueChange={(val) => onOpenChange?.(val || undefined)}
       >
         {items.map((violation, index) => (
           <ViolationItem

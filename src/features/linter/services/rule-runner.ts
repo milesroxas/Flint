@@ -19,6 +19,7 @@ import type {
 import { UtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
 
 import { RuleRegistry } from "./rule-registry";
+import { createDebugger } from "@/shared/utils/debug";
 
 import {
   createNamingRuleExecutor,
@@ -31,6 +32,7 @@ export const createRuleRunner = (
   utilityAnalyzer: UtilityClassAnalyzer,
   classTypeResolver?: (className: string, isComboFlag?: boolean) => ClassType
 ) => {
+  const debug = createDebugger("rule-runner");
   // Authoritative classifier: resolves to your Rule ClassType
   const getClassType = (
     className: string,
@@ -102,6 +104,14 @@ export const createRuleRunner = (
     getElementType?: (id: string) => string | null,
     skipPageRules: boolean = false
   ): RuleResult[] => {
+    debug.log(
+      "runRulesOnStylesWithContext: styles count",
+      stylesWithElement.length,
+      "allStyles count",
+      allStyles.length,
+      "hasRoles",
+      !!rolesByElement
+    );
     const results: RuleResult[] = [];
 
     // Group by element for element-level analysis
@@ -144,6 +154,7 @@ export const createRuleRunner = (
     }
 
     if (ruleRegistry.getPageRules && !skipPageRules) {
+      debug.log("running page rules");
       const pageRules = ruleRegistry.getPageRules().filter((r) => {
         const cfg = ruleRegistry.getRuleConfiguration(r.id);
         return (cfg?.enabled ?? true) === true;
@@ -351,6 +362,7 @@ export const createRuleRunner = (
       }
     }
 
+    debug.log("runRulesOnStylesWithContext: total results", results.length);
     return results;
   };
 

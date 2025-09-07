@@ -50,7 +50,39 @@ export function LinterPanel() {
     refresh: refreshElementLint,
     structuralContext,
     setStructuralContext,
+    inComponentContext,
+    selectedIsComponentInstance,
+    enterComponentContext,
+    exitComponentContext,
+    autoEnterEnabled,
   } = useElementLint();
+
+  // If switching to page mode while inside a component, exit to restore normal Designer behavior
+  useEffect(() => {
+    if (mode === "page" && structuralContext && inComponentContext) {
+      void exitComponentContext();
+    }
+  }, [mode, structuralContext, inComponentContext, exitComponentContext]);
+
+  // If structural context is turned off, exit component if currently inside
+  useEffect(() => {
+    if (!structuralContext && inComponentContext) {
+      void exitComponentContext();
+    }
+  }, [structuralContext, inComponentContext, exitComponentContext]);
+
+  // Auto-enter component only in Element mode with Structural ON
+  useEffect(() => {
+    if (
+      mode === "element" &&
+      structuralContext &&
+      selectedIsComponentInstance &&
+      !inComponentContext &&
+      autoEnterEnabled
+    ) {
+      void enterComponentContext();
+    }
+  }, [mode, structuralContext, selectedIsComponentInstance, inComponentContext, autoEnterEnabled, enterComponentContext]);
 
   const activeViolations: RuleResult[] = useMemo(
     () => (mode === "page" ? results : elementResults),
@@ -88,6 +120,24 @@ export function LinterPanel() {
         : 0,
     [mode, results]
   );
+
+  // ESC exits component context when in element + structural + inside component
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "Escape" &&
+        mode === "element" &&
+        structuralContext &&
+        inComponentContext
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        void exitComponentContext();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mode, structuralContext, inComponentContext, exitComponentContext]);
 
   return (
     <section
@@ -129,11 +179,37 @@ export function LinterPanel() {
                   }}
                 />
                 {mode === "element" && (
-                  <div className="flex pr-2">
+                  <div className="flex pr-2 items-center gap-2">
                     <StructuralContextToggle
                       enabled={structuralContext}
                       onChange={setStructuralContext}
                     />
+                    {structuralContext && (
+                      <div className="flex items-center gap-2">
+                        {inComponentContext ? (
+                          <button
+                            className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
+                            onClick={async () => {
+                              await exitComponentContext();
+                              // keep current results visible; do not auto-refresh here
+                            }}
+                          >
+                            Exit Component
+                          </button>
+                        ) : (
+                          selectedIsComponentInstance && (
+                            <button
+                              className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
+                              onClick={async () => {
+                                await enterComponentContext();
+                              }}
+                            >
+                              Enter Component
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
