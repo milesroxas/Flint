@@ -113,19 +113,8 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     // Mark to ignore the immediate 'selectedelement' event fired by Designer
     (window as any).__flowlint_ignoreNextSelectedEvent = true;
 
-    // For elements already in viewport, force a clear selection first
-    // This ensures consistent highlighting behavior regardless of viewport position
-    const currentSelected = await wf.getSelectedElement();
-    if (
-      currentSelected &&
-      getElementIdFromAnyElement(currentSelected) === String(elementId)
-    ) {
-      // Element is already selected, briefly deselect to force re-highlight
-      await wf.setSelectedElement(null);
-      // Small delay to ensure the deselection is processed
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-
+    // Select target. Some Designer builds do not accept null in setSelectedElement,
+    // so we avoid the temporary deselect path to prevent runtime errors.
     await wf.setSelectedElement(target);
     dbg("selection success");
     return true;

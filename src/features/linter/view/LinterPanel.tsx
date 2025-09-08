@@ -54,7 +54,6 @@ export function LinterPanel() {
     selectedIsComponentInstance,
     enterComponentContext,
     exitComponentContext,
-    autoEnterEnabled,
   } = useElementLint();
 
   // If switching to page mode while inside a component, exit to restore normal Designer behavior
@@ -64,25 +63,7 @@ export function LinterPanel() {
     }
   }, [mode, structuralContext, inComponentContext, exitComponentContext]);
 
-  // If structural context is turned off, exit component if currently inside
-  useEffect(() => {
-    if (!structuralContext && inComponentContext) {
-      void exitComponentContext();
-    }
-  }, [structuralContext, inComponentContext, exitComponentContext]);
-
-  // Auto-enter component only in Element mode with Structural ON
-  useEffect(() => {
-    if (
-      mode === "element" &&
-      structuralContext &&
-      selectedIsComponentInstance &&
-      !inComponentContext &&
-      autoEnterEnabled
-    ) {
-      void enterComponentContext();
-    }
-  }, [mode, structuralContext, selectedIsComponentInstance, inComponentContext, autoEnterEnabled, enterComponentContext]);
+  // Auto-enter/exit is handled centrally in the store's selection subscription
 
   const activeViolations: RuleResult[] = useMemo(
     () => (mode === "page" ? results : elementResults),
@@ -121,23 +102,7 @@ export function LinterPanel() {
     [mode, results]
   );
 
-  // ESC exits component context when in element + structural + inside component
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "Escape" &&
-        mode === "element" &&
-        structuralContext &&
-        inComponentContext
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        void exitComponentContext();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [mode, structuralContext, inComponentContext, exitComponentContext]);
+  // ESC handling moved to store to avoid duplicates
 
   return (
     <section

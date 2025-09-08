@@ -21,6 +21,7 @@ interface ElementLintState {
   autoEnterEnabled: boolean;
   lastSelectedElementKey: string | null;
   componentElementIds: string[]; // normalized ids for elements within current component context
+  currentComponentId: string | null; // component instance id we entered
 }
 
 interface ElementLintActions {
@@ -45,6 +46,7 @@ const initialState: ElementLintState = {
   autoEnterEnabled: true,
   lastSelectedElementKey: null,
   componentElementIds: [],
+  currentComponentId: null,
 };
 
 const debug = createDebugger("element-lint-store");
@@ -66,7 +68,7 @@ export const useElementLintStore = create<ElementLintStore>()(
               classNames: [],
               roles: [],
               loading: false,
-              inComponentContext: false,
+              // preserve inComponentContext; environment lacks Designer APIs
               selectedIsComponentInstance: false,
             });
             return;
@@ -91,13 +93,7 @@ export const useElementLintStore = create<ElementLintStore>()(
             debug.warn(
               "refresh: skipping lint; getStyles missing and not component in structural mode"
             );
-            set({
-              results: [],
-              classNames: [],
-              roles: [],
-              loading: false,
-              inComponentContext: false,
-            });
+            set({ results: [], classNames: [], roles: [], loading: false });
             return;
           }
           const state = get();
@@ -126,7 +122,14 @@ export const useElementLintStore = create<ElementLintStore>()(
       clear: () => set({ ...initialState }),
 
       setStructuralContext: (enabled: boolean) => {
+        const wasEnabled = get().structuralContext;
         set({ structuralContext: enabled });
+
+        // If structural context is turned off while inside a component, exit first
+        if (wasEnabled && !enabled && get().inComponentContext) {
+          void get().exitComponentContext();
+          return;
+        }
 
         // Auto-refresh when structural context setting changes
         const state = get();
@@ -148,22 +151,65 @@ export const useElementLintStore = create<ElementLintStore>()(
             (window as any).__flowlint_ignoreNextSelectedEvent = true;
             await wf.enterComponent(el);
           }
-          // after entering, capture all element ids within this component context
+          // After entering, capture all element ids within this component instance.
+          // Prefer Designer-context APIs which are scoped to the component editor.
           let componentElementIds: string[] = [];
+          let currentComponentId: string | null = null;
           try {
-            if (typeof wf.getAllElements === "function") {
-              const inside = await wf.getAllElements();
-              if (Array.isArray(inside)) {
-                componentElementIds = inside.map((e: any) => toElementKey(e));
+            // Try context-root based id first
+            if (typeof wf.getRootElement === "function") {
+              const root = await wf.getRootElement();
+              currentComponentId = (root as any)?.id?.component || null;
+
+              // Prefer context-scoped getAllElements when available
+              if (typeof wf.getAllElements === "function") {
+                const inside = await wf.getAllElements();
+                if (Array.isArray(inside) && inside.length > 0) {
+                  componentElementIds = inside.map((e: any) => toElementKey(e));
+                }
+              }
+
+              // Fallback: traverse from root
+              if (componentElementIds.length === 0 && root) {
+                const queue: any[] = [root];
+                while (queue.length) {
+                  const node = queue.shift();
+                  componentElementIds.push(toElementKey(node));
+                  if (typeof node?.getChildren === "function") {
+                    const children = await node.getChildren();
+                    if (Array.isArray(children) && children.length) {
+                      queue.push(...children);
+                    }
+                  }
+                }
               }
             }
-          } catch {}
+
+            // Final fallback: traverse from the selected instance element
+            if (componentElementIds.length === 0 && el) {
+              currentComponentId = currentComponentId ?? (el as any)?.id?.component ?? null;
+              const queue: any[] = [el];
+              while (queue.length) {
+                const node = queue.shift();
+                componentElementIds.push(toElementKey(node));
+                if (typeof node?.getChildren === "function") {
+                  const children = await node.getChildren();
+                  if (Array.isArray(children) && children.length) {
+                    queue.push(...children);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            debug.warn("enterComponentContext: failed to collect component elements", e);
+          }
 
           set({
             inComponentContext: true,
             selectedIsComponentInstance: true,
             autoEnterEnabled: true,
             componentElementIds,
+            currentComponentId,
           });
           await get().refresh();
         } catch (e) {
@@ -183,6 +229,7 @@ export const useElementLintStore = create<ElementLintStore>()(
             inComponentContext: false,
             autoEnterEnabled: false,
             componentElementIds: [],
+            currentComponentId: null,
           });
         } catch (e) {
           debug.warn("exitComponentContext failed", e);
@@ -190,12 +237,13 @@ export const useElementLintStore = create<ElementLintStore>()(
             inComponentContext: false,
             autoEnterEnabled: false,
             componentElementIds: [],
+            currentComponentId: null,
           });
         }
       },
     }),
-    { name: "element-lint-store", serialize: { options: true } }
-  )
+      { name: "element-lint-store", serialize: { options: true } }
+    )
 );
 
 // One-time subscription to Designer selection events
@@ -204,6 +252,20 @@ export const useElementLintStore = create<ElementLintStore>()(
     const wf: any = (window as any).webflow;
     if (!wf || typeof wf.subscribe !== "function") return;
     ensureLinterInitialized("balanced");
+    // Global ESC handler: exit component if inside
+    const onKeyDown = (e: KeyboardEvent) => {
+      try {
+        if (e.key === "Escape" && useElementLintStore.getState().inComponentContext) {
+          e.preventDefault();
+          e.stopPropagation();
+          void useElementLintStore.getState().exitComponentContext();
+        }
+      } catch (e) {
+        debug.warn("global ESC handler: exit failed", e);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, { capture: true } as any);
+    document.addEventListener("keydown", onKeyDown, { capture: true } as any);
     wf.subscribe("selectedelement", async (el: any) => {
       const g: any = window as any;
       if (g.__flowlint_ignoreNextSelectedEvent) {
@@ -218,29 +280,34 @@ export const useElementLintStore = create<ElementLintStore>()(
       });
 
       // If we are currently inside a component, and the newly selected element
-      // is NOT inside the current component's element set, exit and preserve results.
+      // is NOT inside the current component's element set, exit component first
+      // then continue with normal selection handling (which may auto-enter a new component
+      // or lint the selected element).
       try {
         const state = useElementLintStore.getState();
         const selectedKey = el ? toElementKey(el as any) : null;
-        if (
+        const selectedComponentId = (el as any)?.id?.component || null;
+        const isOutside = Boolean(
           state.inComponentContext &&
-          selectedKey &&
-          state.componentElementIds.length > 0 &&
-          !state.componentElementIds.includes(selectedKey)
-        ) {
+            selectedKey &&
+            state.componentElementIds.length > 0 &&
+            (!state.componentElementIds.includes(selectedKey) ||
+              (state.currentComponentId &&
+                selectedComponentId !== state.currentComponentId))
+        );
+        if (isOutside) {
           const wf: any = (window as any).webflow;
           if (wf && typeof wf.exitComponent === "function") {
             (window as any).__flowlint_ignoreNextSelectedEvent = true;
             await wf.exitComponent();
           }
-          // Do not overwrite results; exit component context and stop here
+          // Update context flags and continue
           useElementLintStore.setState({
             inComponentContext: false,
-            autoEnterEnabled: false,
+            autoEnterEnabled: true, // allow auto-enter on the newly selected element
             componentElementIds: [],
-            loading: false,
+            currentComponentId: null,
           });
-          return;
         }
       } catch (e) {
         // ignore errors in this path; continue with default handling
@@ -259,6 +326,24 @@ export const useElementLintStore = create<ElementLintStore>()(
           // leave inComponentContext unchanged; explicit exit handles it
         });
         return;
+      }
+
+      // If in Element+Structural context with auto-enter enabled and not already inside,
+      // auto-enter the newly-selected component instance first to avoid page/section lint.
+      try {
+        const state = useElementLintStore.getState();
+        if (
+          state.structuralContext &&
+          !state.inComponentContext &&
+          state.autoEnterEnabled &&
+          isComponentInstance &&
+          typeof state.enterComponentContext === "function"
+        ) {
+          await state.enterComponentContext();
+          return; // enter handler will refresh; do not continue here
+        }
+      } catch (e) {
+        // ignore auto-enter errors and continue with default scanning
       }
       useElementLintStore.setState({ loading: true, error: null });
       try {
