@@ -1,4 +1,4 @@
-## Audit Tool — Webflow Designer Extension
+## Flint — Webflow Designer Extension
 
 Lint Webflow classes in real time. Validates naming, detects duplicate utilities, and applies context‑aware rules so teams keep sites clean while they work.
 

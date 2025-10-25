@@ -35,7 +35,11 @@ export function createLinterServices() {
     (name: string, isCombo?: boolean) => {
       if (isCombo === true) return "combo";
       const kind = activeGrammar.parse(name).kind as any;
-      return kind === "utility" || kind === "combo" ? kind : "custom";
+      // Map component kind to custom (component classes are handled as custom with prefix checks)
+      if (kind === "utility" || kind === "combo") return kind;
+      // Treat component classes as utility to exclude them from custom class rules
+      if (kind === "component") return "utility";
+      return "custom";
     }
   );
 

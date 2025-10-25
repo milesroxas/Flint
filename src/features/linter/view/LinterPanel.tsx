@@ -50,18 +50,7 @@ export function LinterPanel() {
     refresh: refreshElementLint,
     structuralContext,
     setStructuralContext,
-    inComponentContext,
-    selectedIsComponentInstance,
-    enterComponentContext,
-    exitComponentContext,
   } = useElementLint();
-
-  // If switching to page mode while inside a component, exit to restore normal Designer behavior
-  useEffect(() => {
-    if (mode === "page" && structuralContext && inComponentContext) {
-      void exitComponentContext();
-    }
-  }, [mode, structuralContext, inComponentContext, exitComponentContext]);
 
   // Auto-enter/exit is handled centrally in the store's selection subscription
 
@@ -149,32 +138,6 @@ export function LinterPanel() {
                       enabled={structuralContext}
                       onChange={setStructuralContext}
                     />
-                    {structuralContext && (
-                      <div className="flex items-center gap-2">
-                        {inComponentContext ? (
-                          <button
-                            className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
-                            onClick={async () => {
-                              await exitComponentContext();
-                              // keep current results visible; do not auto-refresh here
-                            }}
-                          >
-                            Exit Component
-                          </button>
-                        ) : (
-                          selectedIsComponentInstance && (
-                            <button
-                              className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80"
-                              onClick={async () => {
-                                await enterComponentContext();
-                              }}
-                            >
-                              Enter Component
-                            </button>
-                          )
-                        )}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
