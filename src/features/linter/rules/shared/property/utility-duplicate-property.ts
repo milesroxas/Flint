@@ -1,8 +1,4 @@
-import type {
-  StructureRule,
-  RuleResult,
-  ElementAnalysisArgs,
-} from "@/features/linter/model/rule.types";
+import type { ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/linter/model/rule.types";
 
 /**
  * Configuration for utility duplicate property detection.
@@ -76,16 +72,10 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
 
       for (const [property, value] of propEntries) {
         // Apply property filters
-        if (
-          config.propertyAllowlist &&
-          !config.propertyAllowlist.includes(property)
-        ) {
+        if (config.propertyAllowlist && !config.propertyAllowlist.includes(property)) {
           continue;
         }
-        if (
-          config.propertyBlocklist &&
-          config.propertyBlocklist.includes(property)
-        ) {
+        if (config.propertyBlocklist?.includes(property)) {
           continue;
         }
 
@@ -95,12 +85,14 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
           propertyToClassesMap.set(property, new Map<string, Set<string>>());
         }
 
-        const propertyMap = propertyToClassesMap.get(property)!;
+        const propertyMap = propertyToClassesMap.get(property);
+        if (!propertyMap) continue;
+
         if (!propertyMap.has(valueKey)) {
           propertyMap.set(valueKey, new Set<string>());
         }
 
-        propertyMap.get(valueKey)!.add(style.name);
+        propertyMap.get(valueKey)?.add(style.name);
       }
     }
 
@@ -144,17 +136,13 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
             if (otherEntries.length !== propEntries.length) return false;
 
             const otherFingerprint = JSON.stringify(
-              Object.fromEntries(
-                otherEntries.sort(([a], [b]) => a.localeCompare(b))
-              )
+              Object.fromEntries(otherEntries.sort(([a], [b]) => a.localeCompare(b)))
             );
             return otherFingerprint === propertyFingerprint;
           });
 
-        if (
-          utilitiesWithSameProperties.length >=
-          (config.minClassCount ?? DEFAULT_CONFIG.minClassCount!)
-        ) {
+        const minClassCountForMulti = config.minClassCount ?? DEFAULT_CONFIG.minClassCount ?? 2;
+        if (utilitiesWithSameProperties.length >= minClassCountForMulti) {
           // Remove ignored aliases
           const ignoredAliases = Array.isArray(config.ignoredAliases)
             ? (config.ignoredAliases as string[][])
@@ -163,29 +151,18 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
             (s) => !ignoredAliases.some((group) => group.includes(s.name))
           );
 
-          if (
-            filteredUtilities.length >=
-            (config.minClassCount ?? DEFAULT_CONFIG.minClassCount!)
-          ) {
+          if (filteredUtilities.length >= minClassCountForMulti) {
             // Sort by order to find newest
             filteredUtilities.sort((a, b) => a.order - b.order);
-            const newestUtility =
-              filteredUtilities[filteredUtilities.length - 1];
+            const newestUtility = filteredUtilities[filteredUtilities.length - 1];
 
             // Only flag if current utility is the newest
             if (newestUtility.name === className) {
               const oldestUtility = filteredUtilities[0];
-              const otherUtilityNames = filteredUtilities
-                .slice(0, -1)
-                .map((s) => s.name);
+              const otherUtilityNames = filteredUtilities.slice(0, -1).map((s) => s.name);
 
               const propertyList = propEntries
-                .map(
-                  ([prop, val]) =>
-                    `${prop}: ${
-                      typeof val === "string" ? val : JSON.stringify(val)
-                    }`
-                )
+                .map(([prop, val]) => `${prop}: ${typeof val === "string" ? val : JSON.stringify(val)}`)
                 .join(", ");
 
               results.push({
@@ -193,9 +170,7 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
                 name: "Consolidate duplicate utility properties",
                 message: `This utility duplicates the complete property set (${propertyList}) provided by ${otherUtilityNames.join(
                   ", "
-                )}. Consider using the existing "${
-                  oldestUtility.name
-                }" instead.`,
+                )}. Consider using the existing "${oldestUtility.name}" instead.`,
                 severity: "warning",
                 className,
                 isCombo: false,
@@ -222,31 +197,18 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
       // Check each property/value pair in this utility class (for single-property utilities or partial matches)
       for (const [property, value] of propEntries) {
         // Apply property filters
-        if (
-          config.propertyAllowlist &&
-          !config.propertyAllowlist.includes(property)
-        ) {
+        if (config.propertyAllowlist && !config.propertyAllowlist.includes(property)) {
           continue;
         }
-        if (
-          config.propertyBlocklist &&
-          config.propertyBlocklist.includes(property)
-        ) {
+        if (config.propertyBlocklist?.includes(property)) {
           continue;
         }
 
-        const valueStr =
-          typeof value === "string" ? value : JSON.stringify(value);
-        const classesWithSameProperty = propertyToClassesMap
-          .get(property)
-          ?.get(JSON.stringify(value));
+        const valueStr = typeof value === "string" ? value : JSON.stringify(value);
+        const classesWithSameProperty = propertyToClassesMap.get(property)?.get(JSON.stringify(value));
 
-        const minClassCount =
-          config.minClassCount ?? DEFAULT_CONFIG.minClassCount!;
-        if (
-          !classesWithSameProperty ||
-          classesWithSameProperty.size < minClassCount
-        ) {
+        const minClassCount = config.minClassCount ?? DEFAULT_CONFIG.minClassCount ?? 2;
+        if (!classesWithSameProperty || classesWithSameProperty.size < minClassCount) {
           continue;
         }
 

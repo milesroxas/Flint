@@ -1,8 +1,4 @@
-import type {
-  StructureRule,
-  RuleResult,
-  ElementAnalysisArgs,
-} from "@/features/linter/model/rule.types";
+import type { ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/linter/model/rule.types";
 
 /**
  * Shared structural rule: checks that all block elements have style classes assigned.
@@ -13,8 +9,7 @@ export const createMissingClassOnDivRule = (): StructureRule => ({
   name: "Block elements must have style classes",
   description:
     "All block elements should have at least one style class assigned. Unstyled blocks can indicate incomplete implementations or unnecessary elements.",
-  example:
-    "Add a style class to provide visual structure or remove empty blocks",
+  example: "Add a style class to provide visual structure or remove empty blocks",
   category: "structure",
   type: "structure",
   severity: "warning",
@@ -47,8 +42,7 @@ export const createMissingClassOnDivRule = (): StructureRule => ({
           metadata: {
             elementType,
             reason: "no-classes-assigned",
-            suggestion:
-              "Add a style class or remove the element if it serves no purpose",
+            suggestion: "Add a style class or remove the element if it serves no purpose",
           },
         };
 
@@ -58,10 +52,7 @@ export const createMissingClassOnDivRule = (): StructureRule => ({
       // Element has classes, so it passes the rule
       return [];
     } catch (error) {
-      console.error(
-        `[shared:structure:missing-class-on-div] Error analyzing element ${elementId}:`,
-        error
-      );
+      console.error(`[shared:structure:missing-class-on-div] Error analyzing element ${elementId}:`, error);
       return [];
     }
   },

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/shared/ui/button";
 import { Eye, List } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils";
 
 interface ExpandViewButtonProps {
@@ -10,12 +11,7 @@ interface ExpandViewButtonProps {
   text?: string;
 }
 
-export const ExpandViewButton: React.FC<ExpandViewButtonProps> = ({
-  onClick,
-  isExpanded = false,
-  className,
-  text,
-}) => {
+export const ExpandViewButton: React.FC<ExpandViewButtonProps> = ({ onClick, isExpanded = false, className, text }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevExpanded, setPrevExpanded] = useState(isExpanded);
 
@@ -32,11 +28,7 @@ export const ExpandViewButton: React.FC<ExpandViewButtonProps> = ({
       size="sm"
       variant="outline"
       onClick={onClick}
-      className={cn(
-        className,
-        "cursor-pointer my-2 transition-all duration-200 ease-out",
-        isAnimating && "scale-105"
-      )}
+      className={cn(className, "cursor-pointer my-2 transition-all duration-200 ease-out", isAnimating && "scale-105")}
       title={isExpanded ? "Back to violations" : "View recognized elements"}
       onTransitionEnd={() => {
         if (isAnimating) {

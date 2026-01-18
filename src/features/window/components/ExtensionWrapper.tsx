@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
-export default function ExtensionWrapper({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ExtensionWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // skip if Designer API is not injected
     if (typeof webflow?.setExtensionSize !== "function") {
@@ -52,10 +49,7 @@ export default function ExtensionWrapper({
   }, []);
 
   return (
-    <div
-      className="overflow-x-hidden overflow-y-visible flex flex-col"
-      style={{ height: `${height}px` }}
-    >
+    <div className="overflow-x-hidden overflow-y-visible flex flex-col" style={{ height: `${height}px` }}>
       {children}
     </div>
   );

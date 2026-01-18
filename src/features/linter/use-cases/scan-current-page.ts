@@ -1,5 +1,5 @@
-import type { RuleResult } from "@/features/linter/model/rule.types";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { getLinterServices } from "@/features/linter/services/linter-service-singleton";
 
 export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
@@ -12,22 +12,22 @@ export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
   // Include elements with getStyles() AND potential page slots
   const valid = (elements || []).filter((el: any) => {
     if (!el) return false;
-    
+
     // Include elements that have getStyles (normal elements)
     if (typeof el.getStyles === "function") return true;
-    
+
     // Also include potential page slots (no element type but has component+element ID structure)
     const hasComponentElementId = el?.id?.component && el?.id?.element;
     const hasNoType = !el.type || el.type === "";
-    
+
     console.log(`[DEBUG] Element filter check:`, {
-      elementId: (el?.id?.element || el?.id || "unknown"),
+      elementId: el?.id?.element || el?.id || "unknown",
       hasGetStyles: typeof el.getStyles === "function",
       hasComponentElementId,
       hasNoType,
-      included: typeof el.getStyles === "function" || (hasComponentElementId && hasNoType)
+      included: typeof el.getStyles === "function" || (hasComponentElementId && hasNoType),
     });
-    
+
     return hasComponentElementId && hasNoType;
   });
 
@@ -56,17 +56,17 @@ export async function scanCurrentPageWithMeta(
     }
   }
 
-  // Include elements with getStyles() AND potential page slots  
+  // Include elements with getStyles() AND potential page slots
   const valid = (elements || []).filter((el: any) => {
     if (!el) return false;
-    
+
     // Include elements that have getStyles (normal elements)
     if (typeof el.getStyles === "function") return true;
-    
+
     // Also include potential page slots (no element type but has component+element ID structure)
     const hasComponentElementId = el?.id?.component && el?.id?.element;
     const hasNoType = !el.type || el.type === "";
-    
+
     return hasComponentElementId && hasNoType;
   });
 

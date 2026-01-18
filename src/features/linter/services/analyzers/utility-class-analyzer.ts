@@ -28,15 +28,10 @@ export type UtilityAnalyzerOptions = {
   debug?: boolean;
 };
 
-export const createUtilityClassAnalyzer = (
-  opts: UtilityAnalyzerOptions = {}
-) => {
+export const createUtilityClassAnalyzer = (opts: UtilityAnalyzerOptions = {}) => {
   const { isUtilityName, debug = false } = opts;
 
-  const utilityClassPropertiesMap = new Map<
-    string,
-    { name: string; properties: CSSPropertiesDict }[]
-  >();
+  const utilityClassPropertiesMap = new Map<string, { name: string; properties: CSSPropertiesDict }[]>();
 
   const propertyToClassesMap = new Map<string, Set<string>>();
   const exactPropertiesToClassesMap = new Map<string, Set<string>>();
@@ -49,10 +44,7 @@ export const createUtilityClassAnalyzer = (
   const getExactPropertiesToClassesMap = () => exactPropertiesToClassesMap;
 
   // Enhanced getPropertyToClassesMap that returns structured data for property/value analysis
-  const getPropertyToClassesStructuredMap = (): Map<
-    string,
-    Map<string, Set<string>>
-  > => {
+  const getPropertyToClassesStructuredMap = (): Map<string, Map<string, Set<string>>> => {
     const structuredMap = new Map<string, Map<string, Set<string>>>();
 
     propertyToClassesMap.forEach((classSet, propKey) => {
@@ -63,14 +55,16 @@ export const createUtilityClassAnalyzer = (
         structuredMap.set(property, new Map<string, Set<string>>());
       }
 
-      const propertyMap = structuredMap.get(property)!;
+      const propertyMap = structuredMap.get(property);
+      if (!propertyMap) return;
+
       if (!propertyMap.has(valueJson)) {
         propertyMap.set(valueJson, new Set<string>());
       }
 
       // Copy all classes from the original set
       classSet.forEach((className) => {
-        propertyMap.get(valueJson)!.add(className);
+        propertyMap.get(valueJson)?.add(className);
       });
     });
 
@@ -78,9 +72,7 @@ export const createUtilityClassAnalyzer = (
   };
 
   // Helper to get formatted single property info for utility classes
-  const getFormattedSinglePropertyInfo = (
-    className: string
-  ): { property: string; value: string } | null => {
+  const getFormattedSinglePropertyInfo = (className: string): { property: string; value: string } | null => {
     const entries = utilityClassPropertiesMap.get(className);
     if (!entries || entries.length === 0) return null;
 
@@ -107,19 +99,14 @@ export const createUtilityClassAnalyzer = (
     return stableStringify(payload);
   };
 
-  const normalizeProperties = (props: CSSPropertiesDict): string =>
-    stableStringify(props || {});
+  const normalizeProperties = (props: CSSPropertiesDict): string => stableStringify(props || {});
 
   const logDuplicateProperties = (): void => {
     if (!debug) return;
     console.log("Checking for utility classes with duplicate properties:");
     propertyToClassesMap.forEach((classNames, propKey) => {
       if (classNames.size > 1) {
-        console.log(
-          `  Property ${propKey} is used by: ${Array.from(classNames).join(
-            ", "
-          )}`
-        );
+        console.log(`  Property ${propKey} is used by: ${Array.from(classNames).join(", ")}`);
       }
     });
   };
@@ -149,10 +136,7 @@ export const createUtilityClassAnalyzer = (
       if (isUtilityName && !isUtilityName(style.name)) continue;
 
       const existing = utilityClassPropertiesMap.get(style.name) ?? [];
-      utilityClassPropertiesMap.set(style.name, [
-        ...existing,
-        { name: style.name, properties: props },
-      ]);
+      utilityClassPropertiesMap.set(style.name, [...existing, { name: style.name, properties: props }]);
     }
 
     // Build property:value -> classes and exact fingerprint -> classes maps
@@ -163,13 +147,13 @@ export const createUtilityClassAnalyzer = (
           if (!propertyToClassesMap.has(propKey)) {
             propertyToClassesMap.set(propKey, new Set<string>());
           }
-          propertyToClassesMap.get(propKey)!.add(className);
+          propertyToClassesMap.get(propKey)?.add(className);
         }
         const fingerprint = normalizeProperties(entry.properties);
         if (!exactPropertiesToClassesMap.has(fingerprint)) {
           exactPropertiesToClassesMap.set(fingerprint, new Set<string>());
         }
-        exactPropertiesToClassesMap.get(fingerprint)!.add(className);
+        exactPropertiesToClassesMap.get(fingerprint)?.add(className);
       }
     });
 
@@ -184,17 +168,12 @@ export const createUtilityClassAnalyzer = (
     }
   };
 
-  const analyzeDuplicates = (
-    className: string,
-    properties: CSSPropertiesDict
-  ): UtilityClassDuplicateInfo | null => {
+  const analyzeDuplicates = (className: string, properties: CSSPropertiesDict): UtilityClassDuplicateInfo | null => {
     const propEntries = Object.entries(properties ?? {});
     if (propEntries.length === 0) return null;
 
     const duplicateProps = new Map<string, string[]>();
-    let formattedProperty:
-      | { property: string; value: string; classes: string[] }
-      | undefined;
+    let formattedProperty: { property: string; value: string; classes: string[] } | undefined;
     let exactMatches: string[] = [];
 
     for (const [propName, propValue] of propEntries) {
@@ -202,18 +181,13 @@ export const createUtilityClassAnalyzer = (
       const classesWithThisProp = propertyToClassesMap.get(propKey);
 
       if (classesWithThisProp && classesWithThisProp.size > 1) {
-        const duplicates = Array.from(classesWithThisProp).filter(
-          (cls) => cls !== className
-        );
+        const duplicates = Array.from(classesWithThisProp).filter((cls) => cls !== className);
         if (duplicates.length > 0) {
           duplicateProps.set(propKey, duplicates);
           if (propEntries.length === 1) {
             formattedProperty = {
               property: propName,
-              value:
-                typeof propValue === "string"
-                  ? propValue
-                  : stableStringify(propValue),
+              value: typeof propValue === "string" ? propValue : stableStringify(propValue),
               classes: duplicates,
             };
           }
@@ -223,12 +197,9 @@ export const createUtilityClassAnalyzer = (
 
     // Full-property duplicate check
     const fingerprint = normalizeProperties(properties);
-    const classesWithSameFingerprint =
-      exactPropertiesToClassesMap.get(fingerprint);
+    const classesWithSameFingerprint = exactPropertiesToClassesMap.get(fingerprint);
     if (classesWithSameFingerprint && classesWithSameFingerprint.size > 1) {
-      exactMatches = Array.from(classesWithSameFingerprint).filter(
-        (cls) => cls !== className
-      );
+      exactMatches = Array.from(classesWithSameFingerprint).filter((cls) => cls !== className);
     }
 
     if (duplicateProps.size === 0 && exactMatches.length === 0) return null;
@@ -260,6 +231,4 @@ export const createUtilityClassAnalyzer = (
   } as const;
 };
 
-export type UtilityClassAnalyzer = ReturnType<
-  typeof createUtilityClassAnalyzer
->;
+export type UtilityClassAnalyzer = ReturnType<typeof createUtilityClassAnalyzer>;

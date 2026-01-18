@@ -1,13 +1,7 @@
 // src/features/linter/rules/lumos/naming/combo-class-format.element.ts
-import type {
-  NamingRule,
-  RuleResult,
-  QuickFix,
-} from "@/features/linter/model/rule.types";
-import {
-  normalizeUtilityClass,
-  normalizeVariantClass,
-} from "@/features/linter/lib/string-normalization";
+
+import { normalizeUtilityClass, normalizeVariantClass } from "@/features/linter/lib/string-normalization";
+import type { NamingRule, QuickFix, RuleResult } from "@/features/linter/model/rule.types";
 
 // Rule metadata constants
 const RULE_ID = "lumos:naming:combo-class-format";
@@ -56,9 +50,7 @@ function validateUtilityClass(className: string): RuleResult | null {
   // If normalization returns the same class, it's already valid
   if (normalizedClass === className) return null;
 
-  const fix = normalizedClass
-    ? createRenameFix(className, normalizedClass)
-    : undefined;
+  const fix = normalizedClass ? createRenameFix(className, normalizedClass) : undefined;
 
   return createRuleResult(
     className,
@@ -78,9 +70,7 @@ function validateVariantClass(className: string): RuleResult | null {
   // If normalization returns the same class, it's already valid
   if (normalizedClass === className) return null;
 
-  const fix = normalizedClass
-    ? createRenameFix(className, normalizedClass)
-    : undefined;
+  const fix = normalizedClass ? createRenameFix(className, normalizedClass) : undefined;
 
   return createRuleResult(
     className,

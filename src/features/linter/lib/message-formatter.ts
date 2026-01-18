@@ -14,10 +14,10 @@ export const formatViolationMessage = (message: string): React.ReactNode => {
 
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
-  let match;
   let matchIndex = 0;
 
-  while ((match = quotedContentPattern.exec(message)) !== null) {
+  let match: RegExpExecArray | null = quotedContentPattern.exec(message);
+  while (match !== null) {
     const [fullMatch, content] = match;
     const startIndex = match.index;
 
@@ -29,16 +29,21 @@ export const formatViolationMessage = (message: string): React.ReactNode => {
     // Get the variant from our pre-analysis
     const variant = (contentAnalysis[matchIndex] as any) || "inheritedProperty";
 
-    const badge = React.createElement(Badge, {
-      key: `content-${startIndex}`,
-      variant,
-      className: "inline-flex mx-1 text-[10px] px-1 py-0.5",
-      children: content,
-    });
+    parts.push(
+      React.createElement(
+        Badge,
+        {
+          key: `content-${startIndex}`,
+          variant,
+          className: "inline-flex mx-1 text-[10px] px-1 py-0.5",
+        },
+        content
+      )
+    );
 
-    parts.push(badge);
     lastIndex = startIndex + fullMatch.length;
     matchIndex++;
+    match = quotedContentPattern.exec(message);
   }
 
   // Add remaining text after the last match
@@ -57,9 +62,10 @@ function analyzeMessageContent(message: string): string[] {
   const quotedContentPattern = /"([^"]+)"/g;
   const matches: Array<{ content: string; index: number }> = [];
 
-  let match;
-  while ((match = quotedContentPattern.exec(message)) !== null) {
+  let match: RegExpExecArray | null = quotedContentPattern.exec(message);
+  while (match !== null) {
     matches.push({ content: match[1], index: match.index });
+    match = quotedContentPattern.exec(message);
   }
 
   // Analyze each match based on message patterns
@@ -73,12 +79,7 @@ function analyzeMessageContent(message: string): string[] {
     }
 
     // Analyze the message structure for specific patterns
-    const variant = analyzeContentByMessageStructure(
-      message,
-      content,
-      index,
-      matches.length
-    );
+    const variant = analyzeContentByMessageStructure(message, content, index, matches.length);
     variants.push(variant);
   });
 
@@ -93,13 +94,7 @@ function analyzeContentByMessageStructure(
   content: string,
   matchIndex: number,
   totalMatches: number
-): 
-  | "webflowClass"
-  | "errorContent"
-  | "suggestionContent"
-  | "dynamicProperty"
-  | "inheritedProperty"
-  | "propertyName" {
+): "webflowClass" | "errorContent" | "suggestionContent" | "dynamicProperty" | "inheritedProperty" | "propertyName" {
   // If message clearly refers to a CSS property, style it as a property name
   // Example: Property "background-color" uses hardcoded color "#FF0000".
   if (/^Property\s+"[^"]+"/i.test(message) && matchIndex === 0) {
@@ -111,11 +106,7 @@ function analyzeContentByMessageStructure(
     return "propertyName";
   }
   // Handle "Child group key X does not match root key Y. Rename to Z." pattern
-  if (
-    message.includes("Child group key") &&
-    message.includes("does not match") &&
-    message.includes("Rename to")
-  ) {
+  if (message.includes("Child group key") && message.includes("does not match") && message.includes("Rename to")) {
     if (matchIndex === 0) {
       // First quoted item is the error content
       return "errorContent";
@@ -129,10 +120,7 @@ function analyzeContentByMessageStructure(
   }
 
   // Handle other common patterns
-  if (
-    message.toLowerCase().includes("rename to") &&
-    matchIndex === totalMatches - 1
-  ) {
+  if (message.toLowerCase().includes("rename to") && matchIndex === totalMatches - 1) {
     // Last quoted item after "rename to" is likely a suggestion
     return "suggestionContent";
   }

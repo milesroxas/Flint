@@ -1,13 +1,7 @@
-import type {
-  RoleDetectionConfig,
-  RolesByElement,
-} from "@/features/linter/model/linter.types";
-import type { RoleDetector } from "@/features/linter/model/preset.types";
-import type {
-  ElementWithClassNames,
-  WebflowElement,
-} from "@/entities/element/model/element.types";
 import { toElementKey } from "@/entities/element/lib/id";
+import type { ElementWithClassNames, WebflowElement } from "@/entities/element/model/element.types";
+import type { RoleDetectionConfig, RolesByElement } from "@/features/linter/model/linter.types";
+import type { RoleDetector } from "@/features/linter/model/preset.types";
 
 interface CreateArgs {
   detectors: RoleDetector[];
@@ -17,11 +11,7 @@ interface CreateArgs {
 const DEFAULT_CONFIG: RoleDetectionConfig = { threshold: 0.6 };
 
 function getParentId(el: WebflowElement | undefined): string | null {
-  const pid =
-    (el as any)?.parentId ??
-    (el as any)?.parent?.id ??
-    (el as any)?.parentNode?.id ??
-    null;
+  const pid = (el as any)?.parentId ?? (el as any)?.parent?.id ?? (el as any)?.parentNode?.id ?? null;
   return pid ? String(pid) : null;
 }
 
@@ -111,11 +101,7 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
     }
 
     // Track best scores for singleton main enforcement
-    const scoresByElement: Record<
-      string,
-      { best: number; role: RolesByElement[string] }
-    > = {};
-
+    const scoresByElement: Record<string, { best: number; role: RolesByElement[string] }> = {};
 
     // Build complete detection context with all available information
     const detectionContext = {
@@ -134,16 +120,8 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
 
       // Priority order: main > section > others
       const getTypePriority = (classes: string[]) => {
-        if (
-          classes.some((c) => c === "page_main") ||
-          classes.some((c) => /^main/i.test(c))
-        )
-          return 1; // main first
-        if (
-          classes.some((c) => c === "u-section") ||
-          classes.some((c) => /^section/i.test(c))
-        )
-          return 2; // section second
+        if (classes.some((c) => c === "page_main") || classes.some((c) => /^main/i.test(c))) return 1; // main first
+        if (classes.some((c) => c === "u-section") || classes.some((c) => /^section/i.test(c))) return 2; // section second
         return 3; // everything else last
       };
 
@@ -172,16 +150,14 @@ export function createRoleDetectionService({ detectors, config }: CreateArgs) {
             bestScore = scored.score;
             bestRole = scored.role;
           }
-        } catch (error) {
+        } catch (_error) {
           // detector errors are non-fatal; continue
         }
       }
 
       // Thresholding and assignment
-      result[elementId] =
-        bestRole && bestScore >= threshold ? bestRole : "unknown";
+      result[elementId] = bestRole && bestScore >= threshold ? bestRole : "unknown";
       scoresByElement[elementId] = { best: bestScore, role: result[elementId] };
-
     }
 
     // Enforce singleton `main`: keep highest-scoring, demote others to unknown

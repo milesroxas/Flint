@@ -1,23 +1,14 @@
-import type {
-  RoleDetectionConfig,
-  RolesByElement,
-} from "@/features/linter/model/linter.types";
-import type { RoleDetector } from "@/features/linter/model/preset.types";
-import type {
-  WebflowElement,
-  ElementWithClassNames,
-} from "@/entities/element/model/element.types";
+import type { ElementWithClassNames, WebflowElement } from "@/entities/element/model/element.types";
+import { createElementGraphService, type ElementGraph } from "@/entities/element/services/element-graph.service";
+import { createParentRelationshipService } from "@/entities/element/services/parent-relationship.service";
 
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
-import { resolvePresetOrFallback } from "@/features/linter/presets";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
-
+import type { RoleDetectionConfig, RolesByElement } from "@/features/linter/model/linter.types";
+import type { RoleDetector } from "@/features/linter/model/preset.types";
+import { resolvePresetOrFallback } from "@/features/linter/presets";
 import { createRoleDetectionService } from "@/features/linter/services/role-detection.service";
-import {
-  createElementGraphService,
-  type ElementGraph,
-} from "@/entities/element/services/element-graph.service";
-import { createParentRelationshipService } from "@/entities/element/services/parent-relationship.service";
+
 // Cache for page lint context to improve performance for page mode
 let cachedPageContext: LintContext | null = null;
 
@@ -41,14 +32,11 @@ export function getPageContextCache(): LintContext | null {
 export function invalidatePageContextCache(): void {
   cachedPageContext = null;
 }
-import { toElementKey } from "@/entities/element/lib/id";
-import { createDebugger } from "@/shared/utils/debug";
 
-import type {
-  StyleInfo,
-  StyleWithElement,
-} from "@/entities/style/model/style.types";
+import { toElementKey } from "@/entities/element/lib/id";
+import type { StyleInfo, StyleWithElement } from "@/entities/style/model/style.types";
 import type { StyleService } from "@/entities/style/services/style.service";
+import { createDebugger } from "@/shared/utils/debug";
 
 export interface LintContext {
   allStyles: StyleInfo[];
@@ -65,10 +53,7 @@ export interface LintContext {
 
 export interface LintContextService {
   createContext(elements: WebflowElement[]): Promise<LintContext>;
-  createElementContext(
-    element: WebflowElement,
-    pageContext?: LintContext
-  ): Promise<LintContext>;
+  createElementContext(element: WebflowElement, pageContext?: LintContext): Promise<LintContext>;
   createElementContextWithStructural(
     element: WebflowElement,
     useStructural?: boolean,
@@ -83,18 +68,68 @@ export interface LintContextService {
 function filterValidElements(elements: WebflowElement[]): WebflowElement[] {
   const filtered = elements.filter((el: any) => {
     const hasGetStyles = el && typeof el.getStyles === "function";
-    
+
     // Also include page slots (no element type but has component+element ID structure)
     const hasComponentElementId = el?.id?.component && el?.id?.element;
     const hasNoType = !el.type || el.type === "";
     const isPageSlot = hasComponentElementId && hasNoType;
-    
+
     const shouldInclude = hasGetStyles || isPageSlot;
-    
+
     return shouldInclude;
   });
-  
+
   return filtered;
+}
+
+/**
+ * Tries to get class names from a slot element via DOM access
+ * Webflow slots don't have getStyles(), but may have getDomElement()
+ */
+async function getClassesFromDomElement(element: any): Promise<StyleInfo[]> {
+  try {
+    // Method 1: Try getDomElement() API (Webflow Designer API)
+    if (typeof element?.getDomElement === "function") {
+      const domEl = await element.getDomElement();
+      if (domEl?.classList) {
+        const classNames = Array.from(domEl.classList) as string[];
+        return classNames.map((name, index) => ({
+          id: `slot-class-${name}`,
+          name,
+          properties: {},
+          order: index,
+          isCombo: false,
+        }));
+      }
+    }
+
+    // Method 2: Check for className property directly
+    if (element?.className && typeof element.className === "string") {
+      const classNames = element.className.split(/\s+/).filter(Boolean);
+      return classNames.map((name: string, index: number) => ({
+        id: `slot-class-${name}`,
+        name,
+        properties: {},
+        order: index,
+        isCombo: false,
+      }));
+    }
+
+    // Method 3: Check for classes array property
+    if (Array.isArray(element?.classes)) {
+      return element.classes.map((name: string, index: number) => ({
+        id: `slot-class-${name}`,
+        name,
+        properties: {},
+        order: index,
+        isCombo: false,
+      }));
+    }
+  } catch (_error) {
+    // Silently fail - slot classes are optional
+  }
+
+  return [];
 }
 
 /**
@@ -128,9 +163,7 @@ function createSignature(
   return `v2:${djb2(rows.join("\n"))}:${djb2(tree.join("\n"))}`;
 }
 
-export function createLintContextService(deps: {
-  styleService: StyleService;
-}): LintContextService {
+export function createLintContextService(deps: { styleService: StyleService }): LintContextService {
   const { styleService } = deps;
   const debug = createDebugger("lint-context");
 
@@ -138,9 +171,7 @@ export function createLintContextService(deps: {
   let cachedContext: LintContext | null = null;
   let lastSignature: string | null = null;
 
-  async function createContext(
-    elements: WebflowElement[]
-  ): Promise<LintContext> {
+  async function createContext(elements: WebflowElement[]): Promise<LintContext> {
     if (!Array.isArray(elements)) {
       throw new Error("Elements must be an array");
     }
@@ -154,29 +185,27 @@ export function createLintContextService(deps: {
     const activePreset = resolvePresetOrFallback(getCurrentPreset());
     const grammar = activePreset.grammar ?? lumosGrammar;
     const parseClass = (name: string) => grammar.parse(name);
-    const roleDetectors: readonly RoleDetector[] =
-      activePreset.roleDetectors ?? [];
-    const roleDetectionConfig: RoleDetectionConfig | undefined =
-      activePreset.roleDetectionConfig;
+    const roleDetectors: readonly RoleDetector[] = activePreset.roleDetectors ?? [];
+    const roleDetectionConfig: RoleDetectionConfig | undefined = activePreset.roleDetectionConfig;
 
     // 3) Load site-wide styles
-    const allStyles: StyleInfo[] =
-      await styleService.getAllStylesWithProperties();
+    const allStyles: StyleInfo[] = await styleService.getAllStylesWithProperties();
     debug.log("createContext: loaded allStyles count", allStyles.length);
 
     // 4) Collect applied styles with normalized element ids
     const elementStylePairs = await Promise.all(
       validElements.map(async (element) => {
         const elementId = toElementKey(element);
-        
-        // For elements without getStyles (like page slots), return empty styles
+
+        // For elements without getStyles (like page slots), try alternative methods
         let applied: StyleInfo[];
         if (typeof (element as any).getStyles === "function") {
           applied = await styleService.getAppliedStyles(element);
         } else {
-          applied = []; // Page slots typically have no styles
+          // Try to get classes from DOM element for slots
+          applied = await getClassesFromDomElement(element);
         }
-        
+
         const styles: StyleWithElement[] = applied.map((s) => ({
           ...s,
           elementId,
@@ -185,14 +214,39 @@ export function createLintContextService(deps: {
       })
     );
 
-    // 5) Build parent relationships
+    // 5) Build parent relationships and discover slot children
     const parentRelationshipService = createParentRelationshipService();
-    const parentIdByChildId =
-      await parentRelationshipService.buildParentChildMap(validElements);
+    const { parentIdByChildId, discoveredElements } =
+      await parentRelationshipService.buildParentChildMapWithDiscovery(validElements);
     debug.log("createContext: parent map size", Object.keys(parentIdByChildId).length);
+    debug.log("createContext: discovered slot children", discoveredElements.length);
+
+    // 5b) Process discovered elements (slot children) for styles
+    const discoveredStylePairs = await Promise.all(
+      discoveredElements.map(async (element) => {
+        const elementId = toElementKey(element);
+
+        let applied: StyleInfo[];
+        if (typeof (element as any).getStyles === "function") {
+          applied = await styleService.getAppliedStyles(element);
+        } else {
+          applied = await getClassesFromDomElement(element);
+        }
+
+        const styles: StyleWithElement[] = applied.map((s) => ({
+          ...s,
+          elementId,
+        }));
+        return { element, styles };
+      })
+    );
+
+    // Merge discovered elements into the main lists
+    const allElementStylePairs = [...elementStylePairs, ...discoveredStylePairs];
+    const allValidElements = [...validElements, ...discoveredElements];
 
     // 6) Create signature for caching
-    const signature = createSignature(elementStylePairs, parentIdByChildId);
+    const signature = createSignature(allElementStylePairs, parentIdByChildId);
 
     // 7) Check cache
     if (cachedContext && lastSignature === signature) {
@@ -201,37 +255,31 @@ export function createLintContextService(deps: {
     }
 
     // 8) Build ElementWithClassNames for role detection
-    const elementsWithClassNames: ElementWithClassNames[] =
-      elementStylePairs.map((pair) => ({
-        element: pair.element,
-        classNames: pair.styles
-          .map((s) => s.name)
-          .filter((n) => n.trim() !== ""),
-      }));
+    const elementsWithClassNames: ElementWithClassNames[] = allElementStylePairs.map((pair) => ({
+      element: pair.element,
+      classNames: pair.styles.map((s) => s.name).filter((n) => n.trim() !== ""),
+    }));
 
     // 9) Create element graph first (needed for structural role detection)
-    const graph = createElementGraphService(validElements, parentIdByChildId);
-    debug.log("createContext: graph created with", validElements.length, "nodes");
+    const graph = createElementGraphService(allValidElements, parentIdByChildId);
+    debug.log("createContext: graph created with", allValidElements.length, "nodes");
 
     // 10) Detect roles with graph context for structural analysis
     const roleDetection = createRoleDetectionService({
       detectors: [...roleDetectors],
       config: roleDetectionConfig,
     });
-    const rolesByElement: RolesByElement = roleDetection.detectRolesForPage(
-      elementsWithClassNames,
-      graph
-    );
+    const rolesByElement: RolesByElement = roleDetection.detectRolesForPage(elementsWithClassNames, graph);
 
     // 11) Collect tag information (for semantic HTML validation)
     const tagByElementId = new Map<string, string | null>();
     await Promise.all(
-      elementStylePairs.map(async ({ element }) => {
+      allElementStylePairs.map(async ({ element }) => {
         const id = toElementKey(element);
         try {
           const tag = await graph.getTag(id);
           tagByElementId.set(id, tag);
-        } catch (error) {
+        } catch (_error) {
           tagByElementId.set(id, null);
         }
       })
@@ -239,20 +287,20 @@ export function createLintContextService(deps: {
 
     // 12) Collect element type information (for Webflow element type checks)
     const elementTypeByElementId = new Map<string, string | null>();
-    for (const { element } of elementStylePairs) {
+    for (const { element } of allElementStylePairs) {
       const id = toElementKey(element);
       try {
         // Use element.type from Webflow API
         const elementType = (element as any)?.type || null;
         elementTypeByElementId.set(id, elementType);
-      } catch (error) {
+      } catch (_error) {
         elementTypeByElementId.set(id, null);
       }
     }
 
     // 13) Create element style map for quick lookup
     const elementStyleMap = new Map<string, StyleWithElement[]>();
-    for (const pair of elementStylePairs) {
+    for (const pair of allElementStylePairs) {
       const elementId = toElementKey(pair.element);
       elementStyleMap.set(elementId, pair.styles);
     }
@@ -281,10 +329,7 @@ export function createLintContextService(deps: {
     return context;
   }
 
-  async function createElementContext(
-    element: WebflowElement,
-    pageContext?: LintContext
-  ): Promise<LintContext> {
+  async function createElementContext(element: WebflowElement, pageContext?: LintContext): Promise<LintContext> {
     if (pageContext) {
       // If we have page context, create a focused context for this element
       // while preserving the rich page context for role detection and graph traversal
@@ -348,10 +393,7 @@ export function createLintContextService(deps: {
       }
 
       // Find the section containing this element using the page context graph
-      const sectionId = findSectionContainingElement(
-        elementId,
-        fullPageContext
-      );
+      const sectionId = findSectionContainingElement(elementId, fullPageContext);
       if (!sectionId) {
         debug.log("createElementContextWithStructural: section not found, using fullPageContext");
         return fullPageContext;
@@ -367,10 +409,7 @@ export function createLintContextService(deps: {
   }
 
   // Helper function to find the section containing an element
-  function findSectionContainingElement(
-    elementId: string,
-    context: LintContext
-  ): string | null {
+  function findSectionContainingElement(elementId: string, context: LintContext): string | null {
     // Check if the element itself is a section
     const elementRole = context.rolesByElement[elementId];
     if (elementRole === "section" || elementRole === "main") {
@@ -390,13 +429,9 @@ export function createLintContextService(deps: {
   }
 
   // Helper function to create a scoped context for a specific section
-  function createScopedContextForSection(
-    sectionId: string,
-    fullContext: LintContext
-  ): LintContext {
+  function createScopedContextForSection(sectionId: string, fullContext: LintContext): LintContext {
     // Get all descendants of the section
-    const sectionDescendants =
-      fullContext.graph.getDescendantIds?.(sectionId) || [];
+    const sectionDescendants = fullContext.graph.getDescendantIds?.(sectionId) || [];
     const sectionElementIds = new Set([sectionId, ...sectionDescendants]);
 
     // Filter styles to only include elements in the section
@@ -416,11 +451,9 @@ export function createLintContextService(deps: {
     }
 
     // Filter elementsWithClassNames to only include section elements
-    const sectionElementsWithClassNames =
-      fullContext.elementsWithClassNames.filter((item) =>
-        sectionElementIds.has(toElementKey(item.element))
-      );
-
+    const sectionElementsWithClassNames = fullContext.elementsWithClassNames.filter((item) =>
+      sectionElementIds.has(toElementKey(item.element))
+    );
 
     // Return scoped context
     return {
@@ -446,6 +479,4 @@ export function createLintContextService(deps: {
   } as const;
 }
 
-export type LintContextServiceType = ReturnType<
-  typeof createLintContextService
->;
+export type LintContextServiceType = ReturnType<typeof createLintContextService>;

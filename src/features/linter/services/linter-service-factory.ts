@@ -1,16 +1,13 @@
 // src/features/linter/services/linter-service-factory.ts
 import { createStyleService } from "@/entities/style/services/style.service";
-import { createUtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
-import { createRuleRunner } from "@/features/linter/services/rule-runner";
-import { createElementLintService } from "@/features/linter/services/element-lint-service";
-import { createPageLintService } from "@/features/linter/services/page-lint-service";
-import { createLintContextService } from "@/features/linter/services/lint-context.service";
-import { createPresetElementsService } from "@/features/linter/services/preset-elements.service";
-import {
-  getRuleRegistry,
-  getCurrentPreset,
-} from "@/features/linter/model/linter.factory";
+import { getCurrentPreset, getRuleRegistry } from "@/features/linter/model/linter.factory";
 import { resolvePresetOrFallback } from "@/features/linter/presets";
+import { createUtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
+import { createElementLintService } from "@/features/linter/services/element-lint-service";
+import { createLintContextService } from "@/features/linter/services/lint-context.service";
+import { createPageLintService } from "@/features/linter/services/page-lint-service";
+import { createPresetElementsService } from "@/features/linter/services/preset-elements.service";
+import { createRuleRunner } from "@/features/linter/services/rule-runner";
 
 /**
  * Centralized factory for creating linter services with shared dependencies.
@@ -26,22 +23,17 @@ export function createLinterServices() {
   // Get active preset for grammar-aware rule runner
   const activePreset = resolvePresetOrFallback(getCurrentPreset());
   const activeGrammar =
-    activePreset.grammar ||
-    ({ parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any);
+    activePreset.grammar || ({ parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any);
 
-  const ruleRunner = createRuleRunner(
-    getRuleRegistry(),
-    analyzer,
-    (name: string, isCombo?: boolean) => {
-      if (isCombo === true) return "combo";
-      const kind = activeGrammar.parse(name).kind as any;
-      // Map component kind to custom (component classes are handled as custom with prefix checks)
-      if (kind === "utility" || kind === "combo") return kind;
-      // Treat component classes as utility to exclude them from custom class rules
-      if (kind === "component") return "utility";
-      return "custom";
-    }
-  );
+  const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer, (name: string, isCombo?: boolean) => {
+    if (isCombo === true) return "combo";
+    const kind = activeGrammar.parse(name).kind as any;
+    // Map component kind to custom (component classes are handled as custom with prefix checks)
+    if (kind === "utility" || kind === "combo") return kind;
+    // Treat component classes as utility to exclude them from custom class rules
+    if (kind === "component") return "utility";
+    return "custom";
+  });
 
   // Higher-level services - now using shared context service
   const elementLintService = createElementLintService({

@@ -1,9 +1,5 @@
 // Shared wrapper detection utilities to eliminate code duplication
-import type {
-  RoleDetector,
-  ElementSnapshot,
-  DetectionContext,
-} from "@/features/linter/model/preset.types";
+import type { DetectionContext, ElementSnapshot, RoleDetector } from "@/features/linter/model/preset.types";
 
 /** Accept underscore or hyphen suffixes for wrap */
 const WRAP_SUFFIX_RE = /(?:^|[_-])(wrap|wrapper)$/i;
@@ -41,20 +37,15 @@ export const SUBPART_HINTS = new Set([
 ]);
 
 /** Heuristic to decide componentRoot vs childGroup based on a base name ending in wrap/wrapper */
-export const classifyWrapName = (
-  name: string
-): "componentRoot" | "childGroup" | null => {
+export const classifyWrapName = (name: string): "componentRoot" | "childGroup" | null => {
   if (!WRAP_SUFFIX_RE.test(name)) return null;
 
   const tokens = splitTokens(name);
   const last = tokens[tokens.length - 1]?.toLowerCase();
-  const base =
-    last === "wrap" || last === "wrapper" ? tokens.slice(0, -1) : tokens;
+  const base = last === "wrap" || last === "wrapper" ? tokens.slice(0, -1) : tokens;
 
   // Check if any token hints at subpart
-  const hasSubpartHint = base.some((token) =>
-    SUBPART_HINTS.has(token.toLowerCase())
-  );
+  const hasSubpartHint = base.some((token) => SUBPART_HINTS.has(token.toLowerCase()));
 
   return hasSubpartHint ? "childGroup" : "componentRoot";
 };
@@ -94,8 +85,7 @@ export const isStructuralChildGroup = (
   if (currentRole === "componentRoot") {
     return {
       isChildGroup: false,
-      reason:
-        "Element is already a componentRoot - component boundaries cannot be child groups",
+      reason: "Element is already a componentRoot - component boundaries cannot be child groups",
     };
   }
 
@@ -113,15 +103,11 @@ export const isStructuralChildGroup = (
 
   // 4. Must be nested inside a componentRoot or section (allowing utility containers in between)
   const ancestors = graph.getAncestorIds(elementId);
-  const componentRootId = ancestors.find(
-    (ancestorId) => rolesByElement?.[ancestorId] === "componentRoot"
-  );
-  
+  const componentRootId = ancestors.find((ancestorId) => rolesByElement?.[ancestorId] === "componentRoot");
+
   // For Client-First: also accept elements nested under sections, since section_* can be component roots
   const sectionId = ancestors.find(
-    (ancestorId) => 
-      rolesByElement?.[ancestorId] === "section" || 
-      rolesByElement?.[ancestorId] === "main"
+    (ancestorId) => rolesByElement?.[ancestorId] === "section" || rolesByElement?.[ancestorId] === "main"
   );
 
   if (!componentRootId && !sectionId) {
@@ -173,18 +159,14 @@ export const canBeComponentRoot = (
   // Check if element is nested under a section/main via intermediate elements
   const ancestors = graph.getAncestorIds(elementId);
   const hasSection = ancestors.some(
-    (ancestorId) =>
-      rolesByElement?.[ancestorId] === "section" ||
-      rolesByElement?.[ancestorId] === "main"
+    (ancestorId) => rolesByElement?.[ancestorId] === "section" || rolesByElement?.[ancestorId] === "main"
   );
 
   if (hasSection) {
     // Check if there's a componentRoot ancestor WITHIN the same section
     // (page-level componentRoots shouldn't prevent section-level componentRoots)
     const sectionAncestorId = ancestors.find(
-      (ancestorId) =>
-        rolesByElement?.[ancestorId] === "section" ||
-        rolesByElement?.[ancestorId] === "main"
+      (ancestorId) => rolesByElement?.[ancestorId] === "section" || rolesByElement?.[ancestorId] === "main"
     );
 
     if (sectionAncestorId) {
@@ -200,16 +182,14 @@ export const canBeComponentRoot = (
       if (hasComponentRootInSection) {
         return {
           canBe: false,
-          reason:
-            "Has componentRoot ancestor within same section - should be childGroup",
+          reason: "Has componentRoot ancestor within same section - should be childGroup",
         };
       }
     }
 
     return {
       canBe: true,
-      reason:
-        "Nested under section with no componentRoot ancestor in same section - can be componentRoot",
+      reason: "Nested under section with no componentRoot ancestor in same section - can be componentRoot",
     };
   }
 
@@ -250,7 +230,7 @@ export const createWrapperDetector = (config: {
         return { role: "componentRoot", score: 0.9 };
       } else if (namedRole === "childGroup") {
         const structural = isStructuralChildGroup(element.id, context);
-        
+
         if (!structural.isChildGroup) {
           // Naming suggests childGroup, but structurally it's not (likely componentRoot)
           return { role: "componentRoot", score: 0.9 };

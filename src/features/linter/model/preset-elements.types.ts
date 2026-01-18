@@ -4,13 +4,13 @@
 export interface PresetElementsConfig {
   /** Function to get all known elements for this preset */
   getElements: () => string[];
-  
+
   /** Mapping of category names to their element arrays */
   categoryMap: Record<string, string[]>;
-  
+
   /** Separator used in class names for this preset */
   separator: string;
-  
+
   /** Optional preset-specific metadata */
   metadata?: {
     displayName?: string;

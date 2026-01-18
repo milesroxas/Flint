@@ -1,10 +1,5 @@
-import type {
-  Rule,
-  RuleResult,
-  ClassType,
-  Severity,
-} from "@/features/linter/model/rule.types";
 import type { ElementRole } from "@/features/linter/model/linter.types";
+import type { ClassType, Rule, RuleResult, Severity } from "@/features/linter/model/rule.types";
 
 import type { RuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 
@@ -28,29 +23,14 @@ export type NamingExecInput = {
 
 export type NamingRule = Extract<Rule, { type: "naming" }>;
 
-export type NamingRuleExecutor = (
-  rule: NamingRule,
-  input: NamingExecInput,
-  deps: ExecutionDeps
-) => RuleResult[];
+export type NamingRuleExecutor = (rule: NamingRule, input: NamingExecInput, deps: ExecutionDeps) => RuleResult[];
 
 export const createNamingRuleExecutor = (): NamingRuleExecutor => {
   return (rule, input, deps) => {
-    const {
-      elementId,
-      className,
-      isCombo,
-      comboIndex,
-      severityDefault,
-      configForRule,
-    } = input;
-    const { getRoleForElement, getClassType, suggestName, resolveSeverity } =
-      deps;
+    const { elementId, className, isCombo, comboIndex, severityDefault, configForRule } = input;
+    const { getRoleForElement, getClassType, suggestName, resolveSeverity } = deps;
 
-    const role: ElementRole =
-      elementId && getRoleForElement
-        ? getRoleForElement(elementId) ?? "unknown"
-        : "unknown";
+    const role: ElementRole = elementId && getRoleForElement ? (getRoleForElement(elementId) ?? "unknown") : "unknown";
 
     const classType = getClassType(className, isCombo);
 
@@ -88,18 +68,16 @@ export const createNamingRuleExecutor = (): NamingRuleExecutor => {
           // example is optional in many shapes; include only if present
           ...(evaluated.example ? { example: evaluated.example } : {}),
           // preserve expanded view capabilities from rule evaluation
-          ...(evaluated.expandedViewCapabilities ? { expandedViewCapabilities: evaluated.expandedViewCapabilities } : {}),
+          ...(evaluated.expandedViewCapabilities
+            ? { expandedViewCapabilities: evaluated.expandedViewCapabilities }
+            : {}),
         };
         return [result];
       }
     }
 
     // Fallback boolean API
-    if (
-      "test" in rule &&
-      typeof rule.test === "function" &&
-      !rule.test(className)
-    ) {
+    if ("test" in rule && typeof rule.test === "function" && !rule.test(className)) {
       const baseMessage =
         ("message" in rule && typeof (rule as any).message !== "undefined"
           ? typeof (rule as any).message === "function"

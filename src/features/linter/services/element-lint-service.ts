@@ -1,20 +1,15 @@
 // src/features/linter/services/element-lint-service.ts
-import type { RuleResult } from "@/features/linter/model/rule.types";
-import type { WebflowElement } from "@/entities/element/model/element.types";
-import type { RuleRunner } from "@/features/linter/services/rule-runner";
-import type {
-  LintContextService,
-  LintContext,
-} from "@/features/linter/services/lint-context.service";
+
 import { toElementKey } from "@/entities/element/lib/id";
+import type { WebflowElement } from "@/entities/element/model/element.types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
+import type { LintContext, LintContextService } from "@/features/linter/services/lint-context.service";
+import type { RuleRunner } from "@/features/linter/services/rule-runner";
 import { createDebugger } from "@/shared/utils/debug";
 
 export type ElementLintService = ReturnType<typeof createElementLintService>;
 
-export function createElementLintService(deps: {
-  contextService: LintContextService;
-  ruleRunner: RuleRunner;
-}) {
+export function createElementLintService(deps: { contextService: LintContextService; ruleRunner: RuleRunner }) {
   const { contextService, ruleRunner } = deps;
   const debug = createDebugger("element-lint");
 
@@ -37,20 +32,14 @@ export function createElementLintService(deps: {
     }
 
     // 1) Create or reuse context with optional structural context
-    const context = await contextService.createElementContextWithStructural(
-      element,
-      useStructuralContext,
-      pageContext
-    );
+    const context = await contextService.createElementContextWithStructural(element, useStructuralContext, pageContext);
 
     // 2) Collect styles to analyze
     //    - Structural ON: analyze ALL styles in the section (like page lint but scoped)
     //    - Structural OFF: analyze only the selected element (original behavior)
     const elementId = toElementKey(element);
     const elementStyles = context.elementStyleMap.get(elementId) || [];
-    let stylesToAnalyze:
-      | typeof elementStyles
-      | Array<(typeof elementStyles)[number]> = elementStyles;
+    let stylesToAnalyze: typeof elementStyles | Array<(typeof elementStyles)[number]> = elementStyles;
     let rolesForRun = context.rolesByElement;
 
     if (useStructuralContext) {
@@ -69,12 +58,7 @@ export function createElementLintService(deps: {
         "elements"
       );
     } else {
-      debug.log(
-        "lintElement: standard context analyzing",
-        elementStyles.length,
-        "styles for",
-        elementId
-      );
+      debug.log("lintElement: standard context analyzing", elementStyles.length, "styles for", elementId);
     }
 
     // 3) Execute rules via the same runner API used by page scans
@@ -95,6 +79,15 @@ export function createElementLintService(deps: {
     );
 
     debug.log("lintElement: rule results count", results.length);
+
+    // When structural context is OFF, filter results to only the selected element
+    // The rule runner may produce violations for child elements due to rolesByElement
+    // being passed with all descendants, but we only want selected element violations
+    if (!useStructuralContext) {
+      const filteredResults = results.filter((r) => r.elementId === elementId);
+      debug.log("lintElement: filtered to selected element only", filteredResults.length, "of", results.length);
+      return filteredResults;
+    }
 
     return results;
   }

@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
-import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
-import type { RuleResult } from "@/features/linter/model/rule.types";
-import type { ElementRole } from "@/features/linter/model/linter.types";
-import { createDebugger } from "@/shared/utils/debug";
 import { toElementKey } from "@/entities/element/lib/id";
+import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
+import type { ElementRole } from "@/features/linter/model/linter.types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
+import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
+import { createDebugger } from "@/shared/utils/debug";
 
 // Intentionally unused type guard removed to satisfy no-unused-vars rule; access via window.webflow at runtime
 
@@ -61,31 +61,17 @@ export const useElementLintStore = create<ElementLintStore>()(
           }
           const el = await wf.getSelectedElement();
           const isComponentInstance = (el as any)?.type === "ComponentInstance";
-          debug.log(
-            "refresh: selected element type",
-            (el as any)?.type,
-            "structuralContext",
-            get().structuralContext
-          );
+          debug.log("refresh: selected element type", (el as any)?.type, "structuralContext", get().structuralContext);
           set({
             lastSelectedElementKey: el ? toElementKey(el as any) : null,
           });
-          if (
-            !el ||
-            (typeof el.getStyles !== "function" &&
-              !(get().structuralContext && isComponentInstance))
-          ) {
-            debug.warn(
-              "refresh: skipping lint; getStyles missing and not component in structural mode"
-            );
+          if (!el || (typeof el.getStyles !== "function" && !(get().structuralContext && isComponentInstance))) {
+            debug.warn("refresh: skipping lint; getStyles missing and not component in structural mode");
             set({ results: [], classNames: [], roles: [], loading: false });
             return;
           }
           const state = get();
-          const results = await scanSelectedElement(
-            el,
-            state.structuralContext
-          );
+          const results = await scanSelectedElement(el, state.structuralContext);
           set({
             results,
             classNames: [],
@@ -97,8 +83,7 @@ export const useElementLintStore = create<ElementLintStore>()(
           console.error("[ElementLintStore] refresh failed", err);
           set({
             ...initialState,
-            error:
-              err instanceof Error ? err.message : "Failed to lint element",
+            error: err instanceof Error ? err.message : "Failed to lint element",
           });
         }
       },
@@ -136,10 +121,7 @@ export const useElementLintStore = create<ElementLintStore>()(
       if (
         !el ||
         (typeof el.getStyles !== "function" &&
-          !(
-            useElementLintStore.getState().structuralContext &&
-            isComponentInstance
-          ))
+          !(useElementLintStore.getState().structuralContext && isComponentInstance))
       ) {
         useElementLintStore.setState({
           results: [],

@@ -1,14 +1,8 @@
-import type {
-  ElementAnalysisArgs,
-  RuleResult,
-  ClassType,
-  StructureRule,
-} from "@/features/linter/model/rule.types";
+import type { ClassType, ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/linter/model/rule.types";
 
 // Simple classifiers for variants and utilities
 const isVariant = (name: string) => /^is[_-]/.test(name);
-const isUtility = (name: string, classType: ClassType) =>
-  classType === "utility" || /^u[_-]/.test(name);
+const isUtility = (name: string, classType: ClassType) => classType === "utility" || /^u[_-]/.test(name);
 
 export const createLumosClassOrderRule = (): StructureRule => ({
   id: "lumos:composition:class-order",
@@ -92,9 +86,7 @@ export const createLumosClassOrderRule = (): StructureRule => ({
     const desiredOrder = [...base, ...variants, ...utilities];
     const currentOrder = ordered.map((x) => x.className);
 
-    const needsFix =
-      desiredOrder.length === currentOrder.length &&
-      desiredOrder.some((n, i) => n !== currentOrder[i]);
+    const needsFix = desiredOrder.length === currentOrder.length && desiredOrder.some((n, i) => n !== currentOrder[i]);
 
     return [
       {

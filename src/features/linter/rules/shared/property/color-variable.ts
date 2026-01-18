@@ -1,10 +1,5 @@
-import type {
-  PropertyRule,
-  RuleConfigSchema,
-  RuleResult,
-  RuleContext,
-} from "@/features/linter/model/rule.types";
 import { convertColorToHex } from "@/features/linter/lib/color-utils";
+import type { PropertyRule, RuleConfigSchema, RuleContext, RuleResult } from "@/features/linter/model/rule.types";
 
 interface ColorVariableConfig {
   targetProperties: string[];
@@ -66,8 +61,7 @@ export const createColorVariableRule = (): PropertyRule => ({
 
       // Override with custom config if provided
       if (context.config?.targetProperties) {
-        ruleConfig.targetProperties = context.config
-          .targetProperties as string[];
+        ruleConfig.targetProperties = context.config.targetProperties as string[];
       }
 
       const results: RuleResult[] = [];
@@ -114,10 +108,7 @@ export const createColorVariableRule = (): PropertyRule => ({
 
       return results;
     } catch (error) {
-      console.error(
-        `Error analyzing color variables for class "${className}":`,
-        error
-      );
+      console.error(`Error analyzing color variables for class "${className}":`, error);
       return [];
     }
   },

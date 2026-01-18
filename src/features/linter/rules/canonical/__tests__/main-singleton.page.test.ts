@@ -1,8 +1,8 @@
 // src/features/linter/rules/canonical/__tests__/main-singleton.page.test.ts
-import { describe, it, expect } from "vitest";
-import { createMainSingletonPageRule } from "@/features/linter/rules/canonical/main-singleton.page";
-import type { RuleResult } from "@/features/linter/model/rule.types";
+import { describe, expect, it } from "vitest";
 import type { RolesByElement } from "@/features/linter/model/linter.types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
+import { createMainSingletonPageRule } from "@/features/linter/rules/canonical/main-singleton.page";
 
 // Minimal, typed helper to invoke analyzePage with just what the rule needs
 function runRule(
@@ -57,7 +57,7 @@ describe("canonical:main-singleton.page", () => {
     expect(out).toEqual([]);
   });
 
-  it("reports one violation when no main exists", () => {
+  it("reports one warning when no main exists (may be slot element)", () => {
     const roles: RolesByElement = {
       a: "section",
       b: "componentRoot",
@@ -68,8 +68,8 @@ describe("canonical:main-singleton.page", () => {
     const v = out[0];
     expect(v.ruleId).toBe("canonical:main-singleton");
     expect(v.name).toBe("Exactly one main role per page");
-    expect(v.severity).toBe("error");
-    expect(v.message).toMatch(/No element with role 'main' detected.*Add a main wrapper element following your preset conventions/i);
+    expect(v.severity).toBe("warning");
+    expect(v.message).toMatch(/\[Slot\?\].*No main detected.*Verify slot has class.*tag set to <main>/i);
     // absence case carries no elementId, className="", isCombo=false per implementation
     expect((v as any).elementId).toBeUndefined();
     expect((v as any).className).toBe("");
@@ -100,10 +100,11 @@ describe("canonical:main-singleton.page", () => {
     }
   });
 
-  it("reports violation when no main exists (empty rolesByElement)", () => {
+  it("reports warning when no main exists (empty rolesByElement)", () => {
     const out = runRule({});
     expect(out).toHaveLength(1);
-    expect(out[0].message).toMatch(/No element with role 'main' detected.*Add a main wrapper element following your preset conventions/i);
+    expect(out[0].severity).toBe("warning");
+    expect(out[0].message).toMatch(/\[Slot\?\].*No main detected/i);
   });
 
   it("is pure for the same input", () => {

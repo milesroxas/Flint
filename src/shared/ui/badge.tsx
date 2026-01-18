@@ -1,7 +1,7 @@
-import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Copy, AlertCircle, CircleCheckBig } from "lucide-react";
+import { AlertCircle, CircleCheckBig, Copy } from "lucide-react";
+import * as React from "react";
 import { cn } from "@/shared/utils";
 
 const badgeVariants = cva(
@@ -9,26 +9,18 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover focus-visible:ring-destructive/20",
-        outline:
-          "border border-input text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
-        error:
-          "bg-error text-error-foreground hover:bg-error-hover active:bg-error-active",
-        warning:
-          "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active",
-        suggestion:
-          "bg-suggestion text-suggestion-foreground hover:bg-suggestion-hover active:bg-suggestion-active",
-        inheritedProperty:
-          "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
+        outline: "border border-input text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
+        error: "bg-error text-error-foreground hover:bg-error-hover active:bg-error-active",
+        warning: "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active",
+        suggestion: "bg-suggestion text-suggestion-foreground hover:bg-suggestion-hover active:bg-suggestion-active",
+        inheritedProperty: "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         propertyName:
           "bg-property-name text-property-name-foreground hover:bg-property-name-hover active:bg-property-name-active rounded-xs px-2 font-mono",
-        newProperty:
-          "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
+        newProperty: "bg-secondary text-secondary-foreground rounded-xs px-2 font-mono",
         webflowClass:
           "bg-webflow-class text-webflow-class-foreground hover:bg-webflow-class-hover active:bg-webflow-class-active rounded-xs px-2 font-mono",
         webflowClassMuted:
@@ -128,15 +120,9 @@ function Badge({
       {children}
       {copyable &&
         (copied ? (
-          <CircleCheckBig
-            className="ml-1 h-3 w-3 text-accent"
-            aria-label="Copied"
-          />
+          <CircleCheckBig className="ml-1 h-3 w-3 text-accent" aria-label="Copied" />
         ) : error ? (
-          <AlertCircle
-            className="ml-1 h-3 w-3 text-error"
-            aria-label="Copy failed"
-          />
+          <AlertCircle className="ml-1 h-3 w-3 text-error" aria-label="Copy failed" />
         ) : (
           <Copy className="ml-1 h-3 w-3" aria-label="Copy to clipboard" />
         ))}

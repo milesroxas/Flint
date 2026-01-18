@@ -1,7 +1,4 @@
-import type {
-  GrammarAdapter,
-  ParsedClass,
-} from "@/features/linter/model/linter.types";
+import type { GrammarAdapter, ParsedClass } from "@/features/linter/model/linter.types";
 import type { ClassType } from "@/features/linter/model/rule.types";
 
 function getClassType(name: string): ClassType {
@@ -22,8 +19,7 @@ function parseCustom(name: string): ParsedClass {
   };
 
   if (tokens.length > 0) parsed.type = tokens[0];
-  if (tokens.length > 2)
-    parsed.variation = tokens.slice(1, -1).join("_") || undefined;
+  if (tokens.length > 2) parsed.variation = tokens.slice(1, -1).join("_") || undefined;
   if (tokens.length >= 2) parsed.elementToken = tokens[tokens.length - 1];
 
   // Extract componentKey: for wrapper patterns, exclude the wrapper suffix
@@ -55,7 +51,7 @@ function parseCustom(name: string): ParsedClass {
       } else {
         // For other non-wrapper classes in Client-First:
         // Component key extraction depends on the element's role:
-        // - Component roots (single or two tokens): use first token only 
+        // - Component roots (single or two tokens): use first token only
         // - Child groups (3+ tokens): use first two tokens to capture variant
         if (tokens.length >= 3) {
           // Likely child group: use first two tokens (name + variant)

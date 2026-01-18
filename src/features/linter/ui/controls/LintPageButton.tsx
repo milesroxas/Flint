@@ -1,8 +1,9 @@
 // src/components/LintPageButton.tsx
-import { Button } from "@/shared/ui/button";
-import { cn } from "@/shared/utils";
+
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/utils";
 
 interface LintPageButtonProps {
   onClick: () => void;
@@ -32,9 +33,7 @@ export function LintPageButton({
   }, [issueCount, prevIssueCount]);
 
   const isDestructive = issueCount > 0;
-  const computedLabel =
-    label ??
-    (loading ? "Linting..." : isDestructive ? "Re-lint" : "Lint Full Page");
+  const computedLabel = label ?? (loading ? "Linting..." : isDestructive ? "Re-lint" : "Lint Full Page");
 
   return (
     <Button
@@ -65,7 +64,7 @@ export function LintPageButton({
           <span aria-live="polite">{computedLabel}</span>
         </>
       ) : (
-        <>{computedLabel}</>
+        computedLabel
       )}
     </Button>
   );

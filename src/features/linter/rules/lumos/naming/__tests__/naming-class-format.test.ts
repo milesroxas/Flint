@@ -1,9 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { RuleContext, RuleResult } from "@/features/linter/model/rule.types";
 import { createLumosCustomClassFormatRule } from "@/features/linter/rules/lumos/naming/naming-class-format";
-import type {
-  RuleResult,
-  RuleContext,
-} from "@/features/linter/model/rule.types";
 
 type Rule = ReturnType<typeof createLumosCustomClassFormatRule>;
 
@@ -17,11 +14,7 @@ const createMinimalRuleContext = (
   config,
 });
 
-function run(
-  rule: Rule,
-  className: string,
-  ctx?: { config?: Record<string, unknown> }
-): RuleResult | null {
+function run(rule: Rule, className: string, ctx?: { config?: Record<string, unknown> }): RuleResult | null {
   // Gate: rule should decide if it wants to run on this className
   const shouldRun = rule.test(className);
   if (!shouldRun) return null;
@@ -31,16 +24,9 @@ function run(
   return result ?? null; // Ensure we return null instead of undefined
 }
 
-function expectValid(
-  rule: Rule,
-  className: string,
-  ctx?: { config?: Record<string, unknown> }
-) {
+function expectValid(rule: Rule, className: string, ctx?: { config?: Record<string, unknown> }) {
   const result = run(rule, className, ctx);
-  expect(
-    result,
-    `Expected "${className}" to be valid but got: ${result?.message}`
-  ).toBeNull();
+  expect(result, `Expected "${className}" to be valid but got: ${result?.message}`).toBeNull();
 }
 
 function expectInvalid(
@@ -62,17 +48,17 @@ function expectInvalid(
     isCombo: false,
   });
 
-  expect(result!.message.length).toBeGreaterThan(0);
+  expect(result?.message.length).toBeGreaterThan(0);
 
   // If fix is provided, assert its shape
-  if (result!.fix) {
-    expect(result!.fix).toMatchObject({
+  if (result?.fix) {
+    expect(result?.fix).toMatchObject({
       kind: expect.any(String),
       scope: expect.any(String),
     });
 
-    if (result!.fix.kind === "rename-class") {
-      expect(result!.fix).toMatchObject({
+    if (result?.fix.kind === "rename-class") {
+      expect(result?.fix).toMatchObject({
         kind: "rename-class",
         from: className,
         to: expect.any(String),
@@ -81,7 +67,11 @@ function expectInvalid(
     }
   }
 
-  return result!;
+  if (!result) {
+    throw new Error(`Expected result for className "${className}" but got null/undefined`);
+  }
+
+  return result;
 }
 
 describe("lumos:naming:class-format", () => {
@@ -135,13 +125,7 @@ describe("lumos:naming:class-format", () => {
   it("rejects invalid formats: casing errors", () => {
     const rule = createLumosCustomClassFormatRule();
 
-    const invalidCasing = [
-      "Footer_wrap",
-      "HERO_wrap",
-      "hero_Wrap",
-      "Hero_Title",
-      "section_Main_content",
-    ];
+    const invalidCasing = ["Footer_wrap", "HERO_wrap", "hero_Wrap", "Hero_Title", "section_Main_content"];
 
     for (const className of invalidCasing) {
       expectInvalid(rule, className, "error");
@@ -206,12 +190,7 @@ describe("lumos:naming:class-format", () => {
   it("handles unrecognized elements with suggestions", () => {
     const rule = createLumosCustomClassFormatRule();
 
-    const unrecognizedElements = [
-      "hero_widget",
-      "section_gadget",
-      "footer_thingy",
-      "nav_doohickey",
-    ];
+    const unrecognizedElements = ["hero_widget", "section_gadget", "footer_thingy", "nav_doohickey"];
 
     for (const className of unrecognizedElements) {
       const result = expectInvalid(rule, className, "suggestion");
@@ -275,12 +254,7 @@ describe("lumos:naming:class-format", () => {
   it("skips component classes (c- prefix)", () => {
     const rule = createLumosCustomClassFormatRule();
 
-    const componentClasses = [
-      "c-card",
-      "c-button",
-      "c-invalid-format!@#",
-      "c-BadCasing",
-    ];
+    const componentClasses = ["c-card", "c-button", "c-invalid-format!@#", "c-BadCasing"];
 
     for (const className of componentClasses) {
       // test() should return false for component classes
@@ -325,8 +299,7 @@ describe("lumos:naming:class-format", () => {
     const rule = createLumosCustomClassFormatRule();
 
     // Very long class names
-    const longValidClass =
-      "very_long_section_name_with_many_segments_that_should_still_work_fine_wrap";
+    const longValidClass = "very_long_section_name_with_many_segments_that_should_still_work_fine_wrap";
     expectValid(rule, longValidClass);
 
     // Numbers in class names

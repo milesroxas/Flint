@@ -1,5 +1,5 @@
 export {
-  createDuplicateOfUtilityRule,
   createColorVariableRule,
+  createDuplicateOfUtilityRule,
 } from "./property";
 export { createMissingClassOnDivRule } from "./structure";

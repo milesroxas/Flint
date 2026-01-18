@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
-import { cn } from "@/shared/utils";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Severity } from "@/features/linter/model/rule.types";
-import { SeverityButton } from "@/shared/ui/severity-button";
 import { useAnimationStore } from "@/features/linter/store/animation.store";
+import { SeverityButton } from "@/shared/ui/severity-button";
+import { cn } from "@/shared/utils";
 
 export type SeverityFilterValue = Severity | "all";
 
@@ -22,18 +23,10 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
   condensed = false,
 }) => {
   // Subscribe to animation store
-  const severityTilesVisible = useAnimationStore(
-    (state) => state.severityTilesVisible
-  );
-  const severityCountsAnimating = useAnimationStore(
-    (state) => state.severityCountsAnimating
-  );
-  const startSeverityCounts = useAnimationStore(
-    (state) => state.startSeverityCounts
-  );
-  const completeSeverityAnimation = useAnimationStore(
-    (state) => state.completeSeverityAnimation
-  );
+  const severityTilesVisible = useAnimationStore((state) => state.severityTilesVisible);
+  const severityCountsAnimating = useAnimationStore((state) => state.severityCountsAnimating);
+  const startSeverityCounts = useAnimationStore((state) => state.startSeverityCounts);
+  const completeSeverityAnimation = useAnimationStore((state) => state.completeSeverityAnimation);
   const showViolations = useAnimationStore((state) => state.showViolations);
 
   const [displayCounts, setDisplayCounts] = useState({
@@ -54,13 +47,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
       // Also clear visible counts for next cycle
       setDisplayCounts({ error: 0, warning: 0, suggestion: 0 });
     }
-  }, [
-    severityTilesVisible,
-    severityCountsAnimating,
-    counts,
-    hasAnimated,
-    startSeverityCounts,
-  ]);
+  }, [severityTilesVisible]);
 
   // Handle tile entrance animation complete
   const handleTileAnimationEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
@@ -70,10 +57,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
       setHasAnimated(true);
       setDisplayCounts(counts);
       countAnimationCompleteRef.current = 0;
-      const target =
-        (counts.error > 0 ? 1 : 0) +
-        (counts.warning > 0 ? 1 : 0) +
-        (counts.suggestion > 0 ? 1 : 0);
+      const target = (counts.error > 0 ? 1 : 0) + (counts.warning > 0 ? 1 : 0) + (counts.suggestion > 0 ? 1 : 0);
       targetAnimationCountRef.current = target;
       if (target === 0) {
         // No counts to animate; immediately complete and reveal violations
@@ -93,10 +77,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
       setHasAnimated(true);
       setDisplayCounts(counts);
       countAnimationCompleteRef.current = 0;
-      const target =
-        (counts.error > 0 ? 1 : 0) +
-        (counts.warning > 0 ? 1 : 0) +
-        (counts.suggestion > 0 ? 1 : 0);
+      const target = (counts.error > 0 ? 1 : 0) + (counts.warning > 0 ? 1 : 0) + (counts.suggestion > 0 ? 1 : 0);
       targetAnimationCountRef.current = target;
       if (target === 0) {
         completeSeverityAnimation();
@@ -121,10 +102,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
   const handleCountAnimationComplete = () => {
     countAnimationCompleteRef.current += 1;
     // Wait for all three tiles to complete their count animation
-    if (
-      targetAnimationCountRef.current > 0 &&
-      countAnimationCompleteRef.current >= targetAnimationCountRef.current
-    ) {
+    if (targetAnimationCountRef.current > 0 && countAnimationCompleteRef.current >= targetAnimationCountRef.current) {
       completeSeverityAnimation();
       // Trigger violations animation
       requestAnimationFrame(() => {
@@ -142,9 +120,7 @@ export const SeverityFilter: React.FC<SeverityFilterProps> = ({
       ref={tilesAnimationRef}
       className={cn(
         "grid grid-cols-3 transition-all duration-500 ease-gentle",
-        severityTilesVisible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-2",
+        severityTilesVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
         condensed ? "gap-2" : "gap-3",
         className
       )}

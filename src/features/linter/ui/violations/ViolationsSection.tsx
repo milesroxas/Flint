@@ -1,6 +1,6 @@
 import React from "react";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { Accordion } from "@/shared/ui/accordion";
-import { RuleResult } from "@/features/linter/model/rule.types";
 import { ViolationItem } from "./ViolationItem";
 
 export interface ViolationsSectionProps {

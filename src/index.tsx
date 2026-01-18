@@ -1,14 +1,13 @@
 import "./styles/globals.css";
-import React from "react";
+import type React from "react";
 import { createRoot } from "react-dom/client";
 import Header from "@/app/ui/Header";
-import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
-import { ThemeProvider } from "@/shared/providers/theme-provider";
-
-import { LinterPanel } from "@/features/linter/view/LinterPanel";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { ExpandedContent } from "@/features/linter/ui/expanded/ExpandedContent";
 import { RecognizedElementsView } from "@/features/linter/ui/expanded/RecognizedElementsView";
-import { useExpandedView } from "@/features/linter/store/expandedView.store";
+import { LinterPanel } from "@/features/linter/view/LinterPanel";
+import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
+import { ThemeProvider } from "@/shared/providers/theme-provider";
 import { cn } from "@/shared/utils";
 
 const Root: React.FC = () => {
@@ -22,9 +21,7 @@ const Root: React.FC = () => {
           <div
             className={cn(
               "flex h-full flex-col transition-all duration-300 ease-in-out",
-              isActive
-                ? "translate-x-[-100%] opacity-0"
-                : "translate-x-0 opacity-100"
+              isActive ? "translate-x-[-100%] opacity-0" : "translate-x-0 opacity-100"
             )}
           >
             <Header />
@@ -37,27 +34,16 @@ const Root: React.FC = () => {
           <div
             className={cn(
               "absolute inset-0 flex flex-col transition-all duration-300 ease-in-out",
-              isActive
-                ? "translate-x-0 opacity-100"
-                : "translate-x-full opacity-0"
+              isActive ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
             )}
           >
-            {isActive && content && (
-              <>
-                {content.type === "recognized-elements" && (
-                  <ExpandedContent
-                    title={content.title}
-                    onClose={closeExpandedView}
-                  >
-                    <RecognizedElementsView
-                      presetId={(content.data as any)?.presetId || ""}
-                      projectElements={
-                        (content.data as any)?.projectElements || []
-                      }
-                    />
-                  </ExpandedContent>
-                )}
-              </>
+            {isActive && content && content.type === "recognized-elements" && (
+              <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <RecognizedElementsView
+                  presetId={(content.data as any)?.presetId || ""}
+                  projectElements={(content.data as any)?.projectElements || []}
+                />
+              </ExpandedContent>
             )}
           </div>
         </div>

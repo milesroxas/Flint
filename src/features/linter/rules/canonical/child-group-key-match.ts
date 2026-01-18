@@ -1,10 +1,7 @@
-import type { Rule } from "@/features/linter/model/rule.types";
 // Canonical rules must be preset-agnostic. Avoid importing preset-specific
 // heuristics; rely only on the active grammar's parseClass output.
-import type {
-  ElementRole,
-  ParsedClass,
-} from "@/features/linter/model/linter.types";
+import type { ElementRole, ParsedClass } from "@/features/linter/model/linter.types";
+import type { Rule } from "@/features/linter/model/rule.types";
 
 /**
  * Child group component key must match nearest component root.
@@ -34,7 +31,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     if (!elementId || !getRoleForElement) return [];
 
     const role: ElementRole = getRoleForElement(elementId) ?? "unknown";
-    
+
     // Canonical rule runs only for detected child groups to avoid
     // false positives on utilities/containers across presets.
     if (role !== "childGroup") return [];
@@ -42,10 +39,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     if (!parseClass || !getAncestorIds || !getClassNamesForElement) return [];
 
     // find nearest ancestor with role componentRoot
-    const rootId =
-      (getAncestorIds(elementId) ?? []).find(
-        (id) => getRoleForElement(id) === "componentRoot"
-      ) ?? null;
+    const rootId = (getAncestorIds(elementId) ?? []).find((id) => getRoleForElement(id) === "componentRoot") ?? null;
 
     if (!rootId) {
       const first = classes?.[0];
@@ -53,8 +47,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
         {
           ruleId: "canonical:childgroup-key-match",
           name: "Child group key must match its nearest component root",
-          message:
-            "Child group has no component root ancestor (check structural detection).",
+          message: "Child group has no component root ancestor (check structural detection).",
           severity: "error",
           elementId,
           className: first?.className ?? "",
@@ -67,16 +60,9 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     // Strategy (preset-agnostic): among custom classes, choose the one with the highest token count
     // (preferring names with >=3 tokens and not ending with wrap/wrapper). Falls back to the first
     // custom if no better candidate exists.
-    const getBaseCustomClassName = (
-      id: string,
-      list?: { className: string; isCombo?: boolean }[]
-    ) => {
-      const provided = (list ?? [])
-        .map((c) => c.className)
-        .filter((n) => (getClassType?.(n) ?? "custom") === "custom");
-      const raw = (getClassNamesForElement(id) ?? []).filter(
-        (n) => (getClassType?.(n) ?? "custom") === "custom"
-      );
+    const getBaseCustomClassName = (id: string, list?: { className: string; isCombo?: boolean }[]) => {
+      const provided = (list ?? []).map((c) => c.className).filter((n) => (getClassType?.(n) ?? "custom") === "custom");
+      const raw = (getClassNamesForElement(id) ?? []).filter((n) => (getClassType?.(n) ?? "custom") === "custom");
       const all = Array.from(new Set<string>([...provided, ...raw]));
       if (all.length === 0) return "";
 
@@ -85,9 +71,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
       for (const name of all) {
         const parsed = (parseClass?.(name) as ParsedClass | null) ?? null;
         const tokens = parsed?.tokens ?? name.split(/[_-]+/).filter(Boolean);
-        const last = (parsed?.elementToken ?? tokens[tokens.length - 1] ?? "")
-          .toString()
-          .toLowerCase();
+        const last = (parsed?.elementToken ?? tokens[tokens.length - 1] ?? "").toString().toLowerCase();
         const notWrapper = last !== "wrap" && last !== "wrapper";
         const tokenCount = tokens.length;
         const score = (notWrapper ? 10 : 0) + tokenCount; // prefer non-wrapper and more tokens
@@ -107,14 +91,10 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     const childKey = parsedChild?.componentKey ?? null;
 
     // parse root's base custom class, with robust fallback when roles are incomplete
-    const pickRootBaseClass = (
-      candidateId: string | null
-    ): { base: string; id: string | null } => {
+    const pickRootBaseClass = (candidateId: string | null): { base: string; id: string | null } => {
       if (!candidateId) return { base: "", id: null };
       const names = getClassNamesForElement(candidateId) ?? [];
-      const base = names.find(
-        (n) => (getClassType?.(n) ?? "custom") === "custom"
-      ) ?? "";
+      const base = names.find((n) => (getClassType?.(n) ?? "custom") === "custom") ?? "";
       return { base, id: candidateId };
     };
 
@@ -175,22 +155,15 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
 
     const shouldEnforce = role === "childGroup" || grammarSuggestsChildGroup;
 
-    if (
-      shouldEnforce &&
-      (
-        !childKey ||
-        !rootKey ||
-        (childKey !== rootKey && !childExtendsAllowedSingleTokenRoot)
-      )
-    ) {
+    if (shouldEnforce && (!childKey || !rootKey || (childKey !== rootKey && !childExtendsAllowedSingleTokenRoot))) {
       const baseName = baseChildName ?? "";
       const msg = !childKey
         ? `Could not extract component key from "${baseName}". Use "<name>_<variant>_<group>_wrap".`
         : !rootKey
-        ? `Could not extract component key from root "${rootBaseInfo.base}". Use "<name>_<variant>_wrap".`
-        : isSingleTokenRoot && childKeyParts[0] === rootKey && childKeyParts.length >= 2
-        ? `Child group key "${childKey}" introduces a variant but root key "${rootKey}" has none. Prefer "${rootKey}_${parsedChild?.elementToken ?? "[element]"}".`
-        : `Child group key "${childKey}" does not match root key "${rootKey}". Rename to "${rootKey}_[element]_wrap".`;
+          ? `Could not extract component key from root "${rootBaseInfo.base}". Use "<name>_<variant>_wrap".`
+          : isSingleTokenRoot && childKeyParts[0] === rootKey && childKeyParts.length >= 2
+            ? `Child group key "${childKey}" introduces a variant but root key "${rootKey}" has none. Prefer "${rootKey}_${parsedChild?.elementToken ?? "[element]"}".`
+            : `Child group key "${childKey}" does not match root key "${rootKey}". Rename to "${rootKey}_[element]_wrap".`;
 
       return [
         {

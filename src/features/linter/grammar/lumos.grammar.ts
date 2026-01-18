@@ -1,7 +1,4 @@
-import type {
-  GrammarAdapter,
-  ParsedClass,
-} from "@/features/linter/model/linter.types";
+import type { GrammarAdapter, ParsedClass } from "@/features/linter/model/linter.types";
 import type { ClassType } from "@/features/linter/model/rule.types";
 
 function getClassType(name: string): ClassType {

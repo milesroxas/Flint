@@ -1,11 +1,12 @@
 import type {
-  Rule,
-  RuleConfiguration,
-  RuleConfigSchema,
   ClassType,
+  PageRule,
+  Rule,
   RuleCategory,
+  RuleConfigSchema,
+  RuleConfiguration,
+  Severity,
 } from "@/features/linter/model/rule.types";
-import type { PageRule, Severity } from "@/features/linter/model/rule.types";
 
 export const createRuleRegistry = () => {
   const rules = new Map<string, Rule>();
@@ -13,9 +14,7 @@ export const createRuleRegistry = () => {
   const configurations = new Map<string, RuleConfiguration>();
 
   // ---------- type guards ----------
-  const hasConfig = (
-    rule: Rule
-  ): rule is Rule & { config?: RuleConfigSchema } => "config" in rule;
+  const hasConfig = (rule: Rule): rule is Rule & { config?: RuleConfigSchema } => "config" in rule;
 
   // ---------- register (element/class-scope) ----------
   const registerRule = (rule: Rule): void => {
@@ -73,8 +72,7 @@ export const createRuleRegistry = () => {
 
   const getAllRules = (): Rule[] => Array.from(rules.values());
 
-  const getAllRulesSorted = (): Rule[] =>
-    Array.from(rules.values()).sort((a, b) => a.id.localeCompare(b.id));
+  const getAllRulesSorted = (): Rule[] => Array.from(rules.values()).sort((a, b) => a.id.localeCompare(b.id));
 
   const getRulesByClassType = (classType: ClassType): Rule[] =>
     getAllRules().filter(
@@ -84,34 +82,27 @@ export const createRuleRegistry = () => {
         r.targetClassTypes.includes(classType)
     );
 
-  const getRulesByCategory = (category: RuleCategory): Rule[] =>
-    getAllRules().filter((r) => r.category === category);
+  const getRulesByCategory = (category: RuleCategory): Rule[] => getAllRules().filter((r) => r.category === category);
 
-  const getEnabledRules = (): Rule[] =>
-    getAllRules().filter((r) => configurations.get(r.id)?.enabled ?? r.enabled);
+  const getEnabledRules = (): Rule[] => getAllRules().filter((r) => configurations.get(r.id)?.enabled ?? r.enabled);
 
-  const getElementScopeRules = (): Rule[] =>
-    getAllRules().filter((r) => typeof r.analyzeElement === "function");
+  const getElementScopeRules = (): Rule[] => getAllRules().filter((r) => typeof r.analyzeElement === "function");
 
-  const getClassScopeRules = (): Rule[] =>
-    getAllRules().filter((r) => r.type === "naming" || r.type === "property");
+  const getClassScopeRules = (): Rule[] => getAllRules().filter((r) => r.type === "naming" || r.type === "property");
 
   // ---------- getters (page-scope) ----------
   const getPageRules = (): PageRule[] => Array.from(pageRules.values()); // NEW
 
-  const getEnabledPageRules = (): PageRule[] => // NEW
-    getPageRules().filter(
-      (r) => configurations.get(r.id)?.enabled ?? r.enabled
-    );
+  const getEnabledPageRules = (): PageRule[] =>
+    // NEW
+    getPageRules().filter((r) => configurations.get(r.id)?.enabled ?? r.enabled);
 
-  const getPageRulesSorted = (): PageRule[] => // NEW
+  const getPageRulesSorted = (): PageRule[] =>
+    // NEW
     Array.from(pageRules.values()).sort((a, b) => a.id.localeCompare(b.id));
 
   // ---------- configuration ----------
-  const updateRuleConfiguration = (
-    ruleId: string,
-    update: Partial<Omit<RuleConfiguration, "ruleId">>
-  ): void => {
+  const updateRuleConfiguration = (ruleId: string, update: Partial<Omit<RuleConfiguration, "ruleId">>): void => {
     const existing = configurations.get(ruleId);
     if (!existing) return;
 
@@ -127,15 +118,11 @@ export const createRuleRegistry = () => {
     });
   };
 
-  const getRuleConfiguration = (
-    ruleId: string
-  ): RuleConfiguration | undefined => configurations.get(ruleId);
+  const getRuleConfiguration = (ruleId: string): RuleConfiguration | undefined => configurations.get(ruleId);
 
-  const getAllConfigurations = (): RuleConfiguration[] =>
-    Array.from(configurations.values());
+  const getAllConfigurations = (): RuleConfiguration[] => Array.from(configurations.values());
 
-  const exportConfiguration = (): string =>
-    JSON.stringify(getAllConfigurations(), null, 2);
+  const exportConfiguration = (): string => JSON.stringify(getAllConfigurations(), null, 2);
 
   const importConfiguration = (json: string): void => {
     try {

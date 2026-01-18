@@ -4,9 +4,7 @@ import { getAllPresets } from "@/features/linter/presets";
 /**
  * Service for extracting recognized elements from preset configurations
  */
-export type PresetElementsService = ReturnType<
-  typeof createPresetElementsService
->;
+export type PresetElementsService = ReturnType<typeof createPresetElementsService>;
 
 export function createPresetElementsService() {
   // Simple cache for computed results
@@ -56,10 +54,7 @@ export function createPresetElementsService() {
     };
   }
 
-  function categorizeByMap(
-    elements: string[],
-    categoryMap: Record<string, string[]>
-  ): Record<string, string[]> {
+  function categorizeByMap(elements: string[], categoryMap: Record<string, string[]>): Record<string, string[]> {
     const result: Record<string, string[]> = {};
 
     // Initialize categories
@@ -90,8 +85,7 @@ export function createPresetElementsService() {
   }> {
     const layoutElement = categories.layout?.[0] || "wrap";
     const contentElement = categories.content?.[0] || "text";
-    const interactiveElement =
-      categories.interactive?.[0] || categories.components?.[0] || "button";
+    const interactiveElement = categories.interactive?.[0] || categories.components?.[0] || "button";
 
     return [
       {

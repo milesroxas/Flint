@@ -1,8 +1,5 @@
 // Alternative singleton pattern for better performance
-import {
-  createLinterServices,
-  type LinterServices,
-} from "./linter-service-factory";
+import { createLinterServices, type LinterServices } from "./linter-service-factory";
 
 let servicesSingleton: LinterServices | null = null;
 

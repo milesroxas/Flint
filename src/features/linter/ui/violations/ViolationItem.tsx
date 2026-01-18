@@ -1,16 +1,12 @@
 import React from "react";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/shared/ui/accordion";
-import { RuleResult, Severity } from "@/features/linter/model/rule.types";
-import { ViolationHeader } from "./ViolationHeader";
-import { ViolationDetails, ClassBadge } from "./ViolationDetails";
-import { useExpandedView } from "@/features/linter/store/expandedView.store";
-import { expandedViewCapabilitiesService } from "@/features/linter/services/expanded-view-capabilities.service";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import type { RuleResult, Severity } from "@/features/linter/model/rule.types";
+import { expandedViewCapabilitiesService } from "@/features/linter/services/expanded-view-capabilities.service";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
+import { AccordionContent, AccordionItem, AccordionTrigger } from "@/shared/ui/accordion";
 import { cn } from "@/shared/utils";
+import { ClassBadge, ViolationDetails } from "./ViolationDetails";
+import { ViolationHeader } from "./ViolationHeader";
 
 interface ViolationItemProps {
   violation: RuleResult;
@@ -48,8 +44,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
   const borderColorClass = severityLeftBorder[sev];
 
   // Check if this violation has expanded view capabilities
-  const primaryCapability =
-    expandedViewCapabilitiesService.getPrimaryCapability(violation);
+  const primaryCapability = expandedViewCapabilitiesService.getPrimaryCapability(violation);
 
   const handleExpandedViewClick = () => {
     if (!primaryCapability) return;
@@ -85,9 +80,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
         <div className="flex flex-col items-start gap-1 w-full min-w-0">
           <ViolationHeader violation={violation} />
           {violation.ruleId !== "no-styles-or-classes" && (
-            <div
-              className={cn("w-full ml-0.5 pl-1 border-l-2", borderColorClass)}
-            >
+            <div className={cn("w-full ml-0.5 pl-1 border-l-2", borderColorClass)}>
               <ClassBadge violation={violation} />
             </div>
           )}

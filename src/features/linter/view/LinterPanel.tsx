@@ -1,33 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/shared/utils";
-import type { RuleResult } from "@/features/linter/model/rule.types";
-import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import {
-  ModeToggle,
-  type LintViewMode,
-} from "@/features/linter/ui/controls/ModeToggle";
-import { ActionBar } from "@/features/linter/ui/controls/ActionBar";
+import { useEffect, useMemo, useState } from "react";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { useElementLint } from "@/features/linter/store/elementLint.store";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
-import SeverityFilter, {
-  type SeverityFilterValue,
-} from "@/features/linter/ui/controls/SeverityFilter";
+import { ActionBar } from "@/features/linter/ui/controls/ActionBar";
+import { type LintViewMode, ModeToggle } from "@/features/linter/ui/controls/ModeToggle";
+import SeverityFilter, { type SeverityFilterValue } from "@/features/linter/ui/controls/SeverityFilter";
 import { StructuralContextToggle } from "@/features/linter/ui/controls/StructuralContextToggle";
+import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
+import { cn } from "@/shared/utils";
 
 export function LinterPanel() {
-  const { results, passedClassNames, loading, error, hasRun, lintPage } =
-    usePageLint();
+  const { results, passedClassNames, loading, error, hasRun, lintPage } = usePageLint();
   // const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
-  const [mode, setMode] = useState<LintViewMode>("page");
+  const [mode, setMode] = useState<LintViewMode>("element");
 
   // Track mode internally without noisy logging
   useEffect(() => {
     void mode;
   }, [mode]);
-  const [severityFilter, setSeverityFilter] =
-    useState<SeverityFilterValue>("all");
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilterValue>("all");
   const [filtersCondensed, setFiltersCondensed] = useState(false);
   const [hideModeToggle, setHideModeToggle] = useState(false);
   const [isPanelVisible, setIsPanelVisible] = useState(false);
@@ -70,24 +63,15 @@ export function LinterPanel() {
   const isBusy = mode === "page" ? loading : elementLoading;
 
   const errorCount = useMemo(
-    () =>
-      mode === "page"
-        ? results.filter((v) => v.severity === "error").length
-        : 0,
+    () => (mode === "page" ? results.filter((v) => v.severity === "error").length : 0),
     [mode, results]
   );
   const warningCount = useMemo(
-    () =>
-      mode === "page"
-        ? results.filter((v) => v.severity === "warning").length
-        : 0,
+    () => (mode === "page" ? results.filter((v) => v.severity === "warning").length : 0),
     [mode, results]
   );
   const suggestionCount = useMemo(
-    () =>
-      mode === "page"
-        ? results.filter((v) => v.severity === "suggestion").length
-        : 0,
+    () => (mode === "page" ? results.filter((v) => v.severity === "suggestion").length : 0),
     [mode, results]
   );
 
@@ -120,9 +104,7 @@ export function LinterPanel() {
             <div
               className={cn(
                 "pt-4 transition-[opacity,transform,height,margin] duration-300 ease-gentle will-change-[opacity,transform]",
-                hideModeToggle
-                  ? "opacity-0 -translate-y-2 h-0 -mb-2"
-                  : "opacity-100 translate-y-0 h-auto mb-4"
+                hideModeToggle ? "opacity-0 -translate-y-2 h-0 -mb-2" : "opacity-100 translate-y-0 h-auto mb-4"
               )}
             >
               <div className="flex gap-3 items-center justify-between">
@@ -134,10 +116,7 @@ export function LinterPanel() {
                 />
                 {mode === "element" && (
                   <div className="flex pr-2 items-center gap-2">
-                    <StructuralContextToggle
-                      enabled={structuralContext}
-                      onChange={setStructuralContext}
-                    />
+                    <StructuralContextToggle enabled={structuralContext} onChange={setStructuralContext} />
                   </div>
                 )}
               </div>
@@ -168,14 +147,9 @@ export function LinterPanel() {
                   <ViolationsList
                     violations={filteredViolations}
                     passedClassNames={activePassedClassNames}
-                    showHighlight={
-                      mode === "page" ||
-                      (mode === "element" && structuralContext)
-                    }
+                    showHighlight={mode === "page" || (mode === "element" && structuralContext)}
                     bypassAnimation={mode === "element"}
-                    onScrollStateChange={
-                      mode === "page" ? setFiltersCondensed : undefined
-                    }
+                    onScrollStateChange={mode === "page" ? setFiltersCondensed : undefined}
                     onScrollDirectionChange={
                       mode === "page"
                         ? (dir) => {

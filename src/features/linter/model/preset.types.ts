@@ -1,7 +1,4 @@
-import type {
-  GrammarAdapter,
-  ElementRole,
-} from "@/features/linter/model/linter.types";
+import type { ElementRole, GrammarAdapter } from "@/features/linter/model/linter.types";
 
 /** Stable, minimal element snapshot for role detection */
 export interface ElementSnapshot {
@@ -41,10 +38,7 @@ export interface RoleDetectionResult {
 export interface RoleDetector {
   readonly id: string;
   readonly description?: string;
-  detect(
-    element: ElementSnapshot,
-    context: DetectionContext
-  ): RoleDetectionResult | null;
+  detect(element: ElementSnapshot, context: DetectionContext): RoleDetectionResult | null;
 }
 
 /** Preset configuration interface */

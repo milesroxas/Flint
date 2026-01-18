@@ -1,13 +1,13 @@
-import type { Rule } from "@/features/linter/model/rule.types";
+import { clientFirstRoleDetectors } from "@/features/linter/detectors/client-first.detectors";
+import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import type { Preset } from "@/features/linter/model/preset.types";
 import type { PresetElementsConfig } from "@/features/linter/model/preset-elements.types";
-import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
-import { clientFirstRoleDetectors } from "@/features/linter/detectors/client-first.detectors";
+import type { Rule } from "@/features/linter/model/rule.types";
 import { createCFNamingClassFormatRule } from "@/features/linter/rules/client-first/naming";
 import { getClientFirstKnownElements } from "@/features/linter/rules/client-first/naming/naming-class-format";
 import {
-  createDuplicateOfUtilityRule,
   createColorVariableRule,
+  createDuplicateOfUtilityRule,
   createUtilityDuplicatePropertyRule,
 } from "@/features/linter/rules/shared/property";
 import { createMissingClassOnDivRule } from "@/features/linter/rules/shared/structure";

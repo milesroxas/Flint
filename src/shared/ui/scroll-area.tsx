@@ -1,21 +1,14 @@
-import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+import * as React from "react";
 
 import { cn } from "@/shared/utils";
 
-interface ScrollAreaProps
-  extends React.ComponentProps<typeof ScrollAreaPrimitive.Root> {
+interface ScrollAreaProps extends React.ComponentProps<typeof ScrollAreaPrimitive.Root> {
   onIsScrolledChange?: (value: boolean) => void;
   onScrollDirectionChange?: (direction: "up" | "down") => void;
 }
 
-function ScrollArea({
-  className,
-  children,
-  onIsScrolledChange,
-  onScrollDirectionChange,
-  ...props
-}: ScrollAreaProps) {
+function ScrollArea({ className, children, onIsScrolledChange, onScrollDirectionChange, ...props }: ScrollAreaProps) {
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const lastTopRef = React.useRef(0);
@@ -61,21 +54,14 @@ function ScrollArea({
             }
 
             const passedThreshold = pendingAccumRef.current >= threshold;
-            const blockedByBottom =
-              dir === "up" ? false : nearBottom && !passedThreshold;
-            const blockedByTop =
-              dir === "down" ? false : nearTop && !passedThreshold;
+            const blockedByBottom = dir === "up" ? false : nearBottom && !passedThreshold;
+            const blockedByTop = dir === "down" ? false : nearTop && !passedThreshold;
 
             const now = Date.now();
             const timeSinceLastEmit = now - lastEmitTimeRef.current;
             const minEmitInterval = 150; // ms minimum between direction changes
 
-            if (
-              passedThreshold &&
-              !blockedByBottom &&
-              !blockedByTop &&
-              timeSinceLastEmit >= minEmitInterval
-            ) {
+            if (passedThreshold && !blockedByBottom && !blockedByTop && timeSinceLastEmit >= minEmitInterval) {
               emittedDirRef.current = dir;
               pendingDirRef.current = null;
               pendingAccumRef.current = 0;
@@ -96,21 +82,14 @@ function ScrollArea({
             }
 
             const passedThreshold = pendingAccumRef.current >= threshold;
-            const blockedByBottom =
-              dir === "up" ? false : nearBottom && !passedThreshold;
-            const blockedByTop =
-              dir === "down" ? false : nearTop && !passedThreshold;
+            const blockedByBottom = dir === "up" ? false : nearBottom && !passedThreshold;
+            const blockedByTop = dir === "down" ? false : nearTop && !passedThreshold;
 
             const now = Date.now();
             const timeSinceLastEmit = now - lastEmitTimeRef.current;
             const minEmitInterval = 150; // ms minimum between direction changes
 
-            if (
-              passedThreshold &&
-              !blockedByBottom &&
-              !blockedByTop &&
-              timeSinceLastEmit >= minEmitInterval
-            ) {
+            if (passedThreshold && !blockedByBottom && !blockedByTop && timeSinceLastEmit >= minEmitInterval) {
               emittedDirRef.current = dir;
               pendingDirRef.current = null;
               pendingAccumRef.current = 0;
@@ -131,11 +110,7 @@ function ScrollArea({
   }, [onIsScrolledChange, onScrollDirectionChange]);
 
   return (
-    <ScrollAreaPrimitive.Root
-      data-slot="scroll-area"
-      className={cn("relative overflow-hidden", className)}
-      {...props}
-    >
+    <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn("relative overflow-hidden", className)} {...props}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         ref={viewportRef}
@@ -163,10 +138,8 @@ function ScrollBar({
       orientation={orientation}
       className={cn(
         "flex touch-none p-px transition-colors select-none absolute",
-        orientation === "vertical" &&
-          "right-0 top-0 h-full w-2.5 border-l border-l-transparent",
-        orientation === "horizontal" &&
-          "left-0 bottom-0 h-2.5 w-full flex-col border-t border-t-transparent",
+        orientation === "vertical" && "right-0 top-0 h-full w-2.5 border-l border-l-transparent",
+        orientation === "horizontal" && "left-0 bottom-0 h-2.5 w-full flex-col border-t border-t-transparent",
         className
       )}
       {...props}

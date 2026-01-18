@@ -1,11 +1,12 @@
 // src/features/linter/store/usePageLintStore.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { RuleResult } from "@/features/linter/model/rule.types";
-import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
+import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { useAnimationStore } from "./animation.store";
+
 // import { defaultRules } from '@/features/linter/rules/default-rules';
 
 // Process orchestrator handles service setup per scan
@@ -54,9 +55,7 @@ export const usePageLintStore = create<PageLintStore>()(
           invalidatePageContextCache();
 
           const elements = await webflow.getAllElements();
-          const { results, classNames } = await scanCurrentPageWithMeta(
-            elements
-          );
+          const { results, classNames } = await scanCurrentPageWithMeta(elements);
           set({ results, passedClassNames: classNames, loading: false });
 
           // Trigger severity tiles animation after results are ready
@@ -66,8 +65,7 @@ export const usePageLintStore = create<PageLintStore>()(
         } catch (error) {
           console.error("[PageLintStore] Error during linting:", error);
           set({
-            error:
-              error instanceof Error ? error.message : "Failed to lint page",
+            error: error instanceof Error ? error.message : "Failed to lint page",
             results: [],
             loading: false,
           });

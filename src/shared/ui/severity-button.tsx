@@ -1,7 +1,7 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/shared/utils";
+import * as React from "react";
 import type { Severity } from "@/features/linter/model/rule.types";
+import { cn } from "@/shared/utils";
 
 const severityDot: Record<Severity, string> = {
   error: "bg-error",
@@ -22,21 +22,15 @@ const severityText: Record<Severity, string> = {
 };
 
 const severityBg: Record<Severity, string> = {
-  error:
-    "bg-error/10 hover:bg-error-hover active:bg-error-active text-error hover:text-error-foreground",
-  warning:
-    "bg-warning/20 hover:bg-warning-hover active:bg-warning-active text-warning",
-  suggestion:
-    "bg-suggestion/20 hover:bg-suggestion-hover active:bg-suggestion-active text-suggestion",
+  error: "bg-error/10 hover:bg-error-hover active:bg-error-active text-error hover:text-error-foreground",
+  warning: "bg-warning/20 hover:bg-warning-hover active:bg-warning-active text-warning",
+  suggestion: "bg-suggestion/20 hover:bg-suggestion-hover active:bg-suggestion-active text-suggestion",
 };
 
 const severityBgActive: Record<Severity, string> = {
-  error:
-    "bg-error-hover hover:bg-error-active active:bg-error-active text-error-foreground",
-  warning:
-    "bg-warning hover:bg-warning-active active:bg-warning-active text-warning-foreground",
-  suggestion:
-    "bg-suggestion-hover hover:bg-suggestion-active active:bg-suggestion-active text-suggestion-foreground",
+  error: "bg-error-hover hover:bg-error-active active:bg-error-active text-error-foreground",
+  warning: "bg-warning hover:bg-warning-active active:bg-warning-active text-warning-foreground",
+  suggestion: "bg-suggestion-hover hover:bg-suggestion-active active:bg-suggestion-active text-suggestion-foreground",
 };
 
 const severityButtonVariants = cva(
@@ -71,10 +65,7 @@ const severityButtonVariants = cva(
       {
         severity: "suggestion",
         active: false,
-        className: cn(
-          severityBg.suggestion,
-          "hover:text-suggestion-foreground"
-        ),
+        className: cn(severityBg.suggestion, "hover:text-suggestion-foreground"),
       },
       {
         severity: "error",
@@ -89,10 +80,7 @@ const severityButtonVariants = cva(
       {
         severity: "suggestion",
         active: true,
-        className: cn(
-          severityBgActive.suggestion,
-          "text-suggestion-foreground"
-        ),
+        className: cn(severityBgActive.suggestion, "text-suggestion-foreground"),
       },
     ],
     defaultVariants: {
@@ -102,9 +90,7 @@ const severityButtonVariants = cva(
   }
 );
 
-interface SeverityButtonProps
-  extends React.ComponentProps<"button">,
-    VariantProps<typeof severityButtonVariants> {
+interface SeverityButtonProps extends React.ComponentProps<"button">, VariantProps<typeof severityButtonVariants> {
   severity: Severity;
   count: number;
   expandedLabel: string;
@@ -170,13 +156,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
         startAnimation();
       }
     }
-  }, [
-    shouldAnimateCount,
-    count,
-    staggerDelay,
-    onCountAnimationComplete,
-    isCountingComplete,
-  ]);
+  }, [shouldAnimateCount, count, staggerDelay, onCountAnimationComplete, isCountingComplete]);
 
   // Re-arm counting on each cycle start regardless of count changes
   React.useEffect(() => {
@@ -196,11 +176,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
 
   // Avoid flashing from final count to 0 by not showing the target count
   // until counting actually starts. Show 0 pre-count, animate to target.
-  const displayCount = shouldAnimateCount
-    ? isCountingComplete
-      ? count
-      : animatedCount
-    : count;
+  const displayCount = shouldAnimateCount ? (isCountingComplete ? count : animatedCount) : count;
 
   return (
     <button
@@ -226,10 +202,7 @@ export const SeverityButton: React.FC<SeverityButtonProps> = ({
             active ? severityDotActive[severity] : severityDot[severity]
           )}
         />
-        <span
-          ref={expandedCountRef}
-          className="transition-all duration-300 ease-gentle tabular-nums"
-        >
+        <span ref={expandedCountRef} className="transition-all duration-300 ease-gentle tabular-nums">
           {displayCount}
         </span>
         <span>{expandedLabel}</span>

@@ -1,12 +1,9 @@
 // src/features/linter/services/executors/property-rule-executor.ts
-import type {
-  Rule,
-  RuleResult,
-  Severity,
-} from "@/features/linter/model/rule.types";
+
 import type { StyleInfo } from "@/entities/style/model/style.types";
-import type { RuleRegistry } from "@/features/linter/services/rule-registry";
+import type { Rule, RuleResult, Severity } from "@/features/linter/model/rule.types";
 import type { UtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
+import type { RuleRegistry } from "@/features/linter/services/rule-registry";
 
 /** Public signature returned by the factory. */
 export type ExecutePropertyRule = (
@@ -15,10 +12,7 @@ export type ExecutePropertyRule = (
   properties: Record<string, unknown>,
   severity: Severity,
   allStyles: StyleInfo[],
-  getClassType?: (
-    className: string,
-    isCombo?: boolean
-  ) => import("@/features/linter/model/rule.types").ClassType
+  getClassType?: (className: string, isCombo?: boolean) => import("@/features/linter/model/rule.types").ClassType
 ) => RuleResult[];
 
 /**
@@ -30,14 +24,7 @@ export const createPropertyRuleExecutor = (
   ruleRegistry: RuleRegistry,
   utilityAnalyzer: UtilityClassAnalyzer
 ): ExecutePropertyRule => {
-  return function executePropertyRule(
-    rule,
-    className,
-    properties,
-    severity,
-    allStyles,
-    getClassType
-  ): RuleResult[] {
+  return function executePropertyRule(rule, className, properties, severity, allStyles, getClassType): RuleResult[] {
     // Build/ensure property maps once for this run
     if (typeof (utilityAnalyzer as any).ensureBuilt === "function") {
       (utilityAnalyzer as any).ensureBuilt(allStyles);
@@ -69,9 +56,7 @@ export const createPropertyRuleExecutor = (
       metadata: v.metadata,
       fix: v.fix,
       // preserve expanded view capabilities from rule results
-      ...(v.expandedViewCapabilities
-        ? { expandedViewCapabilities: v.expandedViewCapabilities }
-        : {}),
+      ...(v.expandedViewCapabilities ? { expandedViewCapabilities: v.expandedViewCapabilities } : {}),
     }));
   };
 };

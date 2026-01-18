@@ -1,7 +1,4 @@
-import type {
-  RuleResult,
-  ExpandedViewCapability,
-} from "@/features/linter/model/rule.types";
+import type { ExpandedViewCapability, RuleResult } from "@/features/linter/model/rule.types";
 
 /**
  * Service for managing expanded view capabilities for rule violations.
@@ -47,12 +44,9 @@ export class ExpandedViewCapabilitiesService {
    * Checks if any violations in a list have expanded view capabilities
    */
   hasAnyExpandedViewCapabilities(violations: RuleResult[]): boolean {
-    return violations.some((violation) =>
-      this.hasExpandedViewCapabilities(violation)
-    );
+    return violations.some((violation) => this.hasExpandedViewCapabilities(violation));
   }
 }
 
 // Singleton instance
-export const expandedViewCapabilitiesService =
-  new ExpandedViewCapabilitiesService();
+export const expandedViewCapabilitiesService = new ExpandedViewCapabilitiesService();

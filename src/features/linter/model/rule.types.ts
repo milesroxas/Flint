@@ -1,10 +1,6 @@
-import { StyleInfo } from "@/entities/style/model/style.types";
-import { ElementGraph } from "@/entities/element/services/element-graph.service";
-import {
-  ElementRole,
-  ParsedClass,
-  RolesByElement,
-} from "@/features/linter/model/linter.types";
+import type { ElementGraph } from "@/entities/element/services/element-graph.service";
+import type { StyleInfo } from "@/entities/style/model/style.types";
+import type { ElementRole, ParsedClass, RolesByElement } from "@/features/linter/model/linter.types";
 
 // -------------------------
 // Severity & Result Types
@@ -74,12 +70,7 @@ export type QuickFix =
 // -------------------------
 // Configuration Schema
 // -------------------------
-export type RuleConfigFieldType =
-  | "string"
-  | "string[]"
-  | "number"
-  | "boolean"
-  | "enum";
+export type RuleConfigFieldType = "string" | "string[]" | "number" | "boolean" | "enum";
 
 export interface RuleConfigField {
   label: string;
@@ -104,12 +95,7 @@ export type RuleCategory =
   | "accessibility"
   | "maintainability"
   | "custom";
-export type RuleType =
-  | "naming"
-  | "property"
-  | "structure"
-  | "composition"
-  | "page";
+export type RuleType = "naming" | "property" | "structure" | "composition" | "page";
 
 export interface BaseRule {
   id: string;
@@ -165,12 +151,7 @@ export interface PageRule extends BaseRule {
   analyzePage(args: PageAnalysisArgs): RuleResult[];
 }
 
-export type Rule =
-  | NamingRule
-  | PropertyRule
-  | StructureRule
-  | CompositionRule
-  | PageRule;
+export type Rule = NamingRule | PropertyRule | StructureRule | CompositionRule | PageRule;
 
 // -------------------------
 // Execution Context & Save

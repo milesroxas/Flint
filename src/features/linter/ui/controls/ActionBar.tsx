@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { DocsButton } from "@/features/linter/ui/controls/DocsButton";
 import { LintPageButton } from "@/features/linter/ui/controls/LintPageButton";
 import { PresetSwitcher } from "@/features/linter/ui/controls/PresetSwitcher";
 import { cn } from "@/shared/utils";
@@ -11,13 +13,7 @@ interface ActionBarProps {
   hasRun?: boolean;
 }
 
-export const ActionBar: React.FC<ActionBarProps> = ({
-  loading,
-  mode,
-  issueCount,
-  onLint,
-  hasRun = false,
-}) => {
+export const ActionBar: React.FC<ActionBarProps> = ({ loading, mode, issueCount, onLint, hasRun = false }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [prevIssueCount, setPrevIssueCount] = useState(issueCount);
 
@@ -48,11 +44,10 @@ export const ActionBar: React.FC<ActionBarProps> = ({
               issueCount={issueCount}
               fullWidth
               className="h-full rounded-sm text-base transition-all duration-300 ease-out"
-              label={
-                mode === "page" ? (hasRun ? "Re-Lint" : "Lint Page") : "Re-Lint"
-              }
+              label={mode === "page" ? (hasRun ? "Re-Lint" : "Lint Page") : "Re-Lint"}
             />
           </div>
+          <DocsButton className="h-full rounded-sm w-8" />
         </div>
       </div>
     </div>

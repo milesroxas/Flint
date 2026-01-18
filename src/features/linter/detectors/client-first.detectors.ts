@@ -1,16 +1,15 @@
-import type {
-  RoleDetector,
-  ElementSnapshot,
-} from "@/features/linter/model/preset.types";
 import {
-  createWrapperDetector,
+  canBeComponentRoot,
   classifyWrapName,
+  createWrapperDetector,
+  isStructuralChildGroup,
+  SUBPART_HINTS,
 } from "@/features/linter/detectors/shared/wrapper-detection";
-import { SUBPART_HINTS, canBeComponentRoot, isStructuralChildGroup } from "@/features/linter/detectors/shared/wrapper-detection";
+import type { ElementSnapshot, RoleDetector } from "@/features/linter/model/preset.types";
 
 export const clientFirstRoleDetectors: RoleDetector[] = [
   {
-    id: "client-first-main-detector", 
+    id: "client-first-main-detector",
     description: "Detects main elements using Client-First naming conventions",
     detect: (element: ElementSnapshot, context) => {
       // Client-First main should be exactly "main-wrapper"
@@ -21,11 +20,11 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
         const parentId = context.graph.getParentId(element.id);
         if (parentId) {
           // Check if parent is page-wrapper (or elements ending with page-wrapper)
-          const parentElement = context.allElements?.find(el => el.id === parentId);
-          const hasPageWrapper = parentElement?.classes.some(cls => 
-            cls === "page-wrapper" || cls.endsWith("-page-wrapper")
+          const parentElement = context.allElements?.find((el) => el.id === parentId);
+          const hasPageWrapper = parentElement?.classes.some(
+            (cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper")
           );
-          
+
           if (!hasPageWrapper) {
             // Not a child of page-wrapper, lower confidence
             return { role: "main", score: 0.7 };
@@ -38,8 +37,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
   },
   {
     id: "client-first-section-detector",
-    description:
-      "Detects section elements using Client-First naming conventions",
+    description: "Detects section elements using Client-First naming conventions",
     detect: (element: ElementSnapshot) => {
       // Check for utility class u-section
       if (element.classes.includes("section_")) {
@@ -56,8 +54,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
   // WRAP suffix → componentRoot vs childGroup (using shared logic)
   createWrapperDetector({
     id: "client-first-wrapper-detector",
-    description:
-      "Detects component roots and child groups using Client-First wrapper naming patterns",
+    description: "Detects component roots and child groups using Client-First wrapper naming patterns",
     classifyNaming: (firstClass: string) => {
       // For Client-First, use simplified token count heuristic
       const tokenCount = firstClass.split(/[_-]/).filter(Boolean).length;
@@ -72,8 +69,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
   }),
   {
     id: "client-first-section-root-as-component-root",
-    description:
-      "Treats section_[root][-variant]? as component roots (variant optional)",
+    description: "Treats section_[root][-variant]? as component roots (variant optional)",
     detect: (element: ElementSnapshot, context) => {
       const firstClass = element.classes[0];
       if (!firstClass) return null;
@@ -97,8 +93,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
   },
   {
     id: "client-first-subpart-childgroup-detector",
-    description:
-      "Detects child groups by common subpart suffixes (_grid, -content, etc.) even without wrap/wrapper",
+    description: "Detects child groups by common subpart suffixes (_grid, -content, etc.) even without wrap/wrapper",
     detect: (element, context) => {
       const firstClass = element.classes[0];
       if (!firstClass) return null;
@@ -121,7 +116,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
         // For Client-First: validate structural context when available
         if (context?.graph && context?.rolesByElement) {
           const structural = isStructuralChildGroup(element.id, context as any);
-          
+
           if (!structural.isChildGroup) {
             // Naming suggests childGroup, but structurally it doesn't fit
             // In Client-First, this might be a component root instead
@@ -148,50 +143,50 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
 
       // Check if this is a page slot (no element type but has component+element ID)
       const elementIdObj = element.id as any;
-      const isPageSlot = !element.tagName && 
-                        elementIdObj?.id?.component && 
-                        elementIdObj?.id?.element;
-      
+      const isPageSlot = !element.tagName && elementIdObj?.id?.component && elementIdObj?.id?.element;
+
       if (!isPageSlot) return null;
 
       // Must be under page-wrapper to be considered main
       if (context?.graph && context?.allElements) {
         const parentId = context.graph.getParentId(element.id);
         if (parentId) {
-          const parentElement = context.allElements.find(el => el.id === parentId);
-          const isUnderPageWrapper = parentElement?.classes.some(cls => 
-            cls === "page-wrapper" || cls.endsWith("-page-wrapper")
+          const parentElement = context.allElements.find((el) => el.id === parentId);
+          const isUnderPageWrapper = parentElement?.classes.some(
+            (cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper")
           );
-          
+
           if (isUnderPageWrapper) {
             // Count how many page slots exist under page-wrapper
-            const allPageSlots = context.allElements.filter(el => {
+            const allPageSlots = context.allElements.filter((el) => {
               const elIdObj = el.id as any;
               const isSlot = !el.tagName && elIdObj?.id?.component && elIdObj?.id?.element;
               if (!isSlot) return false;
-              
-              const slotParentId = context.graph!.getParentId(el.id);
+
+              const slotParentId = context.graph?.getParentId(el.id);
               if (!slotParentId) return false;
-              
-              const slotParent = context.allElements!.find(p => p.id === slotParentId);
-              return slotParent?.classes.some(cls => cls === "page-wrapper" || cls.endsWith("-page-wrapper"));
+
+              const slotParent = context.allElements?.find((p) => p.id === slotParentId);
+              return slotParent?.classes.some((cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper"));
             });
 
             if (allPageSlots.length === 1) {
               // Single page slot under page-wrapper - assign main role with warning
-              return { 
-                role: "main", 
+              return {
+                role: "main",
                 score: 0.8,
-                reasoning: "Single page slot under page-wrapper detected as main (configure with main-wrapper class and <main> tag)"
+                reasoning:
+                  "Single page slot under page-wrapper detected as main (configure with main-wrapper class and <main> tag)",
               };
             } else if (allPageSlots.length > 1) {
               // Multiple slots - assign main to first one found
               const isFirstSlot = allPageSlots[0].id === element.id;
               if (isFirstSlot) {
-                return { 
-                  role: "main", 
+                return {
+                  role: "main",
                   score: 0.75,
-                  reasoning: "First page slot of multiple under page-wrapper detected as main (configure with main-wrapper class and <main> tag)"
+                  reasoning:
+                    "First page slot of multiple under page-wrapper detected as main (configure with main-wrapper class and <main> tag)",
                 };
               }
             }

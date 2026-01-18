@@ -1,9 +1,6 @@
-import {
-  ruleRegistry,
-  initializeRuleRegistry,
-} from "@/features/linter/services/registry";
-import { getDefaultPresetId, getPresetIds } from "@/features/linter/presets";
 import type { OpinionMode } from "@/features/linter/model/opinion.modes";
+import { getDefaultPresetId, getPresetIds } from "@/features/linter/presets";
+import { initializeRuleRegistry, ruleRegistry } from "@/features/linter/services/registry";
 
 let isInitialized = false;
 let currentMode: OpinionMode = "balanced";
@@ -42,10 +39,7 @@ function resolveInitialPreset(): string {
 
 let currentPreset: string = resolveInitialPreset();
 
-export function ensureLinterInitialized(
-  mode: OpinionMode = "balanced",
-  preset: string = currentPreset
-): void {
+export function ensureLinterInitialized(mode: OpinionMode = "balanced", preset: string = currentPreset): void {
   if (isInitialized && mode === currentMode && preset === currentPreset) return;
   initializeRuleRegistry(mode, preset);
   isInitialized = true;
@@ -55,23 +49,13 @@ export function ensureLinterInitialized(
   safeWriteStorage(PRESET_STORAGE_KEY, currentPreset);
   void (async () => {
     try {
-      const styleCacheMod = await import(
-        "@/entities/style/services/style-cache"
-      );
-      if (
-        styleCacheMod &&
-        typeof styleCacheMod.resetStyleServiceCache === "function"
-      ) {
+      const styleCacheMod = await import("@/entities/style/services/style-cache");
+      if (styleCacheMod && typeof styleCacheMod.resetStyleServiceCache === "function") {
         styleCacheMod.resetStyleServiceCache();
       }
 
-      const servicesMod = await import(
-        "@/features/linter/services/linter-service-singleton"
-      );
-      if (
-        servicesMod &&
-        typeof servicesMod.resetLinterServices === "function"
-      ) {
+      const servicesMod = await import("@/features/linter/services/linter-service-singleton");
+      if (servicesMod && typeof servicesMod.resetLinterServices === "function") {
         servicesMod.resetLinterServices();
       }
     } catch {

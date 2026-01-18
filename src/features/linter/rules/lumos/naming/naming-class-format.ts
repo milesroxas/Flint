@@ -1,10 +1,5 @@
-import {
-  NamingRule,
-  RuleResult,
-  RuleConfigSchema,
-  RuleContext,
-} from "@/features/linter/model/rule.types";
 import { normalizeToUnderscoreFormat } from "@/features/linter/lib/string-normalization";
+import type { NamingRule, RuleConfigSchema, RuleContext, RuleResult } from "@/features/linter/model/rule.types";
 
 /**
  * Gets the known elements for lumos preset
@@ -57,8 +52,7 @@ const customClassConfig: RuleConfigSchema = {
   projectDefinedElements: {
     label: "Project-defined element terms",
     type: "string[]",
-    description:
-      "Custom terms that are valid as final class segments for this project (e.g. 'flag', 'chip', 'stat').",
+    description: "Custom terms that are valid as final class segments for this project (e.g. 'flag', 'chip', 'stat').",
     default: [],
   },
 };
@@ -81,10 +75,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
     return true;
   },
 
-  evaluate: (
-    className: string,
-    context: RuleContext & { config?: Record<string, unknown> }
-  ): RuleResult | null => {
+  evaluate: (className: string, context: RuleContext & { config?: Record<string, unknown> }): RuleResult | null => {
     // Skip component classes (handled by component rule)
     if (className.startsWith("c-")) return null;
 
@@ -101,10 +92,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         className,
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
-        metadata:
-          suggested && /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(suggested)
-            ? { suggestedName: suggested }
-            : undefined,
+        metadata: suggested && /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(suggested) ? { suggestedName: suggested } : undefined,
       };
     }
 
@@ -130,9 +118,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
     if (segments.some((s) => !s)) {
       const cleanedSegments = segments.filter((s) => s.length > 0);
       const suggestedFix =
-        cleanedSegments.length >= 2
-          ? cleanedSegments.join("_")
-          : `${cleanedSegments[0] || "element"}_wrap`;
+        cleanedSegments.length >= 2 ? cleanedSegments.join("_") : `${cleanedSegments[0] || "element"}_wrap`;
 
       return {
         ruleId: "lumos:naming:class-format",
@@ -192,8 +178,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
           contentType: "recognized-elements",
           title: "View Recognized Elements",
           description: "See all recognized element names for this preset",
-          isRelevantFor: (violation) =>
-            Boolean(violation.metadata?.unrecognizedElement),
+          isRelevantFor: (violation) => Boolean(violation.metadata?.unrecognizedElement),
         },
       ],
     };

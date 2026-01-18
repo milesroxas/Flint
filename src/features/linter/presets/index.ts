@@ -4,12 +4,7 @@ type PresetMap = Map<string, Preset>;
 
 function isPreset(value: unknown): value is Preset {
   const v = value as any;
-  return (
-    v &&
-    typeof v === "object" &&
-    typeof v.id === "string" &&
-    Array.isArray(v.rules)
-  );
+  return v && typeof v === "object" && typeof v.id === "string" && Array.isArray(v.rules);
 }
 
 // Eagerly import all preset modules under this directory
@@ -46,9 +41,7 @@ export function getDefaultPresetId(): string {
   if (presets.has("lumos")) return "lumos";
   const first = getPresetIds()[0];
   if (first) return first;
-  throw new Error(
-    "No presets found. Ensure at least one *.preset.ts exports a Preset object."
-  );
+  throw new Error("No presets found. Ensure at least one *.preset.ts exports a Preset object.");
 }
 
 export function resolvePresetOrFallback(id?: string): Preset {
@@ -56,9 +49,7 @@ export function resolvePresetOrFallback(id?: string): Preset {
   if (byId) return byId;
   const fallback = getPresetById(getDefaultPresetId());
   if (!fallback) {
-    throw new Error(
-      "Preset resolution failed and no default preset available."
-    );
+    throw new Error("Preset resolution failed and no default preset available.");
   }
   return fallback;
 }

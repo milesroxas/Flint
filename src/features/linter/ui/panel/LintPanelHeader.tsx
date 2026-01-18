@@ -1,7 +1,7 @@
-import React from "react";
-import { Badge } from "@/shared/ui/badge";
-import type { ElementRole } from "@/features/linter/model/linter.types";
+import type React from "react";
 import { roleToLabel } from "@/features/linter/lib/labels";
+import type { ElementRole } from "@/features/linter/model/linter.types";
+import { Badge } from "@/shared/ui/badge";
 
 interface LintSummaryProps {
   total: number;
@@ -53,11 +53,7 @@ export const LintPanelHeader: React.FC<LintSummaryProps> = ({
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             {filteredRoles.map((r) => (
-              <Badge
-                key={`role-${r}`}
-                variant="secondary"
-                className="text-[10px]"
-              >
+              <Badge key={`role-${r}`} variant="secondary" className="text-[10px]">
                 {roleToLabel(r)}
               </Badge>
             ))}

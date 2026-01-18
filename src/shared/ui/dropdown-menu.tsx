@@ -1,5 +1,5 @@
-import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import * as React from "react";
 import { cn } from "@/shared/utils";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
@@ -11,10 +11,7 @@ const DropdownMenuContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal
-    container={
-      (typeof document !== "undefined" && document.getElementById("root")) ||
-      undefined
-    }
+    container={(typeof document !== "undefined" && document.getElementById("root")) || undefined}
   >
     <DropdownMenuPrimitive.Content
       ref={ref}
@@ -49,9 +46,4 @@ const DropdownMenuItem = React.forwardRef<
 ));
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 
-export {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-};
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem };

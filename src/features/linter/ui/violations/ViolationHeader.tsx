@@ -1,16 +1,14 @@
-import React from "react";
+import type React from "react";
+import { roleToLabel } from "@/features/linter/lib/labels";
+import type { RuleResult, Severity } from "@/features/linter/model/rule.types";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/utils";
-import { RuleResult, Severity } from "@/features/linter/model/rule.types";
-import { roleToLabel } from "@/features/linter/lib/labels";
 
 interface ViolationHeaderProps {
   violation: RuleResult;
 }
 
-export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
-  violation,
-}) => {
+export const ViolationHeader: React.FC<ViolationHeaderProps> = ({ violation }) => {
   const sevForUi: Severity = violation.severity as Severity;
   const sevForUiLabel = violation.severity;
   const dotBySeverity: Record<Severity, string> = {
@@ -27,10 +25,7 @@ export const ViolationHeader: React.FC<ViolationHeaderProps> = ({
   return (
     <div className="flex min-w-0 w-full overflow-hidden">
       <span
-        className={cn(
-          "h-2 w-2 rounded-full flex-shrink-0 mt-1.5 mr-2",
-          dotBySeverity[sevForUi]
-        )}
+        className={cn("h-2 w-2 rounded-full flex-shrink-0 mt-1.5 mr-2", dotBySeverity[sevForUi])}
         aria-hidden
         title={sevForUiLabel}
       />

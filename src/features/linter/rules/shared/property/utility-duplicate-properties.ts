@@ -1,9 +1,4 @@
-import type {
-  Rule,
-  RuleResult,
-  ClassType,
-  ElementAnalysisArgs,
-} from "@/features/linter/model/rule.types";
+import type { ClassType, ElementAnalysisArgs, Rule, RuleResult } from "@/features/linter/model/rule.types";
 
 /**
  * Config for duplicate-of-utility detection.
@@ -30,22 +25,15 @@ const DEFAULT_CONFIG: DuplicateOfUtilityConfig = {
 };
 
 /** Build a normalized declaration map according to config. */
-const buildComparableDecls = (
-  decls: Record<string, string>,
-  cfg: DuplicateOfUtilityConfig
-): Record<string, string> => {
+const buildComparableDecls = (decls: Record<string, string>, cfg: DuplicateOfUtilityConfig): Record<string, string> => {
   const out: Record<string, string> = {};
-  const allow = cfg.propertyAllowlist?.length
-    ? new Set(cfg.propertyAllowlist)
-    : null;
-  const block = cfg.propertyBlocklist?.length
-    ? new Set(cfg.propertyBlocklist)
-    : null;
+  const allow = cfg.propertyAllowlist?.length ? new Set(cfg.propertyAllowlist) : null;
+  const block = cfg.propertyBlocklist?.length ? new Set(cfg.propertyBlocklist) : null;
 
   for (const [prop, raw] of Object.entries(decls)) {
     if (cfg.ignoreCustomProperties) continue;
     if (allow && !allow.has(prop)) continue;
-    if (block && block.has(prop)) continue;
+    if (block?.has(prop)) continue;
 
     out[prop] = raw;
   }
@@ -54,11 +42,7 @@ const buildComparableDecls = (
 };
 
 /** Compare two declaration maps for equality or subset. */
-const compareDecls = (
-  a: Record<string, string>,
-  b: Record<string, string>,
-  mode: "equal" | "subset"
-): boolean => {
+const compareDecls = (a: Record<string, string>, b: Record<string, string>, mode: "equal" | "subset"): boolean => {
   if (mode === "equal") {
     const aKeys = Object.keys(a);
     const bKeys = Object.keys(b);
@@ -96,8 +80,8 @@ export const createDuplicateOfUtilityRule = (): Rule => ({
     const mergedCfg: DuplicateOfUtilityConfig = {
       ...DEFAULT_CONFIG,
       ...(typeof getRuleConfig === "function"
-        ? ((getRuleConfig("shared:property:duplicate-of-utility")
-            ?.customSettings ?? {}) as Partial<DuplicateOfUtilityConfig>)
+        ? ((getRuleConfig("shared:property:duplicate-of-utility")?.customSettings ??
+            {}) as Partial<DuplicateOfUtilityConfig>)
         : {}),
     };
 
@@ -111,11 +95,11 @@ export const createDuplicateOfUtilityRule = (): Rule => ({
 
     // Build a cache of comparable declaration maps.
     const comparableCache = new Map<string, Record<string, string>>();
-    const getComparable = (
-      className: string
-    ): Record<string, string> | null => {
-      if (comparableCache.has(className))
-        return comparableCache.get(className)!;
+    const getComparable = (className: string): Record<string, string> | null => {
+      if (comparableCache.has(className)) {
+        const cached = comparableCache.get(className);
+        return cached ?? null;
+      }
       const props = byName.get(className);
       if (!props) return null;
       const cmp = buildComparableDecls(props, mergedCfg);
@@ -126,10 +110,7 @@ export const createDuplicateOfUtilityRule = (): Rule => ({
     // Collect utility styles present in the site for reference.
     const utilityDecls = new Map<string, Record<string, string>>();
     for (const [name] of byName) {
-      const kind: ClassType =
-        typeof getClassType === "function"
-          ? getClassType(name)
-          : ("unknown" as ClassType);
+      const kind: ClassType = typeof getClassType === "function" ? getClassType(name) : ("unknown" as ClassType);
       if (kind === "utility") {
         const cmp = getComparable(name);
         if (cmp && Object.keys(cmp).length) utilityDecls.set(name, cmp);
@@ -142,20 +123,14 @@ export const createDuplicateOfUtilityRule = (): Rule => ({
 
     for (const className of classes) {
       const kind: ClassType =
-        typeof getClassType === "function"
-          ? getClassType(className.className)
-          : ("unknown" as ClassType);
+        typeof getClassType === "function" ? getClassType(className.className) : ("unknown" as ClassType);
       if (kind === "utility") continue; // only flag non-utility classes
 
       const subjectDecls = getComparable(className.className);
       if (!subjectDecls || Object.keys(subjectDecls).length === 0) continue;
 
       for (const [utilName, utilDecls] of utilityDecls) {
-        const isDup = compareDecls(
-          subjectDecls,
-          utilDecls,
-          mergedCfg.compareMode
-        );
+        const isDup = compareDecls(subjectDecls, utilDecls, mergedCfg.compareMode);
 
         if (isDup) {
           results.push({

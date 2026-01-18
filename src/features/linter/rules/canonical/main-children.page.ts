@@ -1,10 +1,7 @@
 // src/features/linter/rules/canonical/main-children.page.ts
-import type {
-  PageRule,
-  RuleResult,
-  Severity,
-} from "@/features/linter/model/rule.types";
+
 import type { ElementRole } from "@/features/linter/model/linter.types";
+import type { PageRule, RuleResult, Severity } from "@/features/linter/model/rule.types";
 
 export const createMainChildrenPageRule = (): PageRule => ({
   id: "canonical:main-children",
@@ -16,11 +13,9 @@ export const createMainChildrenPageRule = (): PageRule => ({
   severity: "error",
   enabled: true,
 
-  analyzePage: ({ rolesByElement, graph, getRoleForElement }): RuleResult[] => {
+  analyzePage: ({ rolesByElement, graph, getRoleForElement, getElementType }): RuleResult[] => {
     // Find the main element
-    const mainEntry = Object.entries(rolesByElement).find(
-      ([, role]) => role === "main"
-    );
+    const mainEntry = Object.entries(rolesByElement).find(([, role]) => role === "main");
 
     if (!mainEntry) return []; //
 
@@ -32,43 +27,37 @@ export const createMainChildrenPageRule = (): PageRule => ({
     let hasSemanticContent = false;
 
     // DEBUG: Log graph children detection
-    console.log(
-      `[DEBUG] Graph children for main ${mainElementId}:`,
-      graph.getChildrenIds(mainElementId)
-    );
+    console.log(`[DEBUG] Graph children for main ${mainElementId}:`, graph.getChildrenIds(mainElementId));
 
     // Track found content for better error messages
     const foundRoles: ElementRole[] = [];
 
     // DEBUG: Log initial search state
-    console.log(
-      `[DEBUG] Main-children rule starting BFS for ${mainElementId}:`,
-      {
-        initialQueue: queue,
-        rolesByElement,
-      }
-    );
+    console.log(`[DEBUG] Main-children rule starting BFS for ${mainElementId}:`, {
+      initialQueue: queue,
+      rolesByElement,
+    });
 
     while (queue.length > 0 && !hasSemanticContent) {
-      const currentElementId = queue.shift()!;
+      const currentElementId = queue.shift();
 
-      if (visited.has(currentElementId)) {
+      if (!currentElementId || visited.has(currentElementId)) {
         continue;
       }
       visited.add(currentElementId);
 
       const role: ElementRole = getRoleForElement(currentElementId);
+      const elementType = getElementType(currentElementId);
       foundRoles.push(role);
 
       // DEBUG: Log each element being processed
-      console.log(
-        `[DEBUG] Processing element ${currentElementId}: role=${role}`
-      );
+      console.log(`[DEBUG] Processing element ${currentElementId}: role=${role}, type=${elementType}`);
 
       // Check if we found semantic content
-      if (role === "section" || role === "componentRoot") {
+      // ComponentInstance elements are treated as component roots even without class detection
+      if (role === "section" || role === "componentRoot" || elementType === "ComponentInstance") {
         console.log(
-          `[DEBUG] Found semantic content! Element ${currentElementId} has role ${role}`
+          `[DEBUG] Found semantic content! Element ${currentElementId} has role=${role}, type=${elementType}`
         );
         hasSemanticContent = true;
         break;
@@ -88,13 +77,9 @@ export const createMainChildrenPageRule = (): PageRule => ({
     }
 
     // Generate helpful error message based on what we found
-    const uniqueRoles = [...new Set(foundRoles)].filter(
-      (role) => role !== "unknown"
-    );
+    const uniqueRoles = [...new Set(foundRoles)].filter((role) => role !== "unknown");
     const foundRolesText =
-      uniqueRoles.length > 0
-        ? ` Found roles: ${uniqueRoles.join(", ")}.`
-        : " No semantic roles found.";
+      uniqueRoles.length > 0 ? ` Found roles: ${uniqueRoles.join(", ")}.` : " No semantic roles found.";
 
     const result: RuleResult = {
       ruleId: "canonical:main-children",

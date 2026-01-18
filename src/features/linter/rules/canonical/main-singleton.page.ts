@@ -1,13 +1,23 @@
 // src/features/linter/rules/canonical/structure/main-singleton.page.ts
-import type {
-  PageRule,
-  RuleResult,
-  Severity,
-} from "@/features/linter/model/rule.types";
+
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import type { PageRule, RuleResult, Severity } from "@/features/linter/model/rule.types";
+
+/** Maps preset IDs to their expected main class names */
+const MAIN_CLASS_BY_PRESET: Record<string, string> = {
+  "client-first": "main-wrapper",
+  lumos: "page_main",
+};
+
+/** Get the expected main class name for the current preset */
+function getExpectedMainClassName(): string {
+  const presetId = getCurrentPreset() ?? "lumos";
+  return MAIN_CLASS_BY_PRESET[presetId] ?? "page_main";
+}
 
 export const createMainSingletonPageRule = (): PageRule => ({
   id: "canonical:main-singleton",
-  name: "Exactly one main role per page", 
+  name: "Exactly one main role per page",
   description:
     "There must be one and only one element with role 'main' per page. Use your preset's main wrapper conventions (Client-First: main-wrapper, Lumos: page_main).",
   type: "page",
@@ -16,20 +26,19 @@ export const createMainSingletonPageRule = (): PageRule => ({
   enabled: true,
 
   analyzePage: ({ rolesByElement }): RuleResult[] => {
-    const mains = Object.entries(rolesByElement).filter(
-      ([, role]) => role === "main"
-    );
+    const mains = Object.entries(rolesByElement).filter(([, role]) => role === "main");
 
     const results: RuleResult[] = [];
 
     // Check if we have exactly one main element
     if (mains.length === 0) {
+      const expectedClass = getExpectedMainClassName();
       return [
         {
           ruleId: "canonical:main-singleton",
           name: "Exactly one main role per page",
-          message: "No element with role 'main' detected. Add a main wrapper element following your preset conventions.",
-          severity: "error" as Severity,
+          message: `[Slot?] No main detected. Verify slot has class "${expectedClass}" and tag set to <main>.`,
+          severity: "warning" as Severity,
           className: "",
           isCombo: false,
         },

@@ -1,3 +1,1 @@
-export { usePageLintStore as default, usePageLintStore, usePageLint } from './usePageLintStore';
-
-
+export { usePageLint, usePageLintStore as default, usePageLintStore } from "./usePageLintStore";

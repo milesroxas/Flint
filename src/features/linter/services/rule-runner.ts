@@ -1,31 +1,16 @@
-import type {
-  RuleResult,
-  Rule,
-  ClassType,
-  Severity,
-} from "@/features/linter/model/rule.types";
+import type { StyleInfo, StyleWithElement } from "@/entities/style/model/style.types";
 
-import type {
-  RolesByElement,
-  ElementRole,
-  ParsedClass,
-} from "@/features/linter/model/linter.types";
+import type { ElementRole, ParsedClass, RolesByElement } from "@/features/linter/model/linter.types";
+import type { ClassType, Rule, RuleResult, Severity } from "@/features/linter/model/rule.types";
 
-import type {
-  StyleInfo,
-  StyleWithElement,
-} from "@/entities/style/model/style.types";
-
-import { UtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
-
-import { RuleRegistry } from "./rule-registry";
-import { createDebugger } from "@/shared/utils/debug";
-
+import type { UtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
 import {
   createNamingRuleExecutor,
   createPropertyRuleExecutor,
   type NamingExecutionDeps,
 } from "@/features/linter/services/executors";
+import { createDebugger } from "@/shared/utils/debug";
+import type { RuleRegistry } from "./rule-registry";
 
 export const createRuleRunner = (
   ruleRegistry: RuleRegistry,
@@ -34,10 +19,7 @@ export const createRuleRunner = (
 ) => {
   const debug = createDebugger("rule-runner");
   // Authoritative classifier: resolves to your Rule ClassType
-  const getClassType = (
-    className: string,
-    isComboFlag?: boolean
-  ): ClassType => {
+  const getClassType = (className: string, isComboFlag?: boolean): ClassType => {
     if (typeof classTypeResolver === "function") {
       try {
         const resolved = classTypeResolver(className, isComboFlag);
@@ -52,10 +34,7 @@ export const createRuleRunner = (
   };
 
   const executeNamingRule = createNamingRuleExecutor();
-  const executePropertyRule = createPropertyRuleExecutor(
-    ruleRegistry,
-    utilityAnalyzer
-  );
+  const executePropertyRule = createPropertyRuleExecutor(ruleRegistry, utilityAnalyzer);
 
   // Class-level dispatcher. Naming rules are delegated to the executor.
   const executeRule = (
@@ -143,10 +122,8 @@ export const createRuleRunner = (
       let idx = 0;
       for (const item of sorted) {
         if (item.isCombo) {
-          const map =
-            comboIndexByElementAndClass.get(elId) ?? new Map<string, number>();
-          if (!comboIndexByElementAndClass.has(elId))
-            comboIndexByElementAndClass.set(elId, map);
+          const map = comboIndexByElementAndClass.get(elId) ?? new Map<string, number>();
+          if (!comboIndexByElementAndClass.has(elId)) comboIndexByElementAndClass.set(elId, map);
           map.set(item.name, idx);
           idx += 1;
         }
@@ -199,7 +176,6 @@ export const createRuleRunner = (
           const cfg = ruleRegistry.getRuleConfiguration(rule.id);
           const isEnabled = cfg?.enabled ?? rule.enabled;
 
-
           if (!isEnabled) continue;
 
           const elementResults = rule.analyzeElement({
@@ -209,16 +185,12 @@ export const createRuleRunner = (
               order: i.order,
               elementId: i.elementId,
               isCombo: i.isCombo,
-              comboIndex: i.isCombo
-                ? comboIndexByElementAndClass.get(elId)?.get(i.name) ??
-                  undefined
-                : undefined,
+              comboIndex: i.isCombo ? (comboIndexByElementAndClass.get(elId)?.get(i.name) ?? undefined) : undefined,
               detectionSource: i.detectionSource,
             })),
             allStyles,
             getClassType,
-            getRuleConfig: (id: string) =>
-              ruleRegistry.getRuleConfiguration(id),
+            getRuleConfig: (id: string) => ruleRegistry.getRuleConfiguration(id),
             rolesByElement,
             getRoleForElement: (id: string): ElementRole => {
               return rolesByElement?.[id] ?? "unknown";
@@ -238,8 +210,7 @@ export const createRuleRunner = (
             r.elementId = elId;
             r.severity = r.severity ?? cfg?.severity ?? rule.severity;
             const role = rolesByElement ? rolesByElement[elId] : undefined;
-            const parentId =
-              typeof getParentId === "function" ? getParentId(elId) : undefined;
+            const parentId = typeof getParentId === "function" ? getParentId(elId) : undefined;
             r.metadata = { ...(r.metadata ?? {}), role, parentId };
           }
           results.push(...elementResults);
@@ -248,13 +219,7 @@ export const createRuleRunner = (
     }
 
     // 2) Class-level phase
-    for (const {
-      name,
-      properties,
-      elementId,
-      isCombo,
-      detectionSource,
-    } of stylesWithElement) {
+    for (const { name, properties, elementId, isCombo, detectionSource } of stylesWithElement) {
       const classType = getClassType(name, isCombo);
       const applicableRules = ruleRegistry
         .getRulesByClassType(classType)
@@ -271,23 +236,17 @@ export const createRuleRunner = (
         if (rule.type === "naming") {
           // Injected deps for naming executor
           const deps: NamingExecutionDeps = {
-            getRoleForElement: (id: string) =>
-              rolesByElement?.[id] ?? "unknown",
+            getRoleForElement: (id: string) => rolesByElement?.[id] ?? "unknown",
 
             getClassType,
 
             suggestName: undefined,
             // severity resolver optional; executor uses severityDefault regardless
             resolveSeverity: (ruleId: string) =>
-              ruleRegistry.getRuleConfiguration(ruleId)?.severity as
-                | Severity
-                | undefined,
+              ruleRegistry.getRuleConfiguration(ruleId)?.severity as Severity | undefined,
           };
 
-          const comboIndex =
-            isCombo && elementId
-              ? comboIndexByElementAndClass.get(elementId)?.get(name)
-              : undefined;
+          const comboIndex = isCombo && elementId ? comboIndexByElementAndClass.get(elementId)?.get(name) : undefined;
 
           const namingResults = executeNamingRule(
             rule as Extract<Rule, { type: "naming" }>,
@@ -306,16 +265,9 @@ export const createRuleRunner = (
           namingResults.forEach((r) => {
             r.elementId = elementId;
             const role = rolesByElement ? rolesByElement[elementId] : undefined;
-            const parentId =
-              typeof getParentId === "function"
-                ? getParentId(elementId)
-                : undefined;
-            const merged = { ...(r.metadata ?? {}), role, parentId } as Record<
-              string,
-              unknown
-            >;
-            if (detectionSource && !merged["detectionSource"])
-              merged["detectionSource"] = detectionSource;
+            const parentId = typeof getParentId === "function" ? getParentId(elementId) : undefined;
+            const merged = { ...(r.metadata ?? {}), role, parentId } as Record<string, unknown>;
+            if (detectionSource && !merged.detectionSource) merged.detectionSource = detectionSource;
             r.metadata = merged;
 
             if (isCombo && r.isCombo && r.comboIndex == null) {
@@ -328,33 +280,18 @@ export const createRuleRunner = (
         }
 
         // Property and other rule types
-        const ruleResults = executeRule(
-          rule,
-          name,
-          properties as Record<string, unknown>,
-          allStyles,
-          elementId
-        );
+        const ruleResults = executeRule(rule, name, properties as Record<string, unknown>, allStyles, elementId);
 
         ruleResults.forEach((r) => {
           r.elementId = elementId;
           const role = rolesByElement ? rolesByElement[elementId] : undefined;
-          const parentId =
-            typeof getParentId === "function"
-              ? getParentId(elementId)
-              : undefined;
-          const merged = { ...(r.metadata ?? {}), role, parentId } as Record<
-            string,
-            unknown
-          >;
-          if (detectionSource && !merged["detectionSource"])
-            merged["detectionSource"] = detectionSource;
+          const parentId = typeof getParentId === "function" ? getParentId(elementId) : undefined;
+          const merged = { ...(r.metadata ?? {}), role, parentId } as Record<string, unknown>;
+          if (detectionSource && !merged.detectionSource) merged.detectionSource = detectionSource;
           r.metadata = merged;
 
           if (isCombo && r.isCombo && r.comboIndex == null) {
-            r.comboIndex = comboIndexByElementAndClass
-              .get(elementId)
-              ?.get(name);
+            r.comboIndex = comboIndexByElementAndClass.get(elementId)?.get(name);
           }
         });
 

@@ -1,9 +1,4 @@
-import type {
-  NamingRule,
-  RuleConfigSchema,
-  RuleResult,
-  RuleContext,
-} from "@/features/linter/model/rule.types";
+import type { NamingRule, RuleConfigSchema, RuleContext, RuleResult } from "@/features/linter/model/rule.types";
 
 /** Single source of truth for Client-First recognised element tokens */
 function getClientFirstKnownElements(): string[] {
@@ -92,8 +87,7 @@ const customClassConfig: RuleConfigSchema = {
   projectDefinedElements: {
     label: "Project-defined element terms",
     type: "string[]",
-    description:
-      "Custom terms that are valid as final class segments for this project (e.g. 'flag', 'chip', 'stat').",
+    description: "Custom terms that are valid as final class segments for this project (e.g. 'flag', 'chip', 'stat').",
     default: [],
   },
 };
@@ -101,8 +95,7 @@ const customClassConfig: RuleConfigSchema = {
 export const createCFNamingClassFormatRule = (): NamingRule => ({
   id: "cf:naming:class-format",
   name: "Client-First: Custom Class Format",
-  description:
-    "Use lowercase tokens separated by hyphens or underscores (Client-First style).",
+  description: "Use lowercase tokens separated by hyphens or underscores (Client-First style).",
   example: "section_about, hero-content, feature-card_title",
   type: "naming",
   severity: "error",
@@ -113,17 +106,13 @@ export const createCFNamingClassFormatRule = (): NamingRule => ({
 
   test: (className: string): boolean => CLIENT_FIRST_NAME_RE.test(className),
 
-  evaluate: (
-    className: string,
-    context: RuleContext & { config?: Record<string, unknown> }
-  ): RuleResult | null => {
+  evaluate: (className: string, context: RuleContext & { config?: Record<string, unknown> }): RuleResult | null => {
     // 1) Format validation
     if (!CLIENT_FIRST_NAME_RE.test(className)) {
       return {
         ruleId: "cf:naming:class-format",
         name: "Client-First: Custom Class Format",
-        message:
-          "Use lowercase tokens separated by hyphens or underscores (no spaces or uppercase).",
+        message: "Use lowercase tokens separated by hyphens or underscores (no spaces or uppercase).",
         severity: "error",
         className,
         isCombo: false,
@@ -186,8 +175,7 @@ export const createCFNamingClassFormatRule = (): NamingRule => ({
           contentType: "recognized-elements",
           title: "View Recognized Elements",
           description: "See all recognized element names for this preset",
-          isRelevantFor: (violation) =>
-            Boolean(violation.metadata?.unrecognizedElement),
+          isRelevantFor: (violation) => Boolean(violation.metadata?.unrecognizedElement),
         },
       ],
     };

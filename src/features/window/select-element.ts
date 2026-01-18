@@ -37,17 +37,13 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     }
 
     const wf: any = (window as any).webflow;
-    const canUseDesignerApi = Boolean(
-      wf && typeof wf.setSelectedElement === "function"
-    );
+    const canUseDesignerApi = Boolean(wf && typeof wf.setSelectedElement === "function");
     dbg("start", { elementId, canUseDesignerApi });
 
     if (!canUseDesignerApi) {
       // Preserve existing fallback event so other contexts can handle it
       dbg("designer api unavailable, dispatching fallback event");
-      document.dispatchEvent(
-        new CustomEvent("flowlint:highlight", { detail: { elementId } })
-      );
+      document.dispatchEvent(new CustomEvent("flowlint:highlight", { detail: { elementId } }));
       return false;
     }
 
@@ -56,10 +52,7 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     const hasGetAll = typeof wf.getAllElements === "function";
     if (hasGetAll) {
       const allElements: any[] = await wf.getAllElements();
-      dbg(
-        "getAllElements size",
-        Array.isArray(allElements) ? allElements.length : 0
-      );
+      dbg("getAllElements size", Array.isArray(allElements) ? allElements.length : 0);
       if (Array.isArray(allElements) && allElements.length > 0) {
         target = allElements.find((el) => {
           const id = getElementIdFromAnyElement(el);
@@ -94,9 +87,7 @@ export async function selectElementById(elementId: string): Promise<boolean> {
 
     if (!target) {
       dbg("target not found; dispatching fallback");
-      document.dispatchEvent(
-        new CustomEvent("flowlint:highlight", { detail: { elementId } })
-      );
+      document.dispatchEvent(new CustomEvent("flowlint:highlight", { detail: { elementId } }));
       return false;
     }
 
@@ -104,9 +95,7 @@ export async function selectElementById(elementId: string): Promise<boolean> {
     // https://developers.webflow.com/designer/reference/element-styles/getStyles
     if (typeof target.getStyles !== "function") {
       dbg("target missing getStyles; dispatching fallback");
-      document.dispatchEvent(
-        new CustomEvent("flowlint:highlight", { detail: { elementId } })
-      );
+      document.dispatchEvent(new CustomEvent("flowlint:highlight", { detail: { elementId } }));
       return false;
     }
 

@@ -1,10 +1,10 @@
 // src/features/linter/rules/lumos/composition/combo-limit.element.ts
 import type {
+  ClassType,
   CompositionRule,
   ElementAnalysisArgs,
-  RuleResult,
   RuleConfigSchema,
-  ClassType,
+  RuleResult,
 } from "@/features/linter/model/rule.types";
 
 type ComboLimitConfig = {
@@ -52,17 +52,14 @@ export const comboLimitConfigSchema: RuleConfigSchema = {
   },
 };
 
-const isVariant = (name: string, prefixes: string[]) =>
-  prefixes.some((p) => name.startsWith(p));
+const isVariant = (name: string, prefixes: string[]) => prefixes.some((p) => name.startsWith(p));
 
-const isUtility = (name: string, classType?: ClassType) =>
-  classType === "utility" || /^u[_-]/.test(name);
+const isUtility = (name: string, classType?: ClassType) => classType === "utility" || /^u[_-]/.test(name);
 
 export const createLumosComboLimitRule = (): CompositionRule => ({
   id: "lumos:composition:combo-limit",
   name: "Limit classes after base",
-  description:
-    "Limit the number of classes applied after the base class on an element.",
+  description: "Limit the number of classes applied after the base class on an element.",
   example: "base_custom is-large is-active",
   type: "composition",
   category: "composition",
@@ -75,27 +72,17 @@ export const createLumosComboLimitRule = (): CompositionRule => ({
     if (!classes?.length) return [];
 
     const cfg: ComboLimitConfig = (() => {
-      const rc =
-        typeof getRuleConfig === "function"
-          ? getRuleConfig("lumos:composition:combo-limit")
-          : undefined;
+      const rc = typeof getRuleConfig === "function" ? getRuleConfig("lumos:composition:combo-limit") : undefined;
       const cs = (rc?.customSettings ?? {}) as Partial<ComboLimitConfig>;
       return {
-        maxCombos: Number.isFinite(cs.maxCombos as number)
-          ? (cs.maxCombos as number)
-          : defaultConfig.maxCombos,
-        countUtilities:
-          typeof cs.countUtilities === "boolean"
-            ? cs.countUtilities
-            : defaultConfig.countUtilities,
+        maxCombos: Number.isFinite(cs.maxCombos as number) ? (cs.maxCombos as number) : defaultConfig.maxCombos,
+        countUtilities: typeof cs.countUtilities === "boolean" ? cs.countUtilities : defaultConfig.countUtilities,
         variantPrefixes:
           Array.isArray(cs.variantPrefixes) && cs.variantPrefixes.length > 0
             ? (cs.variantPrefixes as string[])
             : defaultConfig.variantPrefixes,
         assumeFirstAsBase:
-          typeof cs.assumeFirstAsBase === "boolean"
-            ? cs.assumeFirstAsBase
-            : defaultConfig.assumeFirstAsBase,
+          typeof cs.assumeFirstAsBase === "boolean" ? cs.assumeFirstAsBase : defaultConfig.assumeFirstAsBase,
       };
     })();
 
@@ -107,14 +94,8 @@ export const createLumosComboLimitRule = (): CompositionRule => ({
     let baseIdx = -1;
     for (let i = 0; i < ordered.length; i++) {
       const c = ordered[i];
-      const t =
-        typeof getClassType === "function"
-          ? getClassType(c.className, c.isCombo)
-          : undefined;
-      if (
-        !isUtility(c.className, t) &&
-        !isVariant(c.className, cfg.variantPrefixes)
-      ) {
+      const t = typeof getClassType === "function" ? getClassType(c.className, c.isCombo) : undefined;
+      if (!isUtility(c.className, t) && !isVariant(c.className, cfg.variantPrefixes)) {
         baseIdx = i;
         break;
       }
@@ -123,16 +104,12 @@ export const createLumosComboLimitRule = (): CompositionRule => ({
       baseIdx = 0;
     }
 
-    const afterBase =
-      baseIdx >= 0 ? ordered.slice(baseIdx + 1) : ordered.slice(0);
+    const afterBase = baseIdx >= 0 ? ordered.slice(baseIdx + 1) : ordered.slice(0);
 
     // Count everything after base. Optionally include utilities.
     const tokensToCount = afterBase.filter((c) => {
       if (cfg.countUtilities) return true;
-      const t =
-        typeof getClassType === "function"
-          ? getClassType(c.className, c.isCombo)
-          : undefined;
+      const t = typeof getClassType === "function" ? getClassType(c.className, c.isCombo) : undefined;
       return !isUtility(c.className, t);
     });
 

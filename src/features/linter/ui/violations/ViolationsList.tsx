@@ -1,12 +1,11 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { ScrollArea } from "@/shared/ui/scroll-area";
-import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/shared/utils";
-
-import { RuleResult } from "@/features/linter/model/rule.types";
-import { ViolationsSection } from "./ViolationsSection";
+import React, { useEffect, useMemo, useState } from "react";
+import type { RuleResult } from "@/features/linter/model/rule.types";
 import { useAnimationStore } from "@/features/linter/store/animation.store";
 import { selectElementById } from "@/features/window/select-element";
+import { Badge } from "@/shared/ui/badge";
+import { ScrollArea } from "@/shared/ui/scroll-area";
+import { cn } from "@/shared/utils";
+import { ViolationsSection } from "./ViolationsSection";
 
 interface ViolationsListProps {
   violations: RuleResult[];
@@ -26,9 +25,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   bypassAnimation = false,
 }) => {
   // Subscribe to animation store
-  const violationsVisible = useAnimationStore(
-    (state) => state.violationsVisible
-  );
+  const violationsVisible = useAnimationStore((state) => state.violationsVisible);
   // Initialize visibility to avoid a mount-time entrance animation in element mode
   const [isVisible, setIsVisible] = useState<boolean>(
     bypassAnimation || useAnimationStore.getState().violationsVisible
@@ -39,18 +36,9 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     setIsVisible((prev) => (prev === next ? prev : next));
   }, [bypassAnimation, violationsVisible]);
 
-  const errors = useMemo(
-    () => violations.filter((v) => v.severity === "error"),
-    [violations]
-  );
-  const warnings = useMemo(
-    () => violations.filter((v) => v.severity === "warning"),
-    [violations]
-  );
-  const suggestions = useMemo(
-    () => violations.filter((v) => v.severity === "suggestion"),
-    [violations]
-  );
+  const errors = useMemo(() => violations.filter((v) => v.severity === "error"), [violations]);
+  const warnings = useMemo(() => violations.filter((v) => v.severity === "warning"), [violations]);
+  const suggestions = useMemo(() => violations.filter((v) => v.severity === "suggestion"), [violations]);
 
   // Global single-open id across all sections
   const [openId, setOpenId] = useState<string | undefined>(undefined);
@@ -72,9 +60,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     const sig = parts.join("|");
     const total = errors.length + warnings.length + suggestions.length;
     const only = total === 1 ? errors[0] || warnings[0] || suggestions[0] : undefined;
-    const onlyId = only
-      ? `${only.ruleId}-${only.className || "unknown"}-0`
-      : undefined;
+    const onlyId = only ? `${only.ruleId}-${only.className || "unknown"}-0` : undefined;
     return { idToViolation: map, signature: sig, totalCount: total, onlyId };
   }, [errors, warnings, suggestions]);
 
@@ -111,15 +97,11 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
 
   // Passed-only list (deduped)
   const failedSet = useMemo(
-    () =>
-      new Set(violations.map((v) => v.className).filter(Boolean) as string[]),
+    () => new Set(violations.map((v) => v.className).filter(Boolean) as string[]),
     [violations]
   );
   const passedOnly = useMemo(
-    () =>
-      Array.from(new Set(passedClassNames)).filter(
-        (name) => name && !failedSet.has(name)
-      ),
+    () => Array.from(new Set(passedClassNames)).filter((name) => name && !failedSet.has(name)),
     [passedClassNames, failedSet]
   );
 
@@ -167,22 +149,14 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
             <div
               className={cn(
                 "mt-2 space-y-1 transition-all duration-700 ease-spring",
-                isVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-2"
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
               )}
               style={{ transitionDelay: "600ms" }}
             >
-              <div className="text-[11px] text-muted-foreground">
-                Passed ({passedOnly.length})
-              </div>
+              <div className="text-[11px] text-muted-foreground">Passed ({passedOnly.length})</div>
               <div className="grid grid-cols-1 gap-1 pr-2">
                 {passedOnly.map((cls) => (
-                  <Badge
-                    key={cls}
-                    variant="secondary"
-                    className="justify-start whitespace-normal break-words"
-                  >
+                  <Badge key={cls} variant="secondary" className="justify-start whitespace-normal break-words">
                     <code className="font-mono break-all">{cls}</code>
                   </Badge>
                 ))}

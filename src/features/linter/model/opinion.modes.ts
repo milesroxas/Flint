@@ -2,10 +2,7 @@ import type { RuleRegistry } from "@/features/linter/services/rule-registry";
 
 export type OpinionMode = "strict" | "balanced" | "lenient";
 
-export function applyOpinionMode(
-  ruleRegistry: RuleRegistry,
-  mode: OpinionMode
-): void {
+export function applyOpinionMode(ruleRegistry: RuleRegistry, mode: OpinionMode): void {
   if (mode === "balanced") return;
 
   const promoteToError = (ruleId: string) => {
@@ -22,10 +19,7 @@ export function applyOpinionMode(
 
   if (mode === "strict") {
     // Promote format violations to errors
-    const strictIds = [
-      "lumos-utility-class-format",
-      "lumos-combo-class-format",
-    ];
+    const strictIds = ["lumos-utility-class-format", "lumos-combo-class-format"];
     strictIds.forEach(promoteToError);
   }
 

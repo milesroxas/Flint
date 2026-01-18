@@ -1,18 +1,12 @@
 // src/features/linter/rules/canonical/__tests__/main-children.page.test.ts
-import { describe, it, expect } from "vitest";
-import { createMainChildrenPageRule } from "@/features/linter/rules/canonical/main-children.page";
-import type { RuleResult } from "@/features/linter/model/rule.types";
-import type {
-  RolesByElement,
-  ElementRole,
-} from "@/features/linter/model/linter.types";
+import { describe, expect, it } from "vitest";
 import type { ElementGraph } from "@/entities/element/services/element-graph.service";
+import type { ElementRole, RolesByElement } from "@/features/linter/model/linter.types";
+import type { RuleResult } from "@/features/linter/model/rule.types";
+import { createMainChildrenPageRule } from "@/features/linter/rules/canonical/main-children.page";
 
 // Minimal, typed helper to invoke analyzePage with just what the rule needs
-function runRule(
-  rolesByElement?: RolesByElement,
-  graphStructure?: Record<string, string[]>
-): RuleResult[] {
+function runRule(rolesByElement?: RolesByElement, graphStructure?: Record<string, string[]>): RuleResult[] {
   const rule = createMainChildrenPageRule();
 
   // Create a mock graph based on the structure provided
@@ -44,8 +38,8 @@ function runRule(
       const visited = new Set<string>();
 
       while (queue.length > 0) {
-        const currentId = queue.shift()!;
-        if (!visited.has(currentId)) {
+        const currentId = queue.shift();
+        if (currentId && !visited.has(currentId)) {
           visited.add(currentId);
           descendants.push(currentId);
           queue.push(...(graphStructure?.[currentId] || []));
@@ -60,8 +54,7 @@ function runRule(
     rolesByElement: rolesByElement || {},
     graph,
     styles: [], // Not used by this rule
-    getRoleForElement: (id: string): ElementRole =>
-      rolesByElement?.[id] || "unknown",
+    getRoleForElement: (id: string): ElementRole => rolesByElement?.[id] || "unknown",
     getRuleConfig: () => ({
       ruleId: "test",
       enabled: true,
@@ -159,9 +152,7 @@ describe("canonical:main-children.page", () => {
     expect(v.name).toBe("Main should contain sections or component roots");
     expect(v.severity).toBe("error");
     expect(v.elementId).toBe("main1");
-    expect(v.message).toMatch(
-      /Main element must contain at least one section or component root/
-    );
+    expect(v.message).toMatch(/Main element must contain at least one section or component root/);
     expect(v.className).toBe("");
     expect(v.isCombo).toBe(false);
   });

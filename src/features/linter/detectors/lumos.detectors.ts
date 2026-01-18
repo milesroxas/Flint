@@ -1,13 +1,5 @@
-import type {
-  RoleDetector,
-  ElementSnapshot,
-  DetectionContext,
-} from "@/features/linter/model/preset.types";
-
-import {
-  createWrapperDetector,
-  classifyWrapName,
-} from "@/features/linter/detectors/shared/wrapper-detection";
+import { classifyWrapName, createWrapperDetector } from "@/features/linter/detectors/shared/wrapper-detection";
+import type { DetectionContext, ElementSnapshot, RoleDetector } from "@/features/linter/model/preset.types";
 
 export const lumosRoleDetectors: RoleDetector[] = [
   // MAIN detector
@@ -26,11 +18,9 @@ export const lumosRoleDetectors: RoleDetector[] = [
         const parentId = context.graph.getParentId(element.id);
         if (parentId) {
           // Check if parent is page_wrap (or elements ending with page_wrap)
-          const parentElement = context.allElements?.find(el => el.id === parentId);
-          const hasPageWrap = parentElement?.classes.some(cls => 
-            cls === "page_wrap" || cls.endsWith("_page_wrap")
-          );
-          
+          const parentElement = context.allElements?.find((el) => el.id === parentId);
+          const hasPageWrap = parentElement?.classes.some((cls) => cls === "page_wrap" || cls.endsWith("_page_wrap"));
+
           if (!hasPageWrap) {
             // Not a child of page_wrap, lower confidence
             return { role: "main", score: 0.7 };
@@ -87,11 +77,7 @@ export const lumosRoleDetectors: RoleDetector[] = [
         /^banner_/, // banner_primary, etc.
       ];
 
-      if (
-        element.classes?.some((cls) =>
-          sectionPatterns.some((pattern) => pattern.test(cls))
-        )
-      ) {
+      if (element.classes?.some((cls) => sectionPatterns.some((pattern) => pattern.test(cls)))) {
         return { role: "section", score: 0.9 };
       }
       return null;
@@ -101,8 +87,7 @@ export const lumosRoleDetectors: RoleDetector[] = [
   // WRAP suffix → componentRoot vs childGroup (preset-aware grammar-based detection)
   createWrapperDetector({
     id: "lumos-wrapper-detector",
-    description:
-      "Detects component roots and child groups using Lumos wrapper naming patterns",
+    description: "Detects component roots and child groups using Lumos wrapper naming patterns",
     classifyNaming: (firstClass: string) => {
       // Define component boundaries using Lumos grammar patterns
       const componentRootPattern = /^([a-z0-9]+)_(\w+)_wrap$/i;
@@ -125,44 +110,36 @@ export const lumosRoleDetectors: RoleDetector[] = [
     },
   }),
 
-  // Fallback: detect page slots as main when no proper main class found
+  // Fallback: detect page_wrap as main when no page_main class is found
+  // This ensures the wrapper element (which contains component instances) is treated as main
   {
-    id: "lumos-page-slot-main-fallback",
-    description: "Fallback detection for page slots as main elements when no page_main class found",
+    id: "lumos-page-wrap-main-fallback",
+    description: "Fallback detection for page_wrap as main when no page_main class found",
     detect: (element: ElementSnapshot, context: DetectionContext) => {
+      // Debug: Log element being checked
+      console.log(`[lumos-main-fallback] Checking element ${element.id}:`, {
+        classes: element.classes,
+        hasMainAlready: context?.rolesByElement ? Object.values(context.rolesByElement).includes("main") : false,
+      });
+
       // Only run this fallback if no main role has been detected yet
       if (context?.rolesByElement && Object.values(context.rolesByElement).includes("main")) {
         return null; // Main already detected, don't interfere
       }
 
-      // First, check if this element is under page_wrap (page slots are children of page_wrap)
-      if (!context?.graph) return null;
-      
-      const parentId = context.graph.getParentId(element.id);
-      if (!parentId) return null;
-      
-      const parentElement = context.allElements?.find(el => el.id === parentId);
-      const isUnderPageWrap = parentElement?.classes.some(cls => 
-        cls === "page_wrap" || cls.endsWith("_page_wrap")
-      );
-      
-      if (!isUnderPageWrap) return null; // Not a child of page_wrap
-      
-      // Page slots are children of page_wrap that have:
-      // 1. Minimal/no classes (they're structural containers)
-      // 2. No semantic class names (no page_, section_, component_ patterns)
-      const hasMinimalClasses = element.classes.length <= 1;
-      const hasNoSemanticClasses = !element.classes.some(cls => 
-        cls.includes('page_') || cls.includes('section_') || cls.includes('component_')
-      );
-      
-      const isLikelyPageSlot = hasMinimalClasses && hasNoSemanticClasses;
-      
-      if (!isLikelyPageSlot) return null;
-      return { 
-        role: "main", 
-        score: 0.8,
-        reasoning: "Page slot under page_wrap detected as main (configure with page_main class and <main> tag)"
+      // Check if this element has page_wrap class
+      const hasPageWrap = element.classes?.some((cls) => cls === "page_wrap" || cls.endsWith("_page_wrap"));
+
+      console.log(`[lumos-main-fallback] Element ${element.id} hasPageWrap:`, hasPageWrap);
+
+      if (!hasPageWrap) return null;
+
+      // page_wrap can serve as main container when no page_main is defined
+      console.log(`[lumos-main-fallback] Detected ${element.id} as main!`);
+      return {
+        role: "main",
+        score: 0.75,
+        reasoning: "page_wrap detected as main fallback (add page_main class for explicit main element)",
       };
     },
   },

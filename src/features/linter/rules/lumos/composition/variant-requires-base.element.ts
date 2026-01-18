@@ -1,10 +1,10 @@
 // src/features/linter/rules/lumos/composition/variant-requires-base.element.ts
 import type {
+  ClassType,
   CompositionRule,
   ElementAnalysisArgs,
-  RuleResult,
-  ClassType,
   RuleConfigSchema,
+  RuleResult,
 } from "@/features/linter/model/rule.types";
 
 type VariantRequiresBaseConfig = {
@@ -53,8 +53,7 @@ const configSchema: RuleConfigSchema = {
 };
 
 // Helpers
-const hasAnyPrefix = (name: string, prefixes: string[]) =>
-  prefixes.some((p) => name.startsWith(p));
+const hasAnyPrefix = (name: string, prefixes: string[]) => prefixes.some((p) => name.startsWith(p));
 
 const isUtility = (name: string, classType: ClassType) =>
   classType === "utility" || name.startsWith("u_") || name.startsWith("u-");
@@ -77,16 +76,15 @@ export const createLumosVariantRequiresBaseRule = (): CompositionRule => ({
 
     const cfg = {
       ...defaultConfig,
-      ...(getRuleConfig?.("lumos:composition:variant-requires-base")
-        ?.customSettings as Partial<VariantRequiresBaseConfig> | undefined),
+      ...(getRuleConfig?.("lumos:composition:variant-requires-base")?.customSettings as
+        | Partial<VariantRequiresBaseConfig>
+        | undefined),
     };
 
     const ordered = [...classes].sort((a, b) => a.order - b.order);
 
     // Detect variants and base presence
-    const variants = ordered.filter((c) =>
-      hasAnyPrefix(c.className, cfg.variantPrefixes)
-    );
+    const variants = ordered.filter((c) => hasAnyPrefix(c.className, cfg.variantPrefixes));
 
     if (variants.length === 0) return [];
 
@@ -100,9 +98,7 @@ export const createLumosVariantRequiresBaseRule = (): CompositionRule => ({
 
       // Custom base-like: not utility, not variant, and type is custom
       const isCustomBase =
-        !isUtility(c.className, t) &&
-        !hasAnyPrefix(c.className, cfg.variantPrefixes) &&
-        t === "custom";
+        !isUtility(c.className, t) && !hasAnyPrefix(c.className, cfg.variantPrefixes) && t === "custom";
 
       // Optional allowances
       const isComboBase = cfg.allowComboAsBase && t === "combo";

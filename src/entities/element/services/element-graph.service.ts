@@ -1,5 +1,5 @@
 import type { WebflowElement } from "@/entities/element/model/element.types";
-import { toElementKey, getElementTag } from "../lib/id";
+import { getElementTag, toElementKey } from "../lib/id";
 
 export type ElementGraph = {
   getParentId: (id: string) => string | null;
@@ -31,10 +31,8 @@ export function createElementGraphService(
     }
   }
 
-  const getParentId = (id: string): string | null =>
-    parentIdByChildId[id] ?? null;
-  const getChildrenIds = (id: string): string[] =>
-    childrenByParentId.get(id) ?? [];
+  const getParentId = (id: string): string | null => parentIdByChildId[id] ?? null;
+  const getChildrenIds = (id: string): string[] => childrenByParentId.get(id) ?? [];
   const getAncestorIds = (id: string): string[] => {
     const out: string[] = [];
     let cur: string | null = getParentId(id);

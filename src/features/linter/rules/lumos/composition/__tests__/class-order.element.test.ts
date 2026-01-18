@@ -1,11 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { ClassType, ElementAnalysisArgs, ElementClassItem, RuleResult } from "@/features/linter/model/rule.types";
 import { createLumosClassOrderRule } from "@/features/linter/rules/lumos/composition/class-order.element";
-import type {
-  ElementAnalysisArgs,
-  RuleResult,
-  ClassType,
-  ElementClassItem,
-} from "@/features/linter/model/rule.types";
 
 type Rule = ReturnType<typeof createLumosClassOrderRule>;
 
@@ -23,10 +18,8 @@ const createMockElementAnalysisArgs = (
     // Default classification logic
     if (classTypeMap[className]) return classTypeMap[className];
     if (className.startsWith("c-")) return "custom"; // components are classified as custom
-    if (className.startsWith("u-") || className.startsWith("u_"))
-      return "utility";
-    if (className.startsWith("is-") || className.startsWith("is_"))
-      return "custom"; // variants are custom type
+    if (className.startsWith("u-") || className.startsWith("u_")) return "utility";
+    if (className.startsWith("is-") || className.startsWith("is_")) return "custom"; // variants are custom type
     return "custom"; // default to custom for base classes
   };
 
@@ -74,9 +67,7 @@ function expectValid(
   const results = runRule(rule, classes, classTypeMap);
   expect(
     results,
-    `Expected class order to be valid but got violations: ${results
-      .map((r) => r.message)
-      .join(", ")}`
+    `Expected class order to be valid but got violations: ${results.map((r) => r.message).join(", ")}`
   ).toEqual([]);
 }
 
@@ -120,9 +111,7 @@ describe("lumos:composition:class-order", () => {
     expect(rule.severity).toBe("error");
     expect(rule.enabled).toBe(true);
     expect(rule.example).toBe("base_custom is-active u-hidden");
-    expect(rule.description).toContain(
-      "base classes (custom/component/combo) must come before variant classes"
-    );
+    expect(rule.description).toContain("base classes (custom/component/combo) must come before variant classes");
   });
 
   describe("valid class ordering", () => {
@@ -419,13 +408,7 @@ describe("lumos:composition:class-order", () => {
 
       expect(result.fix).toEqual({
         kind: "reorder-classes",
-        order: [
-          "hero_wrap",
-          "is-active",
-          "is-highlighted",
-          "u-margin",
-          "u-hidden",
-        ],
+        order: ["hero_wrap", "is-active", "is-highlighted", "u-margin", "u-hidden"],
         scope: "element",
       });
     });
@@ -452,14 +435,7 @@ describe("lumos:composition:class-order", () => {
         scope: "element",
       });
       if (result.fix?.kind === "reorder-classes") {
-        expect(result.fix.order).toEqual([
-          "base_first",
-          "base_second",
-          "is-first",
-          "is-second",
-          "u-first",
-          "u-second",
-        ]);
+        expect(result.fix.order).toEqual(["base_first", "base_second", "is-first", "is-second", "u-first", "u-second"]);
       }
     });
 
