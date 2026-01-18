@@ -59,7 +59,6 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 
 ### Architecture overview
 
-- See `docs/guides/architecture.md` for a full, up‑to‑date description of runtime wiring, services, presets, and flows.
 - **Core Services**: `src/features/linter/services/` contains the shared context service architecture with intelligent caching and redundancy elimination.
 - **Enhanced UI**: `src/shared/ui/` contains enhanced components with intelligent color coding for improved message readability.
 - Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
@@ -70,13 +69,11 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
 ### Documentation index
 
 - Guides
-
-  - `docs/guides/architecture.md`
   - `docs/guides/how-it-all-works.md`
   - `docs/guides/element-role-identification-feature.md`
-  - `docs/guides/unified-plan.md`
-  - `docs/guides/product-technical-plan.md`
-  - `docs/guides/user-stories.md`
+
+
+
 
 - Module READMEs
 
@@ -90,21 +87,6 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
   - Presets: `src/presets/README.md`
   - Element types: `src/entities/element/model/element.types.ts`
   - Style service: `src/entities/style/model/README.md`
-
-- ADRs (Architecture Decision Records)
-
-  - Folder: `docs/adrs/`
-  - Template: `docs/adrs/template.md`
-  - Create a new ADR
-    1. Copy the template to a new file in `docs/adrs/` using the next sequential number and a short kebab‑case title, for example: `adr-020-short-title.md`.
-    2. Fill the sections from the template:
-       - Title
-       - Status (e.g., Proposed, Accepted, Superseded)
-       - Context (problem and constraints)
-       - Decision (what and why)
-       - Consequences (tradeoffs, follow‑ups)
-    3. Commit the ADR with the code changes that implement the decision where possible.
-    4. Do not modify existing ADRs; add a new one and link with “Supersedes”/“Superseded by” when changing a decision.
 
 - RFCs (Requests for Comments)
   - Folder: `docs/rfcs/`
@@ -128,31 +110,3 @@ React + Vite extension that integrates with the Webflow Designer API. Preset‑d
   ```
 - Unit, parity, and snapshot tests: `src/features/linter/services/__tests__/`
 - Style service tests: `src/entities/style/model/__tests__/`
-
-### Project structure
-
-```
-src/
-  app/
-  entities/
-    element/model/
-    style/model/
-  features/
-    linter/
-      model/ services/ grammar/ roles/ store/ view/
-      ui/
-        controls/
-        violations/
-        panel/
-      lib/
-    window/
-  lib/
-  presets/
-  processes/scan/
-  rules/
-  shared/
-    ui/
-    utils/
-styles/
-docs/
-```
