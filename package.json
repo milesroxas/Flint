@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:prod": "tsc && vite build --mode prod  && webflow extension bundle && mv bundle.zip bundle/prod/bundle_$(date +'%Y-%m-%d_%H-%M-%S').zip",
+    "build:prod": "tsc && vite build --mode production && webflow extension bundle && mv bundle.zip bundle/prod/bundle_$(date +'%Y-%m-%d_%H-%M-%S').zip",
     "build:dev": "tsc && vite build --mode development && webflow extension bundle && mv bundle.zip bundle/development/bundle_$(date +'%Y-%m-%d_%H-%M-%S').zip",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

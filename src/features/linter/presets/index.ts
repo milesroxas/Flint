@@ -7,6 +7,10 @@ function isPreset(value: unknown): value is Preset {
   return v && typeof v === "object" && typeof v.id === "string" && Array.isArray(v.rules);
 }
 
+// Check environment variables to determine which frameworks are enabled
+const isClientFirstEnabled = import.meta.env.VITE_ENABLE_CLIENT_FIRST !== "false";
+const isLumosEnabled = import.meta.env.VITE_ENABLE_LUMOS !== "false";
+
 // Eagerly import all preset modules under this directory
 const presetModules = import.meta.glob("./*.preset.ts", {
   eager: true,
@@ -18,6 +22,13 @@ for (const mod of Object.values(presetModules)) {
   // Collect any export that looks like a Preset
   for (const candidate of Object.values(mod)) {
     if (isPreset(candidate)) {
+      // Filter presets based on environment configuration
+      if (candidate.id === "client-first" && !isClientFirstEnabled) {
+        continue;
+      }
+      if (candidate.id === "lumos" && !isLumosEnabled) {
+        continue;
+      }
       presets.set(candidate.id, candidate);
     }
   }
