@@ -3,6 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import type { WindowPreset } from "@/features/linter/store/linterSettings.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
+import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
 import { Button } from "@/shared/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 
@@ -19,34 +20,16 @@ export const HeightSwitcher: React.FC = () => {
   const presetLabel = WINDOW_PRESETS[windowPreset].label;
 
   async function applyPreset(id: WindowPreset) {
-    try {
-      const wf: any = (window as any).webflow;
-      if (typeof wf?.setExtensionSize !== "function") return;
-
-      const MIN_HEIGHT = 360;
-      const MAX_HEIGHT = 800;
-
-      const width = typeof window !== "undefined" ? window.innerWidth || 400 : 400;
-      const requested = WINDOW_PRESETS[id].height;
-      const clampedHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, requested));
-
-      await wf.setExtensionSize({ width, height: clampedHeight });
-      setWindowPreset(id);
-      setOpen(false);
-    } catch {
-      // ignore
-    }
+    await applyWindowPreset(id);
+    setWindowPreset(id);
+    setOpen(false);
   }
 
   return (
-    <div className="relative rounded-xs border bg-card flex items-stretch h-full">
+    <div className="relative">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="group h-full w-7 rounded-xs focus-visible:ring-0 transition-colors text-foreground"
-          >
+          <Button variant="ghost" size="icon" className="group transition-colors">
             <Scaling aria-hidden className="size-4 transition-transform duration-200 ease-out group-hover:scale-110" />
             <span className="sr-only">Change height: {presetLabel}</span>
           </Button>

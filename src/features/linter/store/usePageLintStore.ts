@@ -1,4 +1,5 @@
 // src/features/linter/store/usePageLintStore.ts
+import posthog from "posthog-js";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
@@ -71,6 +72,10 @@ export const usePageLintStore = create<PageLintStore>()(
           });
         } catch (error) {
           console.error("[PageLintStore] Error during linting:", error);
+          posthog.capture("lint_error", {
+            mode: "page",
+            error: error instanceof Error ? error.message : "Failed to lint page",
+          });
           set({
             error: error instanceof Error ? error.message : "Failed to lint page",
             results: [],

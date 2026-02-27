@@ -2,6 +2,7 @@ import type React from "react";
 import type { WindowPreset } from "@/features/linter/store/linterSettings.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { WINDOW_PRESETS } from "@/features/window/components/HeightSwitcher";
+import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
 import { useTheme } from "@/shared/providers/theme-provider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
@@ -98,7 +99,11 @@ export const SettingsPanel: React.FC = () => {
         label="Window size"
         description="Set the default height of the extension panel."
         value={windowPreset}
-        onValueChange={(v) => setWindowPreset(v as WindowPreset)}
+        onValueChange={(v) => {
+          const preset = v as WindowPreset;
+          void applyWindowPreset(preset);
+          setWindowPreset(preset);
+        }}
         options={windowPresetOptions}
       />
     </div>

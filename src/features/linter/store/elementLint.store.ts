@@ -1,3 +1,4 @@
+import posthog from "posthog-js";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { toElementKey } from "@/entities/element/lib/id";
@@ -94,6 +95,10 @@ export const useElementLintStore = create<ElementLintStore>()(
         } catch (err: unknown) {
           // eslint-disable-next-line no-console
           console.error("[ElementLintStore] refresh failed", err);
+          posthog.capture("lint_error", {
+            mode: "element",
+            error: err instanceof Error ? err.message : "Failed to lint element",
+          });
           set({
             ...initialState,
             error: err instanceof Error ? err.message : "Failed to lint element",
@@ -163,6 +168,11 @@ export const useElementLintStore = create<ElementLintStore>()(
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error("[ElementLintStore] event lint failed", err);
+        posthog.capture("lint_error", {
+          mode: "element",
+          source: "selectedelement",
+          error: err instanceof Error ? err.message : "Failed to lint element",
+        });
         useElementLintStore.setState({
           ...initialState,
           error: "Failed to lint element",
