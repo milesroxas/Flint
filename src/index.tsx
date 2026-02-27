@@ -2,7 +2,7 @@ import "./styles/globals.css";
 import posthog from "posthog-js";
 import { createRoot } from "react-dom/client";
 
-posthog.init("phc_w0ptm8A4m0wWvbKzozlxIGnWNRlCSWke7i5NcSu5wNn", {
+posthog.init("phc_kJd34pP5g9zgEp8Q9dAIGnTx6vT8Vlafo2C3bzMfcR4", {
   api_host: "https://us.i.posthog.com",
   person_profiles: "identified_only",
   capture_exceptions: {
