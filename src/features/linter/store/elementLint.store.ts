@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { toElementKey } from "@/entities/element/lib/id";
+import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
+import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
 import { createDebugger } from "@/shared/utils/debug";
 
@@ -12,6 +14,7 @@ import { createDebugger } from "@/shared/utils/debug";
 interface ElementLintState {
   results: RuleResult[];
   classNames: string[];
+  ignoredClassNames: string[];
   roles: ElementRole[];
   loading: boolean;
   error: string | null;
@@ -30,6 +33,7 @@ type ElementLintStore = ElementLintState & ElementLintActions;
 const initialState: ElementLintState = {
   results: [],
   classNames: [],
+  ignoredClassNames: [],
   roles: [],
   loading: false,
   error: null,
@@ -38,6 +42,11 @@ const initialState: ElementLintState = {
 };
 
 const debug = createDebugger("element-lint-store");
+
+function buildClassFilter(): ((name: string) => boolean) | undefined {
+  const { ignoreThirdPartyClasses } = useLinterSettingsStore.getState();
+  return ignoreThirdPartyClasses ? (name: string) => !isThirdPartyClass(name) : undefined;
+}
 
 export const useElementLintStore = create<ElementLintStore>()(
   devtools(
@@ -54,6 +63,7 @@ export const useElementLintStore = create<ElementLintStore>()(
             set({
               results: [],
               classNames: [],
+              ignoredClassNames: [],
               roles: [],
               loading: false,
             });
@@ -67,13 +77,16 @@ export const useElementLintStore = create<ElementLintStore>()(
           });
           if (!el || (typeof el.getStyles !== "function" && !(get().structuralContext && isComponentInstance))) {
             debug.warn("refresh: skipping lint; getStyles missing and not component in structural mode");
-            set({ results: [], classNames: [], roles: [], loading: false });
+            set({ results: [], classNames: [], ignoredClassNames: [], roles: [], loading: false });
             return;
           }
           const state = get();
-          const results = await scanSelectedElement(el, state.structuralContext);
+          const { results, ignoredClassNames } = await scanSelectedElement(el, state.structuralContext, {
+            classFilter: buildClassFilter(),
+          });
           set({
             results,
+            ignoredClassNames,
             classNames: [],
             roles: [],
             loading: false,
@@ -126,6 +139,7 @@ export const useElementLintStore = create<ElementLintStore>()(
         useElementLintStore.setState({
           results: [],
           classNames: [],
+          ignoredClassNames: [],
           roles: [],
           loading: false,
         });
@@ -136,9 +150,12 @@ export const useElementLintStore = create<ElementLintStore>()(
       try {
         const state = useElementLintStore.getState();
         debug.log("event: structuralContext", state.structuralContext);
-        const results = await scanSelectedElement(el, state.structuralContext);
+        const { results, ignoredClassNames } = await scanSelectedElement(el, state.structuralContext, {
+          classFilter: buildClassFilter(),
+        });
         useElementLintStore.setState({
           results,
+          ignoredClassNames,
           classNames: [],
           roles: [],
           loading: false,

@@ -1,16 +1,17 @@
 import "./styles/globals.css";
-import type React from "react";
 import { createRoot } from "react-dom/client";
 import Header from "@/app/ui/Header";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { ExpandedContent } from "@/features/linter/ui/expanded/ExpandedContent";
 import { RecognizedElementsView } from "@/features/linter/ui/expanded/RecognizedElementsView";
+import { ThirdPartyLibrariesView } from "@/features/linter/ui/expanded/ThirdPartyLibrariesView";
 import { LinterPanel } from "@/features/linter/view/LinterPanel";
+import { SettingsPanel } from "@/features/settings/ui/SettingsPanel";
 import ExtensionWrapper from "@/features/window/components/ExtensionWrapper";
 import { ThemeProvider } from "@/shared/providers/theme-provider";
 import { cn } from "@/shared/utils";
 
-const Root: React.FC = () => {
+const Root = () => {
   const { isActive, content, closeExpandedView } = useExpandedView();
 
   return (
@@ -43,6 +44,16 @@ const Root: React.FC = () => {
                   presetId={(content.data as any)?.presetId || ""}
                   projectElements={(content.data as any)?.projectElements || []}
                 />
+              </ExpandedContent>
+            )}
+            {isActive && content && content.type === "settings" && (
+              <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <SettingsPanel />
+              </ExpandedContent>
+            )}
+            {isActive && content && content.type === "third-party-libraries" && (
+              <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <ThirdPartyLibrariesView />
               </ExpandedContent>
             )}
           </div>

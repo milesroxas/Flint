@@ -12,8 +12,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui
 export type PresetId = string;
 
 const presetLogos: Record<string, string> = {
-  lumos: "/images/logo-lumos.webp",
-  "client-first": "/images/logo-client-first.svg",
+  lumos: "./images/logo-lumos.webp",
+  "client-first": "./images/logo-client-first.svg",
 };
 
 interface PresetSwitcherProps {

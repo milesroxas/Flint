@@ -52,7 +52,7 @@ flowchart TD
 
 ## Presets, grammar, and roles
 
-- Presets live under `src/presets/` and define:
+- Presets live under `src/features/linter/presets/` and define:
   - `id`: preset identifier (e.g., `lumos`, `client-first`, or any custom id)
   - `grammar`: `GrammarAdapter` implementation that parses a class name into a structured `ParsedClass`
   - `roles`: `RoleResolver` that maps a `ParsedClass` to an `ElementRole`
@@ -191,7 +191,7 @@ Result object highlights (`RuleResult`):
 
 ## API surface map (quick reference)
 
-- Preset registry: `src/presets/index.ts` → `getPresetIds()`, `resolvePresetOrFallback()`
+- Preset registry: `src/features/linter/presets/index.ts` → `getPresetIds()`, `resolvePresetOrFallback()`
 - Linter lifecycle: `src/features/linter/model/linter.factory.ts` → `ensureLinterInitialized()`, `setPreset()`
 - Services: `createElementLintService()`, `createPageLintService()`
 - Runner: `createRuleRunner()` → `runRulesOnStylesWithContext()`
@@ -230,5 +230,5 @@ Result object highlights (`RuleResult`):
 ## Extensibility
 
 - Add a new rule by exporting a `Rule` and registering it via the active preset or by calling `addCustomRule(rule)` after initialization.
-- Add or alter presets by editing `src/presets/*.preset.ts`, wiring grammar/roles and `contextConfig`.
+- Add or alter presets by editing `src/features/linter/presets/*.preset.ts`, wiring grammar/roles and `contextConfig`.
 - UI additions can read structured metadata from `RuleResult.metadata` without changing the core contracts.

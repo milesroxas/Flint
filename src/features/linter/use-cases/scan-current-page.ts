@@ -1,42 +1,40 @@
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { getLinterServices } from "@/features/linter/services/linter-service-singleton";
+import type { PageLintOptions } from "@/features/linter/services/page-lint-service";
 
-export async function scanCurrentPage(elements: any[]): Promise<RuleResult[]> {
+export interface ScanCurrentPageWithMetaResult {
+  results: RuleResult[];
+  classNames: string[];
+  ignoredClassNames: string[];
+}
+
+function filterValidElements(elements: any[]): any[] {
+  return (elements || []).filter((el: any) => {
+    if (!el) return false;
+    if (typeof el.getStyles === "function") return true;
+    const hasComponentElementId = el?.id?.component && el?.id?.element;
+    const hasNoType = !el.type || el.type === "";
+    return hasComponentElementId && hasNoType;
+  });
+}
+
+export async function scanCurrentPage(elements: any[], options?: PageLintOptions): Promise<RuleResult[]> {
   ensureLinterInitialized();
   const { styleService, analyzer, pageLintService } = getLinterServices();
 
   const allStyles = await styleService.getAllStylesWithProperties();
   analyzer.buildPropertyMaps(allStyles);
 
-  // Include elements with getStyles() AND potential page slots
-  const valid = (elements || []).filter((el: any) => {
-    if (!el) return false;
-
-    // Include elements that have getStyles (normal elements)
-    if (typeof el.getStyles === "function") return true;
-
-    // Also include potential page slots (no element type but has component+element ID structure)
-    const hasComponentElementId = el?.id?.component && el?.id?.element;
-    const hasNoType = !el.type || el.type === "";
-
-    console.log(`[DEBUG] Element filter check:`, {
-      elementId: el?.id?.element || el?.id || "unknown",
-      hasGetStyles: typeof el.getStyles === "function",
-      hasComponentElementId,
-      hasNoType,
-      included: typeof el.getStyles === "function" || (hasComponentElementId && hasNoType),
-    });
-
-    return hasComponentElementId && hasNoType;
-  });
-
-  return pageLintService.lintCurrentPage(valid as any);
+  const valid = filterValidElements(elements);
+  const { results } = await pageLintService.lintCurrentPage(valid as any, options);
+  return results;
 }
 
 export async function scanCurrentPageWithMeta(
-  elements: any[]
-): Promise<{ results: RuleResult[]; classNames: string[] }> {
+  elements: any[],
+  options?: PageLintOptions
+): Promise<ScanCurrentPageWithMetaResult> {
   ensureLinterInitialized();
   const { styleService, analyzer, pageLintService } = getLinterServices();
 
@@ -56,20 +54,7 @@ export async function scanCurrentPageWithMeta(
     }
   }
 
-  // Include elements with getStyles() AND potential page slots
-  const valid = (elements || []).filter((el: any) => {
-    if (!el) return false;
-
-    // Include elements that have getStyles (normal elements)
-    if (typeof el.getStyles === "function") return true;
-
-    // Also include potential page slots (no element type but has component+element ID structure)
-    const hasComponentElementId = el?.id?.component && el?.id?.element;
-    const hasNoType = !el.type || el.type === "";
-
-    return hasComponentElementId && hasNoType;
-  });
-
-  const results = await pageLintService.lintCurrentPage(valid as any);
-  return { results, classNames: Array.from(unique) };
+  const valid = filterValidElements(elements);
+  const { results, ignoredClassNames } = await pageLintService.lintCurrentPage(valid as any, options);
+  return { results, classNames: Array.from(unique), ignoredClassNames };
 }

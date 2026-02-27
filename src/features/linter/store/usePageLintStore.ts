@@ -1,19 +1,18 @@
 // src/features/linter/store/usePageLintStore.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
 import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
+import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { useAnimationStore } from "./animation.store";
-
-// import { defaultRules } from '@/features/linter/rules/default-rules';
-
-// Process orchestrator handles service setup per scan
 
 interface PageLintState {
   results: RuleResult[];
   passedClassNames: string[];
+  ignoredClassNames: string[];
   loading: boolean;
   error: string | null;
   hasRun: boolean;
@@ -29,10 +28,16 @@ type PageLintStore = PageLintState & PageLintActions;
 const initialState: PageLintState = {
   results: [],
   passedClassNames: [],
+  ignoredClassNames: [],
   loading: false,
   error: null,
   hasRun: false,
 };
+
+function buildClassFilter(): ((name: string) => boolean) | undefined {
+  const { ignoreThirdPartyClasses } = useLinterSettingsStore.getState();
+  return ignoreThirdPartyClasses ? (name: string) => !isThirdPartyClass(name) : undefined;
+}
 
 export const usePageLintStore = create<PageLintStore>()(
   devtools(
@@ -55,8 +60,10 @@ export const usePageLintStore = create<PageLintStore>()(
           invalidatePageContextCache();
 
           const elements = await webflow.getAllElements();
-          const { results, classNames } = await scanCurrentPageWithMeta(elements);
-          set({ results, passedClassNames: classNames, loading: false });
+          const { results, classNames, ignoredClassNames } = await scanCurrentPageWithMeta(elements, {
+            classFilter: buildClassFilter(),
+          });
+          set({ results, passedClassNames: classNames, ignoredClassNames, loading: false });
 
           // Trigger severity tiles animation after results are ready
           requestAnimationFrame(() => {
@@ -78,6 +85,7 @@ export const usePageLintStore = create<PageLintStore>()(
         set({
           results: [],
           passedClassNames: [],
+          ignoredClassNames: [],
           error: null,
           hasRun: false,
         });

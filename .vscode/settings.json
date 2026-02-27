@@ -2,22 +2,22 @@
   // Biome as default formatter
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,
-  
+
   // Biome-specific settings
   "editor.codeActionsOnSave": {
-    "quickfix.biome": "explicit",
+    "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
-  
+
   // Disable other formatters to avoid conflicts
   "typescript.format.enable": false,
   "javascript.format.enable": false,
-  
+
   // File associations
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  
+
   // Biome extension settings
   "biome.enabled": true,
   "biome.lspBin": "./node_modules/@biomejs/biome/bin/biome"

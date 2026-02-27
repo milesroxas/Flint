@@ -6,7 +6,9 @@ export type ExpandedViewContentType =
   | "recognized-elements"
   | "rule-documentation"
   | "diagnostic-details"
-  | "suggested-fixes";
+  | "settings"
+  | "suggested-fixes"
+  | "third-party-libraries";
 
 export interface ExpandedViewContent {
   type: ExpandedViewContentType;

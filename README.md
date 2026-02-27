@@ -1,6 +1,6 @@
 ## Flint — Webflow Designer Extension
 
-Lint Webflow classes in real time. Validates naming, detects duplicate utilities, and applies context‑aware rules so teams keep sites clean while they work.
+Lint Webflow classes in real time. Validates naming, detects duplicate utilities, and applies context-aware rules so teams keep sites clean while they work.
 
 ### Table of Contents
 
@@ -9,104 +9,152 @@ Lint Webflow classes in real time. Validates naming, detects duplicate utilities
 - Quick start
 - Development
 - Architecture overview
-- Documentation index (guides, module READMEs, ADRs)
+- Documentation index
 - Testing
 - Project structure
 
 ### Overview
 
-React + Vite extension that integrates with the Webflow Designer API. Preset‑driven linter (Lumos, Client‑first) analyzes class naming, order, and style properties, with element‑context awareness and role identification.
+Flint is a React + Vite Designer extension written in strict TypeScript. It attaches to the Webflow Designer API, loads preset-driven linting rules for Lumos and Client-first, and renders results inside `src/features/linter/view/LinterPanel.tsx`. Grammar adapters (`src/features/linter/presets/*.preset.ts`) parse the first custom class on each element to determine its role, while context-aware services map DOM relationships so rules understand root wrappers, child groups, and invalid combinations. Utility duplicate detection is powered by `src/features/linter/services/analyzers/utility-class-analyzer.ts`, and UI state is managed with Zustand stores.
 
 ### Features
 
-- Class type detection: custom, utility, combo (combo prefers Webflow API `style.isComboClass()` with fallback to variant-like heuristic such as `is-`, `is_`, or `isCamelCase`)
-- Naming validation per class type
-- Utility exact-duplicate detection (identical full property sets). Overlap-only checks are disabled by default.
-- Element‑context classification (componentRoot, childGroup, childGroupInvalid)
-- Role identification from the first custom class per preset
-- Presets and opinion modes with persisted rule configuration
-- Page and selected‑element scanning, highlighting in Designer
-- **🎨 Enhanced Message Color Coding**: Intelligent color coding system that automatically applies appropriate colors to different content types in lint messages for improved readability
+- Preset-aware linting: `src/features/linter/presets/client-first.preset.ts` and `lumos.preset.ts` register grammar, rule, and role resolvers. Enable/disable them per environment via `VITE_ENABLE_CLIENT_FIRST` / `VITE_ENABLE_LUMOS` in `.env.*`.
+- Context + role detection: `lint-context.service.ts` builds cached page contexts (element graphs, parent relationships, tags, and role maps) so rules know when wraps or child groups violate the preset conventions.
+- Duplicate utilities and metadata: `createUtilityClassAnalyzer()` fingerprints utility classes, surfaces full-property `exactMatches`, and produces formatted payloads for single-property duplicates consumed by `ViolationDetails`.
+- Element vs structural scans: `useElementLintStore` supports a structural-context toggle that reuses the page context to lint a component boundary, while `usePageLintStore` runs a full `scanCurrentPageWithMeta()` across all Designer elements.
+- UI feedback and Designer highlight: `ViolationsList.tsx` filters by severity, animates counts via `useAnimationStore`, and calls `selectElementById()` so opening a violation (page mode or structural element lint) highlights the element in Designer with a `flowlint:highlight` fallback event.
+- Enhanced messaging and badges: `message-formatter.ts` and the shared `Badge` variants colorize quoted fragments (class names, suggestions, dynamic placeholders) for high-signal lint messages without sacrificing accessibility.
 
 ### Quick start
 
-- Install: `pnpm i`
-- Dev server:
+- Install dependencies:
+  ```bash
+  pnpm install
+  ```
+- Start the Designer dev server (prints the URL you set as your Webflow “Development URL”):
   ```bash
   pnpm dev
   ```
-  Use the printed URL as your Webflow “Development URL”.
-- Build (development bundle.zip):
+- Build timestamped `bundle.zip` files (moved into `bundle/development/` or `bundle/prod/`):
   ```bash
-  pnpm build:dev
+  pnpm build:dev    # uses Vite development mode
+  pnpm build:prod   # uses Vite production mode
   ```
-- Build (production bundle.zip):
+- Preview the compiled extension locally:
   ```bash
-  pnpm build:prod
+  pnpm preview
   ```
-- Lint code:
+- Lint and type-check:
   ```bash
-  pnpm lint
+  pnpm lint        # Biome
+  pnpm lint:all    # tsc --noEmit + Biome
+  pnpm format      # Biome formatter
   ```
 
 ### Development
 
-- Tooling: Vite, TypeScript (strict), ESLint, Vitest
-- Path alias: `@/* → src/*` (see `tsconfig.json`)
-- Webflow integration:
-  - Dev: custom Vite plugin injects Webflow extension scripts and serves `/__webflow` from `webflow.json`
-  - Runtime: defensive access to Designer APIs (`getAllElements`, `getAllStyles`, `getStyles`, `getChildren`, `setSelectedElement`); combo detection uses `style.isComboClass()` when available with heuristic fallback
+- Tooling: Vite, strict TypeScript, Biome (lint + format), Vitest, Zustand, Radix UI (via shadcn). Scripts live in `package.json`.
+- Path aliases: `@/* → src/*` (`tsconfig.json`) aligned with Vite (`vite.config.ts`).
+- Framework toggles: `.env.development` / `.env.production` expose `VITE_ENABLE_CLIENT_FIRST` and `VITE_ENABLE_LUMOS` (see `docs/guides/framework_config.md`).
+- Webflow integration: `vite.config.ts` registers a `wf-vite-extension-plugin` that injects the Designer boot scripts, watches TS/TSX/CSS files, and serves `webflow.json` via `/__webflow` for the CLI.
+- Build pipeline: `pnpm build:*` runs `tsc`, Vite build, `webflow extension bundle`, and moves the generated `bundle.zip` into `bundle/`. `scripts/post-build.js` can mirror `dist/` into `public/` for manual distribution.
 
 ### Architecture overview
 
-- **Core Services**: `src/features/linter/services/` contains the shared context service architecture with intelligent caching and redundancy elimination.
-- **Enhanced UI**: `src/shared/ui/` contains enhanced components with intelligent color coding for improved message readability.
-- Key modules: `src/entities/*`, `src/features/linter/*`, `src/processes/scan/*`, `src/presets/*`, `src/rules/*`, `src/features/window/*`. The linter UI entry is `src/features/linter/view/LinterPanel.tsx`.
-  - Auto-highlight on violation open in page mode is implemented in `src/features/linter/ui/violations/ViolationsSection.tsx` via `selectElementById` with a fallback `flowlint:highlight` event.
-  - **New**: Context service (`lint-context.service.ts`) centralizes bootstrap logic with 57% overall code reduction in linting services.
-  - **New**: Enhanced message formatter (`message-formatter.ts`) provides intelligent color coding based on message structure and content type.
+- **Services and analyzers**
+  - `src/features/linter/services/lint-context.service.ts` caches hashed page contexts, builds element graphs, gathers slot class names, and stores role/tag/element-type maps reused by page + structural scans.
+  - `element-lint-service.ts` and `page-lint-service.ts` wrap `RuleRunner` to lint a selected element (optionally using the structural context) or an entire page; the element service filters results to the selected element unless structural context is on.
+  - `linter-service-factory.ts` and `linter-service-singleton.ts` expose shared instances (style service, analyzer, context service, preset element service) that are reset whenever `ensureLinterInitialized()` or preset changes occur.
+  - `rule-runner.ts` orchestrates page rules, element rules, and property rules, respecting registry configuration and class type resolution derived from the active grammar.
+  - `src/entities/style/services/style.service.ts` fronts the Designer API (`getAllStyles`, `getStyles`, `style.isComboClass()`), caches sitewide styles, and annotates detection sources for combos.
+  - `src/features/linter/services/analyzers/utility-class-analyzer.ts` and `preset-elements.service.ts` provide duplicate detection metadata and preset-driven element catalogs for expanded-view UI.
+- **Use cases and stores**
+  - `src/features/linter/use-cases/scan-selected-element.ts` / `scan-current-page.ts` ensure the registry is initialized, build property maps, and funnel elements to the appropriate service.
+  - `elementLint.store.ts` subscribes to Designer `selectedelement` events, tracks the last selection, exposes structural-context toggles, and triggers scans via `scanSelectedElement`.
+  - `usePageLintStore.ts` coordinates page-wide scans (`scanCurrentPageWithMeta`), invalidates cached contexts, stores “passed” class names, and triggers animation phases.
+  - `store/animation.store.ts` sequences severity tile animations, count-up effects, and violation reveals via Zustand.
+- **UI and Designer integration**
+  - `src/features/linter/view/LinterPanel.tsx` renders the mode toggle, severity filter, action bar, and wires up stores for live counts.
+  - `ui/violations/ViolationsList.tsx` groups violations by severity, applies staggered animations, and calls `selectElementById()` on accordion changes so Designer highlights stay in sync.
+  - `src/features/window/select-element.ts` encapsulates Designer selection APIs with DOM traversal fallbacks before dispatching the `flowlint:highlight` custom event.
+  - `src/features/linter/lib/message-formatter.ts`, `message-parser.ts`, and `src/shared/ui/badge.tsx` implement the color-coded badges, copy-to-clipboard helpers, and parsing logic used inside `ViolationDetails`.
 
 ### Documentation index
 
-- Guides
-  - `docs/guides/how-it-all-works.md`
-  - `docs/guides/element-role-identification-feature.md`
-
-
-
-
-- Module READMEs
-
-  - Linter (feature overview): `src/features/linter/README.md`
-  - **Linter services**: `src/features/linter/services/README.md` ✨ _Updated with context service architecture_
-  - **Shared UI components**: `src/shared/ui/README.md` ✨ _New documentation for enhanced Badge component and color coding_
-  - **Linter library functions**: `src/features/linter/lib/README.md` ✨ _New documentation for enhanced message formatter and color coding system_
-  - Linter grammar adapters: `src/features/linter/grammar/README.md`
-  - Linter role resolvers: `src/features/linter/roles/README.md`
-  - Linter store: `src/features/linter/store/README.md`
-  - Presets: `src/presets/README.md`
-  - Element types: `src/entities/element/model/element.types.ts`
-  - Style service: `src/entities/style/model/README.md`
-
-- RFCs (Requests for Comments)
+- **Guides**
+  - `docs/guides/how-it-all-works.md` — walkthrough of the runtime lifecycle, registry, and UI flow.
+  - `docs/guides/framework_config.md` — environment variable switches for enabling Client-first vs Lumos presets.
+  - `docs/guides/linting.md` — Biome + TypeScript lint/type-check practices (`pnpm lint:all`, `pnpm format`).
+- **Notes**
+  - `docs/notes/rules.md` — catalog of rule categories and Lumos rule behavior.
+- **Module READMEs & references**
+  - `src/features/linter/README.md` — feature overview and contracts.
+  - `src/features/linter/presets/README.md` — preset structure and grammar expectations.
+  - `src/features/linter/services/README.md` — context service, analyzer, and runner docs.
+  - `src/features/linter/lib/README.md` — formatter, parser, label helpers.
+  - `src/features/linter/rules/README.md` (plus `rules/lumos`, `rules/client-first`, `rules/shared`) — rule catalogs.
+  - `src/features/linter/store/README.md` — animation store sequencing.
+  - `src/shared/ui/README.md` and `src/shared/ui/badge/README.md` — Badge + UI system details.
+  - `src/shared/utils/README.md` — debug utilities.
+  - `src/styles/README.md` — animation tokens and easing utilities.
+  - `src/entities/element/model/element.types.ts` — element + role typing.
+  - `src/entities/style/services/style.service.ts` — single source of truth for Designer style IO.
+- **RFCs**
   - Folder: `docs/rfcs/`
   - Template: `docs/rfcs/template.md`
-  - Create a new RFC
-    1. Copy `docs/rfcs/template.md` into `docs/rfcs/` with a descriptive filename (kebab‑case), e.g., `improve-lint-performance.md`.
-    2. Fill the sections from the template:
-       - Summary
-       - Motivation
-       - Detailed Design
-       - Drawbacks
-       - Alternatives
-       - Adoption Strategy
-    3. Open a PR with the RFC for review before implementation.
+  - Create a new RFC:
+    1. Copy the template into `docs/rfcs/<topic>.md`.
+    2. Complete Summary → Adoption Strategy sections.
+    3. Open a PR with the RFC for review before implementing changes.
 
 ### Testing
 
-- Run tests:
+- Run the full suite (Vitest):
   ```bash
-  pnpm exec vitest
+  pnpm test        # interactive
+  pnpm test:run    # one-off CI run
+  pnpm test:watch  # watch mode
   ```
-- Unit, parity, and snapshot tests: `src/features/linter/services/__tests__/`
-- Style service tests: `src/entities/style/model/__tests__/`
+- Current coverage focuses on rule behavior:
+  - Lumos naming + composition suites under `src/features/linter/rules/lumos/**/__tests__/`.
+  - Canonical page rules under `src/features/linter/rules/canonical/__tests__/`.
+  - There are no dedicated `src/features/linter/services/__tests__` or `src/entities/style/model/__tests__` directories today; service changes should be validated manually or by adding new Vitest suites alongside the affected modules.
+
+### Project structure
+
+```
+├── docs/
+│   ├── guides/ (framework_config.md, how-it-all-works.md, linting.md)
+│   ├── notes/rules.md
+│   └── rfcs/template.md
+├── src/
+│   ├── app/ui/…                       # shell + header
+│   ├── entities/
+│   │   ├── element/…                 # id helpers, model/types, services
+│   │   └── style/…                   # style service + cache
+│   ├── features/
+│   │   ├── linter/
+│   │   │   ├── lib/                  # message formatter, labels, parser
+│   │   │   ├── model/                # preset + registry types
+│   │   │   ├── presets/              # lumos + client-first definitions
+│   │   │   ├── rules/                # canonical + preset rules
+│   │   │   ├── services/             # context, runner, analyzer, lint services
+│   │   │   ├── store/                # element/page/animation Zustand stores
+│   │   │   ├── ui/                   # violation UI, controls
+│   │   │   ├── use-cases/            # scan-selected-element/current-page
+│   │   │   └── view/LinterPanel.tsx  # panel entrypoint
+│   │   └── window/                   # Designer window helpers (select-element)
+│   ├── shared/
+│   │   ├── lib/                      # stable JSON helpers
+│   │   ├── ui/                       # shadcn-based primitives
+│   │   └── utils/                    # cn(), debugger, etc.
+│   └── styles/                       # globals + animation docs
+├── scripts/post-build.js             # dist → public copier
+├── bundle/                           # timestamped bundle archives
+├── public/ & dist/                   # Vite outputs
+├── webflow.json                      # Designer manifest for bundling
+├── components.json                   # shadcn ui config
+├── biome.json, tsconfig.json, vite.config.ts
+└── package.json, pnpm-lock.yaml
+```

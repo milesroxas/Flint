@@ -1,8 +1,12 @@
+import { List } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { useAnimationStore } from "@/features/linter/store/animation.store";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
+import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { selectElementById } from "@/features/window/select-element";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { cn } from "@/shared/utils";
 import { ViolationsSection } from "./ViolationsSection";
@@ -10,6 +14,7 @@ import { ViolationsSection } from "./ViolationsSection";
 interface ViolationsListProps {
   violations: RuleResult[];
   passedClassNames?: string[]; // optional: when provided, enables Passed tab
+  ignoredClassNames?: string[]; // optional: third-party classes skipped during linting
   showHighlight?: boolean; // controls highlight element button in items
   onScrollStateChange?: (isScrolled: boolean) => void; // notify parent when list scrolled from top
   onScrollDirectionChange?: (direction: "up" | "down") => void; // notify parent of scroll direction
@@ -19,6 +24,7 @@ interface ViolationsListProps {
 export const ViolationsList: React.FC<ViolationsListProps> = ({
   violations,
   passedClassNames = [],
+  ignoredClassNames = [],
   showHighlight = true,
   onScrollStateChange,
   onScrollDirectionChange,
@@ -30,6 +36,9 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   const [isVisible, setIsVisible] = useState<boolean>(
     bypassAnimation || useAnimationStore.getState().violationsVisible
   );
+
+  const { openExpandedView } = useExpandedView();
+  const { autoSelectElement } = useLinterSettings();
 
   useEffect(() => {
     const next = bypassAnimation || violationsVisible;
@@ -87,7 +96,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     if (!nextId) return;
     const violation = idToViolation.get(nextId);
     const elementId = violation?.elementId;
-    if (!elementId) return;
+    if (!elementId || !autoSelectElement) return;
     try {
       await selectElementById(elementId);
     } catch {
@@ -95,7 +104,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     }
   };
 
-  // Passed-only list (deduped)
+  // Passed-only list (deduped, excluding failed)
   const failedSet = useMemo(
     () => new Set(violations.map((v) => v.className).filter(Boolean) as string[]),
     [violations]
@@ -104,6 +113,19 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     () => Array.from(new Set(passedClassNames)).filter((name) => name && !failedSet.has(name)),
     [passedClassNames, failedSet]
   );
+
+  // Ignored-only list (deduped, excluding failed)
+  const ignoredOnly = useMemo(
+    () => Array.from(new Set(ignoredClassNames)).filter((name) => name && !failedSet.has(name)),
+    [ignoredClassNames, failedSet]
+  );
+
+  const handleViewLibraryClasses = () => {
+    openExpandedView({
+      type: "third-party-libraries",
+      title: "Third-party library classes",
+    });
+  };
 
   return (
     <div
@@ -157,6 +179,40 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
               <div className="grid grid-cols-1 gap-1 pr-2">
                 {passedOnly.map((cls) => (
                   <Badge key={cls} variant="secondary" className="justify-start whitespace-normal break-words">
+                    <code className="font-mono break-all">{cls}</code>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {ignoredOnly.length > 0 && (
+            <div
+              className={cn(
+                "mt-2 space-y-1 transition-all duration-700 ease-spring",
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+              )}
+              style={{ transitionDelay: "700ms" }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] text-muted-foreground">Ignored — 3rd party ({ignoredOnly.length})</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                  onClick={handleViewLibraryClasses}
+                  title="View the list of third-party library classes"
+                >
+                  <List className="h-3 w-3" />
+                  View list
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 gap-1 pr-2">
+                {ignoredOnly.map((cls) => (
+                  <Badge
+                    key={cls}
+                    variant="outline"
+                    className="justify-start whitespace-normal break-words border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400"
+                  >
                     <code className="font-mono break-all">{cls}</code>
                   </Badge>
                 ))}

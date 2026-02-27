@@ -4,46 +4,14 @@ This document provides a comprehensive overview of all canonical rules that enfo
 
 ## Overview
 
-Canonical rules provide fundamental structural validation that applies regardless of the naming convention or preset being used. They consist of **4 rules** across 1 category:
+Canonical rules provide fundamental structural validation that applies regardless of the naming convention or preset being used. **Two** of these rules are registered in the rule registry at runtime; one is implemented but not currently registered.
 
-- **4 structure rules** (page structure, component relationships, semantic hierarchy)
+- **Registered**: `canonical:main-children`, `canonical:childgroup-key-match`
+- **Implemented but not registered**: `canonical:section-parent-is-main`
 
 ## Rule Categories
 
-### 1. Structure Rules (4 rules)
-
-#### `canonical:main-singleton`
-
-- **Name**: Exactly one main role per page
-- **Type**: Page Rule
-- **Severity**: Error
-- **Target Classes**: All
-- **Configurable**: ❌
-
-**Description**: There must be one and only one element with role 'main' using the proper `<main>` tag. Preset-specific main classes are supported as fallbacks.
-
-**Validation Checks**:
-
-- Exactly one element with role 'main'
-- Main element should use `<main>` tag
-- Preset-specific classes (e.g., `page_main`, `main-wrapper`) are accepted as fallbacks
-- Multiple main roles are flagged as errors
-
-**Preset Support**:
-
-- **Lumos**: `page_main` class
-- **Client-First**: `main-wrapper` or `main_*` patterns
-
-**Examples**:
-
-- ✅ Single `<main>` element with role 'main'
-- ✅ Element with `page_main` class and role 'main'
-- ❌ No elements with role 'main'
-- ❌ Multiple elements with role 'main'
-
-**Auto-fix**: ❌ (Manual structural changes required)
-
----
+### 1. Structure Rules (3 rules)
 
 #### `canonical:main-children`
 
@@ -85,6 +53,7 @@ Canonical rules provide fundamental structural validation that applies regardles
 - **Severity**: Error
 - **Target Classes**: Custom, Combo, Utility
 - **Configurable**: ❌
+- **Status**: Implemented but **not currently registered** in the rule registry (see `registry.ts`).
 
 **Description**: Enforces that any element with role 'section' is a direct child of a 'main' element.
 
@@ -132,12 +101,11 @@ Canonical rules provide fundamental structural validation that applies regardles
 
 ## Rule Summary
 
-| Rule ID                            | Name                                                        | Type      | Severity | Auto-fix | Configurable |
-| ---------------------------------- | ----------------------------------------------------------- | --------- | -------- | -------- | ------------ |
-| `canonical:main-singleton`         | Exactly one main role per page                              | Page      | Error    | ❌       | ❌           |
-| `canonical:main-children`          | Main should contain sections or component roots             | Page      | Error    | ❌       | ❌           |
-| `canonical:section-parent-is-main` | Section must be a direct child of main                      | Structure | Error    | ❌       | ❌           |
-| `canonical:childgroup-key-match`   | Child group component key must match nearest component root | Structure | Error    | ❌       | ❌           |
+| Rule ID                            | Name                                                        | Type      | Severity | Auto-fix | Configurable | Registered |
+| ---------------------------------- | ----------------------------------------------------------- | --------- | -------- | -------- | ------------ | ---------- |
+| `canonical:main-children`          | Main should contain sections or component roots             | Page      | Error    | ❌       | ❌           | ✅         |
+| `canonical:childgroup-key-match`   | Child group component key must match nearest component root | Structure | Error    | ❌       | ❌           | ✅         |
+| `canonical:section-parent-is-main` | Section must be a direct child of main                      | Structure | Error    | ❌       | ❌           | ❌         |
 
 ## Canonical Structural Patterns
 
@@ -145,7 +113,6 @@ These rules enforce fundamental structural patterns that apply across all preset
 
 ### Page Structure
 
-- **Single Main**: One main role per page
 - **Semantic Content**: Main must contain meaningful content
 - **Proper Hierarchy**: Sections must be direct children of main
 

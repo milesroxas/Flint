@@ -88,7 +88,7 @@ Rules about class organization and relationships on elements.
 
 #### Property
 
-Rules that inspect computed style declarations or utilities' property effects.
+Rules that inspect computed style declarations or utilities' property effects. The Lumos preset currently uses shared property rules only; the following exist in code but are **not included in the preset**:
 
 - **utility-class-exact-duplicate**
 

@@ -4,14 +4,14 @@ This document provides a comprehensive overview of all shared rules that can be 
 
 ## Overview
 
-Shared rules provide common functionality that can be reused across multiple presets. They consist of **3 rules** across 2 categories:
+Shared rules provide common functionality that can be reused across multiple presets. They consist of **4 rules** across 2 categories:
 
-- **2 property rules** (duplicate detection, color variables)
+- **3 property rules** (duplicate-of-utility, color variables, utility-duplicate-property)
 - **1 structure rule** (missing classes on divs)
 
 ## Rule Categories
 
-### 1. Property Rules (2 rules)
+### 1. Property Rules (3 rules)
 
 #### `shared:property:duplicate-of-utility`
 
@@ -89,6 +89,20 @@ Shared rules provide common functionality that can be reused across multiple pre
 
 ---
 
+#### `canonical:utility-duplicate-property`
+
+- **Name**: Consolidate duplicate utility properties
+- **Type**: Structure Rule
+- **Severity**: Warning
+- **Target Classes**: Utility
+- **Configurable**: ✅
+
+**Description**: Detects utility classes that declare the same CSS property/value as other utilities. Teams should consolidate aliases to avoid redundancy. Exported from shared property and used by both presets; rule ID is canonical.
+
+**Auto-fix**: ❌ (Manual consolidation required)
+
+---
+
 ### 2. Structure Rules (1 rule)
 
 #### `shared:structure:missing-class-on-div`
@@ -116,11 +130,12 @@ Shared rules provide common functionality that can be reused across multiple pre
 
 ## Rule Summary
 
-| Rule ID                                 | Name                                   | Type      | Severity | Auto-fix | Configurable |
-| --------------------------------------- | -------------------------------------- | --------- | -------- | -------- | ------------ |
-| `shared:property:duplicate-of-utility`  | Avoid duplicate of existing utility    | Structure | Warning  | ❌       | ✅           |
-| `shared:property:color-variable`        | Use Color Variables                    | Property  | Warning  | ❌       | ✅           |
-| `shared:structure:missing-class-on-div` | Block elements must have style classes | Structure | Warning  | ❌       | ❌           |
+| Rule ID                                 | Name                                    | Type      | Severity | Auto-fix | Configurable |
+| --------------------------------------- | --------------------------------------- | --------- | -------- | -------- | ------------ |
+| `shared:property:duplicate-of-utility`  | Avoid duplicate of existing utility     | Structure | Warning  | ❌       | ✅           |
+| `shared:property:color-variable`        | Use Color Variables                     | Property  | Warning  | ❌       | ✅           |
+| `canonical:utility-duplicate-property`  | Consolidate duplicate utility properties | Structure | Warning  | ❌       | ✅           |
+| `shared:structure:missing-class-on-div` | Block elements must have style classes  | Structure | Warning  | ❌       | ❌           |
 
 ## Usage Across Presets
 

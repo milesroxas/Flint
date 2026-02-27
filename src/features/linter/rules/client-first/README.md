@@ -4,10 +4,10 @@ This document provides a comprehensive overview of all rules implemented in the 
 
 ## Overview
 
-The Client-First preset enforces kebab-case naming conventions and structural patterns for Webflow projects. It consists of **4 rules** across 3 categories:
+The Client-First preset enforces kebab-case naming conventions and structural patterns for Webflow projects. It consists of **5 rules** across 3 categories:
 
 - **1 Client-First-specific rule** (1 naming)
-- **3 shared rules** (2 property, 1 structure)
+- **4 shared rules** (3 property, 1 structure)
 
 ## Rule Categories
 
@@ -45,7 +45,7 @@ The Client-First preset enforces kebab-case naming conventions and structural pa
 
 ---
 
-### 2. Shared Property Rules (2 rules)
+### 2. Shared Property Rules (3 rules)
 
 #### `shared:property:duplicate-of-utility`
 
@@ -123,6 +123,20 @@ The Client-First preset enforces kebab-case naming conventions and structural pa
 
 ---
 
+#### `canonical:utility-duplicate-property`
+
+- **Name**: Consolidate duplicate utility properties
+- **Type**: Structure Rule
+- **Severity**: Warning
+- **Target Classes**: Utility
+- **Configurable**: ✅
+
+**Description**: Detects utility classes that declare the same CSS property/value as other utilities. Teams should consolidate aliases to avoid redundancy.
+
+**Auto-fix**: ❌ (Manual consolidation required)
+
+---
+
 ### 3. Shared Structure Rules (1 rule)
 
 #### `shared:structure:missing-class-on-div`
@@ -155,6 +169,7 @@ The Client-First preset enforces kebab-case naming conventions and structural pa
 | `cf:naming:class-format`                | Client-First: Custom Class Format      | Naming    | Error    | ❌       | ✅           |
 | `shared:property:duplicate-of-utility`  | Avoid duplicate of existing utility    | Structure | Warning  | ❌       | ✅           |
 | `shared:property:color-variable`        | Use Color Variables                    | Property  | Warning  | ❌       | ✅           |
+| `canonical:utility-duplicate-property`  | Consolidate duplicate utility properties | Structure | Warning  | ❌       | ✅           |
 | `shared:structure:missing-class-on-div` | Block elements must have style classes | Structure | Warning  | ❌       | ❌           |
 
 ## Client-First Class Naming Convention

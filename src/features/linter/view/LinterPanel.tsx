@@ -11,7 +11,15 @@ import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
 import { cn } from "@/shared/utils";
 
 export function LinterPanel() {
-  const { results, passedClassNames, loading, error, hasRun, lintPage } = usePageLint();
+  const {
+    results,
+    passedClassNames,
+    ignoredClassNames: pageIgnoredClassNames,
+    loading,
+    error,
+    hasRun,
+    lintPage,
+  } = usePageLint();
   // const opinionMode: "strict" | "balanced" | "lenient" = "balanced";
   const count = results.length;
   const [mode, setMode] = useState<LintViewMode>("element");
@@ -39,6 +47,7 @@ export function LinterPanel() {
   const {
     results: elementResults,
     classNames: elementClassNames,
+    ignoredClassNames: elementIgnoredClassNames,
     loading: elementLoading,
     refresh: refreshElementLint,
     structuralContext,
@@ -59,6 +68,10 @@ export function LinterPanel() {
   const activePassedClassNames: string[] = useMemo(
     () => (mode === "page" ? passedClassNames : elementClassNames),
     [mode, passedClassNames, elementClassNames]
+  );
+  const activeIgnoredClassNames: string[] = useMemo(
+    () => (mode === "page" ? pageIgnoredClassNames : elementIgnoredClassNames),
+    [mode, pageIgnoredClassNames, elementIgnoredClassNames]
   );
   const isBusy = mode === "page" ? loading : elementLoading;
 
@@ -147,6 +160,7 @@ export function LinterPanel() {
                   <ViolationsList
                     violations={filteredViolations}
                     passedClassNames={activePassedClassNames}
+                    ignoredClassNames={activeIgnoredClassNames}
                     showHighlight={mode === "page" || (mode === "element" && structuralContext)}
                     bypassAnimation={mode === "element"}
                     onScrollStateChange={mode === "page" ? setFiltersCondensed : undefined}

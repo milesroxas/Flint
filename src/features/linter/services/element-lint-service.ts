@@ -7,6 +7,15 @@ import type { LintContext, LintContextService } from "@/features/linter/services
 import type { RuleRunner } from "@/features/linter/services/rule-runner";
 import { createDebugger } from "@/shared/utils/debug";
 
+export interface ElementLintOptions {
+  classFilter?: (name: string) => boolean;
+}
+
+export interface ElementLintResult {
+  results: RuleResult[];
+  ignoredClassNames: string[];
+}
+
 export type ElementLintService = ReturnType<typeof createElementLintService>;
 
 export function createElementLintService(deps: { contextService: LintContextService; ruleRunner: RuleRunner }) {
@@ -16,8 +25,9 @@ export function createElementLintService(deps: { contextService: LintContextServ
   async function lintElement(
     element: WebflowElement,
     pageContext?: LintContext,
-    useStructuralContext: boolean = false
-  ): Promise<RuleResult[]> {
+    useStructuralContext: boolean = false,
+    options?: ElementLintOptions
+  ): Promise<ElementLintResult> {
     if (!element || typeof (element as any).getStyles !== "function") {
       const isComponentInstance =
         (element as any)?.type === "ComponentInstance" ||
@@ -27,7 +37,7 @@ export function createElementLintService(deps: { contextService: LintContextServ
           "lintElement: element lacks getStyles and is not a component instance in structural mode",
           (element as any)?.type
         );
-        return [];
+        return { results: [], ignoredClassNames: [] };
       }
     }
 
@@ -61,7 +71,21 @@ export function createElementLintService(deps: { contextService: LintContextServ
       debug.log("lintElement: standard context analyzing", elementStyles.length, "styles for", elementId);
     }
 
-    // 3) Execute rules via the same runner API used by page scans
+    // 3) Apply third-party class filter before running rules
+    const ignoredClassNames: string[] = [];
+    const classFilter = options?.classFilter;
+    if (classFilter) {
+      const filtered = stylesToAnalyze.filter((s) => {
+        if (!classFilter(s.name)) {
+          ignoredClassNames.push(s.name);
+          return false;
+        }
+        return true;
+      });
+      stylesToAnalyze = filtered;
+    }
+
+    // 4) Execute rules via the same runner API used by page scans
     //    Skip page rules when no page context is available
     const results = ruleRunner.runRulesOnStylesWithContext(
       stylesToAnalyze,
@@ -86,10 +110,10 @@ export function createElementLintService(deps: { contextService: LintContextServ
     if (!useStructuralContext) {
       const filteredResults = results.filter((r) => r.elementId === elementId);
       debug.log("lintElement: filtered to selected element only", filteredResults.length, "of", results.length);
-      return filteredResults;
+      return { results: filteredResults, ignoredClassNames };
     }
 
-    return results;
+    return { results, ignoredClassNames };
   }
 
   return { lintElement } as const;

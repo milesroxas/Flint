@@ -23,7 +23,6 @@ src/features/linter/rules/
 │   ├── __tests__/
 │   ├── child-group-key-match.ts
 │   ├── main-children.page.ts
-│   ├── main-singleton.page.ts
 │   ├── section-parent-is-main.ts
 │   └── index.ts
 ├── shared/                       # Rules shared across presets
@@ -50,17 +49,13 @@ src/features/linter/rules/
 │   │   └── index.ts
 │   ├── property/
 │   │   ├── utility-class-duplicate-properties.ts
-│   │   ├── utility-class-exact-duplicate.ts
-│   │   └── index.ts
-│   ├── structure/
-│   │   └── utility-style-order.page.ts
+│   │   └── utility-class-exact-duplicate.ts
 │   ├── README.md
 │   └── index.ts
 ├── client-first/                  # Client-First preset-specific rules
 │   ├── naming/
 │   │   ├── naming-class-format.ts
 │   │   └── index.ts
-│   ├── role-aware/
 │   ├── README.md
 │   └── index.ts
 └── README.md
@@ -108,10 +103,9 @@ The linter now features intelligent message formatting that automatically applie
 
 These use canonical roles and the element graph. They apply to any preset.
 
-- `main-singleton.page.ts` (page): Enforces exactly one `main` per page
-- `main-children.page.ts` (page): Requires `main` to contain at least one `section` or `componentRoot` child
-- `section-parent-is-main.ts` (element): `section` must be a direct child of `main`
-- `child-group-key-match.ts` (element): `childGroup` must share the component key with its nearest `componentRoot` ancestor (derived via `parseClass`)
+- `main-children.page.ts` (page): Requires `main` to contain at least one `section` or `componentRoot` child — **registered** in `registry.ts`
+- `child-group-key-match.ts` (element): `childGroup` must share the component key with its nearest `componentRoot` ancestor — **registered** in `registry.ts`
+- `section-parent-is-main.ts` (element): `section` must be a direct child of `main` — implemented but **not currently registered** in the registry
 
 Do not duplicate these in presets. If a preset needs stronger/different behavior, extend detectors or add additional role‑aware rules that complement (not replace) the canonical set.
 
@@ -121,9 +115,9 @@ Do not duplicate these in presets. If a preset needs stronger/different behavior
 
 ### Property Rules
 
-- `color-variable.ts`: Detects color values that should use CSS variables
-- `utility-duplicate-properties.ts`: Identifies duplicate CSS properties from utility classes
-- `utility-duplicate-property.ts`: Identifies single utility property duplicates
+- `color-variable.ts`: Detects color values that should use CSS variables (`shared:property:color-variable`)
+- `utility-duplicate-properties.ts`: Identifies custom/combo classes that duplicate or subset a utility (`shared:property:duplicate-of-utility`)
+- `utility-duplicate-property.ts`: Identifies utility classes that duplicate the same property/value as other utilities (`canonical:utility-duplicate-property`)
 
 ### Structure Rules
 
@@ -135,14 +129,13 @@ These shared rules are imported and used by multiple presets to avoid duplicatio
 
 ## Preset‑specific Rules
 
-### Lumos (naming, composition, property)
+### Lumos (naming, composition, shared property/structure)
 
 - **Naming**: `naming-class-format.ts`, `combo-class-format.element.ts`
 - **Composition**: `class-order.element.ts`, `variant-requires-base.element.ts`, `combo-limit.element.ts`
-- **Property**: `utility-class-duplicate-properties.ts`, `utility-class-exact-duplicate.ts`
-- **Structure**: `utility-style-order.page.ts`
+- **Property**: Uses shared rules only. Lumos-specific files `utility-class-duplicate-properties.ts` and `utility-class-exact-duplicate.ts` exist but are not currently included in the preset.
 
-### Client‑First (naming)
+### Client‑First (naming, shared property/structure)
 
 - **Naming**: `naming-class-format.ts`
 
@@ -171,7 +164,7 @@ These shared rules are imported and used by multiple presets to avoid duplicatio
 
 2. Register in a preset:
 
-   - Edit `src/features/linter/presets/<preset>.preset.ts`
+   - Edit `src/features/linter/presets/<preset>.preset.ts` (e.g. `lumos.preset.ts`, `client-first.preset.ts`)
    - Add the rule in the `rules` array (canonical first, then preset naming/property, then shared)
 
 3. If your rule needs class parsing or graph helpers, use the provided `analyzeElement` args

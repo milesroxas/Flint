@@ -4,10 +4,10 @@ This document provides a comprehensive overview of all rules implemented in the 
 
 ## Overview
 
-The Lumos preset enforces a custom class naming convention and structural patterns for Webflow projects. It consists of **8 rules** across 4 categories:
+The Lumos preset enforces a custom class naming convention and structural patterns for Webflow projects. It consists of **9 rules** across 4 categories:
 
 - **5 Lumos-specific rules** (2 naming, 3 composition)
-- **3 shared rules** (2 property, 1 structure)
+- **4 shared rules** (3 property, 1 structure)
 
 ## Rule Categories
 
@@ -183,7 +183,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 ---
 
-### 3. Shared Property Rules (2 rules)
+### 3. Shared Property Rules (3 rules)
 
 #### `shared:property:duplicate-of-utility`
 
@@ -261,6 +261,20 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 ---
 
+#### `canonical:utility-duplicate-property`
+
+- **Name**: Consolidate duplicate utility properties
+- **Type**: Structure Rule
+- **Severity**: Warning
+- **Target Classes**: Utility
+- **Configurable**: ✅
+
+**Description**: Detects utility classes that declare the same CSS property/value as other utilities. Teams should consolidate aliases to avoid redundancy.
+
+**Auto-fix**: ❌ (Manual consolidation required)
+
+---
+
 ### 4. Shared Structure Rules (1 rule)
 
 #### `shared:structure:missing-class-on-div`
@@ -297,6 +311,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 | `lumos:composition:combo-limit`           | Limit classes after base                       | Composition | Error    | ❌       | ✅           |
 | `shared:property:duplicate-of-utility`    | Avoid duplicate of existing utility            | Structure   | Warning  | ❌       | ✅           |
 | `shared:property:color-variable`          | Use Color Variables                            | Property    | Warning  | ❌       | ✅           |
+| `canonical:utility-duplicate-property`    | Consolidate duplicate utility properties        | Structure   | Warning  | ❌       | ✅           |
 | `shared:structure:missing-class-on-div`   | Block elements must have style classes         | Structure   | Warning  | ❌       | ❌           |
 
 ## Lumos Class Naming Convention
