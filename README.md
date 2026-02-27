@@ -4,14 +4,14 @@ Lint Webflow classes in real time. Validates naming, detects duplicate utilities
 
 ### Table of Contents
 
-- Overview
-- Features
-- Quick start
-- Development
-- Architecture overview
-- Documentation index
-- Testing
-- Project structure
+- [Overview](#overview)
+- [Features](#features)
+- [Quick start](#quick-start)
+- [Development](#development)
+- [Architecture overview](#architecture-overview)
+- [Documentation index](#documentation-index)
+- [Testing](#testing)
+- [Project structure](#project-structure)
 
 ### Overview
 
@@ -36,11 +36,13 @@ Flint is a React + Vite Designer extension written in strict TypeScript. It atta
   ```bash
   pnpm dev
   ```
-- Build timestamped `bundle.zip` files (moved into `bundle/development/` or `bundle/prod/`):
+- Build timestamped bundles:
   ```bash
-  pnpm build:dev    # uses Vite development mode
-  pnpm build:prod   # uses Vite production mode
+  pnpm build       # Interactive CLI: pick channel (prod/dev) and recipient
+  pnpm build:dev   # Direct: development mode → bundle/development/internal/
+  pnpm build:prod  # Direct: production mode → bundle/prod/internal/
   ```
+  Output goes to `bundle/<channel>/<recipient>/` (e.g. `bundle/prod/group-a/`).
 - Preview the compiled extension locally:
   ```bash
   pnpm preview
@@ -58,7 +60,7 @@ Flint is a React + Vite Designer extension written in strict TypeScript. It atta
 - Path aliases: `@/* → src/*` (`tsconfig.json`) aligned with Vite (`vite.config.ts`).
 - Framework toggles: `.env.development` / `.env.production` expose `VITE_ENABLE_CLIENT_FIRST` and `VITE_ENABLE_LUMOS` (see `docs/guides/framework_config.md`).
 - Webflow integration: `vite.config.ts` registers a `wf-vite-extension-plugin` that injects the Designer boot scripts, watches TS/TSX/CSS files, and serves `webflow.json` via `/__webflow` for the CLI.
-- Build pipeline: `pnpm build:*` runs `tsc`, Vite build, `webflow extension bundle`, and moves the generated `bundle.zip` into `bundle/`. `scripts/post-build.js` can mirror `dist/` into `public/` for manual distribution.
+- Build pipeline: `pnpm build` runs an interactive CLI; `pnpm build:dev` / `pnpm build:prod` run `tsc`, Vite build, `webflow extension bundle`, and move the zip into `bundle/<channel>/<recipient>/`. `scripts/post-build.js` can mirror `dist/` into `public/` for manual distribution.
 
 ### Architecture overview
 
@@ -119,7 +121,7 @@ Flint is a React + Vite Designer extension written in strict TypeScript. It atta
 - Current coverage focuses on rule behavior:
   - Lumos naming + composition suites under `src/features/linter/rules/lumos/**/__tests__/`.
   - Canonical page rules under `src/features/linter/rules/canonical/__tests__/`.
-  - There are no dedicated `src/features/linter/services/__tests__` or `src/entities/style/model/__tests__` directories today; service changes should be validated manually or by adding new Vitest suites alongside the affected modules.
+  - There are no dedicated `src/features/linter/services/__tests__` or `src/entities/style/services/__tests__` directories today; service changes should be validated manually or by adding new Vitest suites alongside the affected modules.
 
 ### Project structure
 

@@ -1,5 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
+import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
 
 export default function ExtensionWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -12,23 +14,8 @@ export default function ExtensionWrapper({ children }: { children: React.ReactNo
       return;
     }
 
-    async function resizeExtension() {
-      try {
-        // custom size (clamped to min 240×360, max 1200×800)
-        await webflow.setExtensionSize({ width: 400, height: 800 });
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.log("Extension UI resized to 400×800");
-        }
-      } catch (err) {
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.error("Error resizing extension UI", err);
-        }
-      }
-    }
-
-    void resizeExtension();
+    const preset = useLinterSettingsStore.getState().windowPreset;
+    void applyWindowPreset(preset);
   }, []);
 
   // Maintain a concrete pixel height so descendant h-full/min-h-0 and

@@ -1,6 +1,7 @@
 import type { OpinionMode } from "@/features/linter/model/opinion.modes";
 import { getDefaultPresetId, getPresetIds } from "@/features/linter/presets";
 import { initializeRuleRegistry, ruleRegistry } from "@/features/linter/services/registry";
+import { registerFrameworkPreset } from "@/shared/lib/analytics";
 
 let isInitialized = false;
 let currentMode: OpinionMode = "balanced";
@@ -47,6 +48,7 @@ export function ensureLinterInitialized(mode: OpinionMode = "balanced", preset: 
   currentPreset = preset;
   // Persist selected preset so subsequent UI states (e.g., mode switches) keep it
   safeWriteStorage(PRESET_STORAGE_KEY, currentPreset);
+  registerFrameworkPreset(currentPreset);
   void (async () => {
     try {
       const styleCacheMod = await import("@/entities/style/services/style-cache");

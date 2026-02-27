@@ -9,7 +9,7 @@ export async function applyWindowPreset(id: WindowPreset): Promise<void> {
     const wf = (window as any).webflow;
     if (typeof wf?.setExtensionSize !== "function") return;
 
-    const width = window.innerWidth || 400;
+    const width = 400;
     const requested = WINDOW_PRESETS[id].height;
     const clampedHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, requested));
 

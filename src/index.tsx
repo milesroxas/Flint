@@ -1,7 +1,8 @@
 import "./styles/globals.css";
 import posthog from "posthog-js";
 import { createRoot } from "react-dom/client";
-import { identifySiteGroup, identifyWorkspaceGroup } from "@/shared/lib/analytics";
+import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import { identifySiteGroup, identifyWorkspaceGroup, registerFrameworkPreset } from "@/shared/lib/analytics";
 import { buildInfo } from "@/shared/lib/build-info";
 
 posthog.init("phc_kJd34pP5g9zgEp8Q9dAIGnTx6vT8Vlafo2C3bzMfcR4", {
@@ -20,6 +21,7 @@ posthog.register({
   build_time: buildInfo.buildTime,
   bundle_recipient: buildInfo.recipient,
 });
+registerFrameworkPreset(getCurrentPreset());
 
 webflow.getSiteInfo().then((siteInfo) => {
   identifySiteGroup({

@@ -2,6 +2,8 @@
 
 This directory contains preset configurations for the linter. Each preset is self-contained and defines its own rules, grammar, role detection, and element categorization.
 
+**To create or extend a preset:** See `docs/guides/extending-presets.md` (single source of truth).
+
 ## Current Structure
 
 ```

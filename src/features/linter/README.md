@@ -50,15 +50,15 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 - **`element-lint-service.ts`** ✨ _Enhanced with Structural Mode_
 
-  - Streamlined from 104 to 49 lines by delegating bootstrap logic to context service
+  - Delegates bootstrap logic to context service
   - **Structural mode**: when enabled, collects styles from selected element + all descendants via graph traversal
   - **Standard mode**: analyzes only the selected element (original behavior)
   - Enhanced API: `lintElement(element, pageContext?, useStructuralContext)` supports structural subtree analysis
   - Focuses purely on element-specific linting logic
 
-- **`page-lint-service.ts`** ✨ _Simplified (77% reduction)_
+- **`page-lint-service.ts`** ✨ _Simplified_
 
-  - Streamlined from 200 to 45 lines by delegating bootstrap logic to context service
+  - Delegates bootstrap logic to context service
   - All caching and optimization handled by shared context service
 
 - **`utility-class-analyzer.ts`** (in `services/analyzers/`)
@@ -87,7 +87,7 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 - `registry.ts`
 
   - Global `ruleRegistry` and `ruleConfigService`
-  - `initializeRuleRegistry(mode, presetId?)` resolves the active preset from the dynamic registry (`src/presets/index.ts`), registers its rules, and applies persisted configs
+  - `initializeRuleRegistry(mode, presetId?)` resolves the active preset from `presets/index.ts`, registers its rules, and applies persisted configs
   - `addCustomRule()` registers a rule dynamically
 
 - `rule-runner.ts`
@@ -97,15 +97,20 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
   - Entry point: `runRulesOnStylesWithContext(stylesWithElement, contextsMap, allStyles)`
   - **Structural support**: receives styles for all subtree elements, enabling child-group rules to run on descendants
 
-- **`linter-service-factory.ts`** ✨ _Enhanced_
+- **`linter-service-factory.ts`**
 
-  - Now creates and exposes the shared `contextService` for future use
-  - Maintains zero breaking changes while preparing for context-aware features
+  - Creates all linter services with shared dependencies; exposes `contextService`
+  - `createLinterServices()` returns styleService, analyzer, contextService, ruleRunner, elementLintService, pageLintService, presetElementsService
 
-- Grammar and role mapping (per preset)
+- **`linter-service-singleton.ts`**
 
-  - `grammar/lumos.grammar.ts`, `roles/lumos.roles.ts`
-  - `grammar/client-first.grammar.ts`, `roles/client-first.roles.ts`
+  - `getLinterServices()` returns shared service instance (used by `scan-current-page.ts`, `scan-selected-element.ts`, `RecognizedElementsView`)
+  - `resetLinterServices()` clears singleton (e.g., on preset change)
+
+- Grammar and role detection (per preset)
+
+  - `grammar/lumos.grammar.ts`, `detectors/lumos.detectors.ts`
+  - `grammar/client-first.grammar.ts`, `detectors/client-first.detectors.ts`
 
 - **Library functions** (in `lib/`)
 
@@ -116,19 +121,17 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 ### Rules
 
-- Rules are defined under `src/rules/` and registered via presets in `src/presets/`.
-  - Naming: `rules/naming/*`
-  - Property: `rules/property/*`
-  - Context‑aware: `rules/context-aware/*`
+- Rules are defined under `features/linter/rules/` and registered via presets in `features/linter/presets/`.
+  - Naming: `rules/lumos/naming/*`, `rules/client-first/naming/*`
+  - Property: `rules/lumos/property/*`, `rules/shared/property/*`
+  - Structure: `rules/shared/structure/*`, `rules/lumos/composition/*`
   - **Canonical**: `rules/canonical/*` - structural rules like `child-group-key-match` that analyze element hierarchies
 
 ### Types
 
-- `src/features/linter/model/rule.types.ts`
+- `model/rule.types.ts`
   - `RuleResult` includes `metadata` (e.g., role, parentId)
   - `BaseRule` supports `analyzeElement` for element-level role/graph-based checks
-- `src/entities/element/model/element-context.types.ts`
-  - Defines legacy context types (deprecated) retained for minimal compatibility
 
 ### View, UI, hooks, and store
 
@@ -151,10 +154,10 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 - `lib/color-utils.ts`: Color utility functions for consistent styling
 - **Smart Badge Variants**: New badge variants (`webflowClass`, `errorContent`, `suggestionContent`, `dynamicProperty`) for enhanced visual hierarchy
 
-#### Hooks
+#### Hooks (exported from stores)
 
-- `hooks/useElementLint.ts`: re-exports the new Zustand store hook for backward compatibility.
-- `hooks/usePageLint.ts`: thin wrapper around the page store.
+- `useElementLint` (from `store/elementLint.store.ts`): Zustand store hook for selected-element lint; ties into Webflow selection changes.
+- `usePageLint` (from `store/usePageLintStore.ts`): alias for `usePageLintStore`; the store exposes `lintPage`, results, and status.
 
 #### Store
 
@@ -211,15 +214,14 @@ Roles are computed via `services/role-detection.service.ts` using the active pre
 
 - `services/element-lint-service.ts`, `services/analyzers/utility-class-analyzer.ts`, `services/rule-runner.ts`
 - `services/rule-registry.ts`, `services/rule-configuration-service.ts`, `services/registry.ts`
-- `services/lint-context.service.ts`
+- `services/lint-context.service.ts`, `services/linter-service-factory.ts`, `services/linter-service-singleton.ts`
 - `services/executors/naming-rule-executor.ts`, `services/executors/property-rule-executor.ts`
-- `entities/style/model/style.service.ts`
-- `rules/*` (naming, property, context-aware, canonical)
-- `hooks/useElementLint.ts`, `hooks/usePageLint.ts`
-- `store/usePageLintStore.ts`, `store/elementLint.store.ts`
+- `src/entities/style/services/style.service.ts`
+- `rules/*` (lumos, client-first, shared, canonical)
+- `store/elementLint.store.ts` (useElementLint), `store/usePageLintStore.ts` / `store/pageLint.store.ts` (usePageLint)
 - `view/LinterPanel.tsx`, `ui/controls/LintPageButton.tsx`, `ui/controls/StructuralContextToggle.tsx`, `ui/violations/ViolationsList.tsx`, `ui/violations/ViolationItem.tsx`, `ui/controls/ModeToggle.tsx`, `ui/controls/PresetSwitcher.tsx`, `ui/controls/ActionBar.tsx`, `ui/panel/LintPanelHeader.tsx`
 - **Message Formatting**: `lib/message-formatter.ts`, `lib/color-utils.ts`
-- **Enhanced Badges**: `shared/ui/badge.tsx` (with new color variants)
+- **Enhanced Badges**: `src/shared/ui/badge.tsx` (variants: webflowClass, errorContent, suggestionContent, dynamicProperty)
 
 ## Notes and limitations
 

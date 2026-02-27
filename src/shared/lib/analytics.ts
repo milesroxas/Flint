@@ -83,6 +83,13 @@ export function trackDocsOpened(props: { preset: string }) {
   posthog.capture("docs_opened", props);
 }
 
+// ─── Super Properties ───────────────────────────────────────────────────────────
+
+/** Registers framework preset as a super property so it appears on every event for PostHog filtering. */
+export function registerFrameworkPreset(preset: string): void {
+  posthog.register({ framework_preset: preset });
+}
+
 // ─── Group Identity ─────────────────────────────────────────────────────────────
 
 export function identifySiteGroup(props: { siteId: string; siteName: string; shortName: string }) {

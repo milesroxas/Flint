@@ -11,7 +11,7 @@
  *   (or node scripts/build-cli.js)
  */
 
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from "node:fs";
 import * as p from "@clack/prompts";
 import color from "picocolors";
@@ -27,9 +27,20 @@ function progressBar(pct, width = 22) {
 }
 
 function run(cmd, args, env = {}) {
-  return spawnSync(cmd, args, {
-    env: { ...process.env, ...env },
-    encoding: "utf-8",
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, {
+      env: { ...process.env, ...env },
+      encoding: "utf-8",
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (d) => {
+      stdout += d;
+    });
+    child.stderr?.on("data", (d) => {
+      stderr += d;
+    });
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
   });
 }
 
@@ -148,7 +159,7 @@ async function main() {
 
   // Step 1 — Type check
   s.start(`${progressBar(STEPS[0].pct)}  ${STEPS[0].label}…`);
-  const tscResult = run("pnpm", ["exec", "tsc", "--noEmit"]);
+  const tscResult = await run("pnpm", ["exec", "tsc", "--noEmit"]);
   if (tscResult.status !== 0) {
     s.stop(color.red("Type check failed"));
     p.log.error(tscResult.stdout || tscResult.stderr || "Unknown error");
@@ -157,7 +168,7 @@ async function main() {
 
   // Step 2 — Vite build
   s.message(`${progressBar(STEPS[1].pct)}  ${STEPS[1].label}…`);
-  const viteResult = run("pnpm", ["exec", "vite", "build", "--mode", viteMode], env);
+  const viteResult = await run("pnpm", ["exec", "vite", "build", "--mode", viteMode], env);
   if (viteResult.status !== 0) {
     s.stop(color.red("Vite build failed"));
     p.log.error(viteResult.stdout || viteResult.stderr || "Unknown error");
@@ -166,7 +177,7 @@ async function main() {
 
   // Step 3 — Webflow bundle
   s.message(`${progressBar(STEPS[2].pct)}  ${STEPS[2].label}…`);
-  const bundleResult = run("pnpm", ["exec", "webflow", "extension", "bundle"]);
+  const bundleResult = await run("pnpm", ["exec", "webflow", "extension", "bundle"]);
   if (bundleResult.status !== 0) {
     s.stop(color.red("Webflow bundle failed"));
     p.log.error(bundleResult.stdout || bundleResult.stderr || "Unknown error");

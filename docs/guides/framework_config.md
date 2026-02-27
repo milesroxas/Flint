@@ -18,23 +18,18 @@ Framework availability is controlled via environment variables in `.env.producti
 
 ### Setup
 
-1. Copy the example files:
-   ```bash
-   cp .env.production.example .env.production
-   cp .env.development.example .env.development
+1. Create `.env.production` and `.env.development` in the project root (these files are gitignored). Add the variables:
+   ```
+   VITE_ENABLE_CLIENT_FIRST=true
+   VITE_ENABLE_LUMOS=true
    ```
 
-2. Edit the files to enable/disable frameworks as needed:
-   ```bash
-   # .env.production
-   VITE_ENABLE_CLIENT_FIRST=true
-   VITE_ENABLE_LUMOS=false  # Disable Lumos in production
-   ```
+2. Edit the values to enable/disable frameworks as needed.
 
 3. Build your project:
    ```bash
-   pnpm run build:prod   # Uses .env.production
-   pnpm run build:dev    # Uses .env.development
+   pnpm build:prod   # Uses .env.production
+   pnpm build:dev    # Uses .env.development
    ```
 
 ## Examples
@@ -63,5 +58,5 @@ VITE_ENABLE_LUMOS=false
 ## Notes
 
 - Changes to `.env.*` files require rebuilding the project
-- The `.env.*` files are gitignored - use `.env.*.example` as templates
+- The `.env.*` files are gitignored
 - If a variable is not set or set to any value other than `"false"`, the framework will be enabled by default

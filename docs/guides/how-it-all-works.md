@@ -149,7 +149,7 @@ Result object highlights (`RuleResult`):
 
 ## Style service and caching
 
-`src/entities/style/model/style.service.ts`
+`src/entities/style/services/style.service.ts`
 
 - Site styles
   - `getAllStylesWithProperties()` caches site‑wide styles for the session and returns `{ name, properties, order, isCombo, detectionSource }[]`.
@@ -164,11 +164,11 @@ Result object highlights (`RuleResult`):
 ## Processes, hooks, and store
 
 - Processes
-  - `src/processes/scan/scan-selected-element.ts`: scans a single element using the element service and shared registry
-  - `src/processes/scan/scan-current-page.ts`: scans a page using the page service and shared registry; provides `scanCurrentPageWithMeta()` to also return the class set
-- Hooks
-  - `useElementLint.ts`: ties into Webflow selection changes and returns violations/contexts/classNames/roles
-  - `usePageLint.ts`: thin wrapper around the store
+  - `src/features/linter/use-cases/scan-selected-element.ts`: scans a single element using the element service and shared registry
+  - `src/features/linter/use-cases/scan-current-page.ts`: scans a page using the page service and shared registry; provides `scanCurrentPageWithMeta()` to also return the class set
+- Hooks (exported from Zustand stores)
+  - `useElementLint` (from `elementLint.store.ts`): ties into Webflow selection changes and returns violations/contexts/classNames/roles
+  - `usePageLint` (from `usePageLintStore.ts`): thin wrapper around the page store
 - Store
   - `src/features/linter/store/usePageLintStore.ts`: Zustand store holding `results`, `passedClassNames`, `loading`, `error`, `hasRun`, and actions `lintPage()` / `clearResults()`
 
@@ -222,13 +222,13 @@ Result object highlights (`RuleResult`):
 
 ## Testing
 
-- Run tests: `pnpm exec vitest`
+- Run tests: `pnpm test` or `pnpm exec vitest`
 - Tests live under:
-  - `src/features/linter/services/__tests__/` (unit, parity, snapshot)
-  - `src/entities/style/model/__tests__/` (style service behavior)
+  - `src/features/linter/rules/lumos/**/__tests__/` (naming, composition)
+  - `src/features/linter/rules/canonical/__tests__/` (page rules)
 
 ## Extensibility
 
+- **Presets**: See `docs/guides/extending-presets.md` for creating or extending presets (grammar, detectors, rules).
 - Add a new rule by exporting a `Rule` and registering it via the active preset or by calling `addCustomRule(rule)` after initialization.
-- Add or alter presets by editing `src/features/linter/presets/*.preset.ts`, wiring grammar/roles and `contextConfig`.
 - UI additions can read structured metadata from `RuleResult.metadata` without changing the core contracts.

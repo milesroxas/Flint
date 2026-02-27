@@ -19,13 +19,13 @@ function loadFromStorage(): StoredSettings {
       return {
         autoSelectElement: parsed.autoSelectElement ?? true,
         ignoreThirdPartyClasses: parsed.ignoreThirdPartyClasses ?? true,
-        windowPreset: parsed.windowPreset ?? "large",
+        windowPreset: parsed.windowPreset ?? "compact",
       };
     }
   } catch {
     // ignore parse errors
   }
-  return { autoSelectElement: true, ignoreThirdPartyClasses: true, windowPreset: "large" };
+  return { autoSelectElement: true, ignoreThirdPartyClasses: true, windowPreset: "compact" };
 }
 
 function saveToStorage(settings: StoredSettings): void {
