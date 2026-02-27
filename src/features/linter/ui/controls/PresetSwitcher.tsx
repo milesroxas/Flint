@@ -6,6 +6,7 @@ import {
   getCurrentPreset,
 } from "@/features/linter/model/linter.factory";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
+import { trackPresetSwitched } from "@/shared/lib/analytics";
 import { Button } from "@/shared/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 
@@ -54,6 +55,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({ onPresetChange }
                 type="button"
                 key={id}
                 onClick={() => {
+                  trackPresetSwitched({ from_preset: preset, to_preset: id });
                   ensureLinterInitialized("balanced", id);
                   setPreset(id);
                   try {

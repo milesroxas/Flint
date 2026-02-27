@@ -3,11 +3,12 @@ import posthog from "posthog-js";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
-import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
+import { ensureLinterInitialized, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
 import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
+import { trackLintPageCompleted } from "@/shared/lib/analytics";
 import { useAnimationStore } from "./animation.store";
 
 interface PageLintState {
@@ -65,6 +66,16 @@ export const usePageLintStore = create<PageLintStore>()(
             classFilter: buildClassFilter(),
           });
           set({ results, passedClassNames: classNames, ignoredClassNames, loading: false });
+
+          trackLintPageCompleted({
+            preset: getCurrentPreset(),
+            error_count: results.filter((r) => r.severity === "error").length,
+            warning_count: results.filter((r) => r.severity === "warning").length,
+            suggestion_count: results.filter((r) => r.severity === "suggestion").length,
+            total_violations: results.length,
+            passed_count: classNames.length,
+            ignored_count: ignoredClassNames.length,
+          });
 
           // Trigger severity tiles animation after results are ready
           requestAnimationFrame(() => {

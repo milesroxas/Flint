@@ -8,6 +8,7 @@ import { type LintViewMode, ModeToggle } from "@/features/linter/ui/controls/Mod
 import SeverityFilter, { type SeverityFilterValue } from "@/features/linter/ui/controls/SeverityFilter";
 import { StructuralContextToggle } from "@/features/linter/ui/controls/StructuralContextToggle";
 import { ViolationsList } from "@/features/linter/ui/violations/ViolationsList";
+import { trackModeSwitched, trackSeverityFilterChanged } from "@/shared/lib/analytics";
 import { cn } from "@/shared/utils";
 
 export function LinterPanel() {
@@ -124,6 +125,7 @@ export function LinterPanel() {
                 <ModeToggle
                   mode={mode}
                   onChange={(next) => {
+                    trackModeSwitched({ from_mode: mode, to_mode: next });
                     setMode(next);
                   }}
                 />
@@ -151,7 +153,10 @@ export function LinterPanel() {
                         warning: warningCount,
                         suggestion: suggestionCount,
                       }}
-                      onChange={setSeverityFilter}
+                      onChange={(next) => {
+                        trackSeverityFilterChanged({ filter: next });
+                        setSeverityFilter(next);
+                      }}
                       condensed={filtersCondensed}
                     />
                   </div>

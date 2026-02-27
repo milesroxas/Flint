@@ -3,6 +3,7 @@ import type { WindowPreset } from "@/features/linter/store/linterSettings.store"
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { WINDOW_PRESETS } from "@/features/window/components/HeightSwitcher";
 import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
+import { trackSettingChanged } from "@/shared/lib/analytics";
 import { useTheme } from "@/shared/providers/theme-provider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
@@ -79,21 +80,30 @@ export const SettingsPanel: React.FC = () => {
         label="Dark mode"
         description="Switch between light and dark appearance."
         checked={isDark}
-        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        onCheckedChange={(checked) => {
+          trackSettingChanged({ setting: "dark_mode", value: checked });
+          setTheme(checked ? "dark" : "light");
+        }}
       />
       <SettingsRow
         id="settings-third-party"
         label="Ignore third-party classes"
         description="Skip known library classes (e.g. Swiper, Splide) during linting."
         checked={ignoreThirdPartyClasses}
-        onCheckedChange={setIgnoreThirdPartyClasses}
+        onCheckedChange={(checked) => {
+          trackSettingChanged({ setting: "ignore_third_party_classes", value: checked });
+          setIgnoreThirdPartyClasses(checked);
+        }}
       />
       <SettingsRow
         id="settings-auto-select"
         label="Auto-select on canvas"
         description="Automatically select the canvas element when opening a violation."
         checked={autoSelectElement}
-        onCheckedChange={setAutoSelectElement}
+        onCheckedChange={(checked) => {
+          trackSettingChanged({ setting: "auto_select_on_canvas", value: checked });
+          setAutoSelectElement(checked);
+        }}
       />
       <SettingsSelectRow
         label="Window size"
@@ -101,6 +111,7 @@ export const SettingsPanel: React.FC = () => {
         value={windowPreset}
         onValueChange={(v) => {
           const preset = v as WindowPreset;
+          trackSettingChanged({ setting: "window_size", value: preset });
           void applyWindowPreset(preset);
           setWindowPreset(preset);
         }}

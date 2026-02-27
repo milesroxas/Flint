@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { WindowPreset } from "@/features/linter/store/linterSettings.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
+import { trackWindowPresetChanged } from "@/shared/lib/analytics";
 import { Button } from "@/shared/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible";
 
@@ -20,6 +21,7 @@ export const HeightSwitcher: React.FC = () => {
   const presetLabel = WINDOW_PRESETS[windowPreset].label;
 
   async function applyPreset(id: WindowPreset) {
+    trackWindowPresetChanged({ from_preset: windowPreset, to_preset: id });
     await applyWindowPreset(id);
     setWindowPreset(id);
     setOpen(false);

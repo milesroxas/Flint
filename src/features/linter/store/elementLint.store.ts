@@ -3,11 +3,12 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { toElementKey } from "@/entities/element/lib/id";
 import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
-import { ensureLinterInitialized } from "@/features/linter/model/linter.factory";
+import { ensureLinterInitialized, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
+import { trackLintElementCompleted, trackStructuralContextToggled } from "@/shared/lib/analytics";
 import { createDebugger } from "@/shared/utils/debug";
 
 // Intentionally unused type guard removed to satisfy no-unused-vars rule; access via window.webflow at runtime
@@ -92,6 +93,13 @@ export const useElementLintStore = create<ElementLintStore>()(
             roles: [],
             loading: false,
           });
+
+          trackLintElementCompleted({
+            preset: getCurrentPreset(),
+            violation_count: results.length,
+            ignored_count: ignoredClassNames.length,
+            structural_context: state.structuralContext,
+          });
         } catch (err: unknown) {
           // eslint-disable-next-line no-console
           console.error("[ElementLintStore] refresh failed", err);
@@ -109,6 +117,7 @@ export const useElementLintStore = create<ElementLintStore>()(
       clear: () => set({ ...initialState }),
 
       setStructuralContext: (enabled: boolean) => {
+        trackStructuralContextToggled({ enabled });
         set({ structuralContext: enabled });
 
         // Auto-refresh when structural context setting changes
@@ -164,6 +173,13 @@ export const useElementLintStore = create<ElementLintStore>()(
           classNames: [],
           roles: [],
           loading: false,
+        });
+
+        trackLintElementCompleted({
+          preset: getCurrentPreset(),
+          violation_count: results.length,
+          ignored_count: ignoredClassNames.length,
+          structural_context: state.structuralContext,
         });
       } catch (err) {
         // eslint-disable-next-line no-console

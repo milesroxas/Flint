@@ -1,6 +1,7 @@
 import { BookOpen } from "lucide-react";
 import type React from "react";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
+import { trackDocsOpened } from "@/shared/lib/analytics";
 import { Button } from "@/shared/ui/button";
 
 const PRESET_DOCS: Record<string, string> = {
@@ -21,6 +22,7 @@ export const DocsButton: React.FC<DocsButtonProps> = ({ className }) => {
   }
 
   const handleClick = () => {
+    trackDocsOpened({ preset });
     window.open(docsUrl, "_blank", "noopener,noreferrer");
   };
 

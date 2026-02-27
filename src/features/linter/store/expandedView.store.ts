@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { trackExpandedViewClosed, trackExpandedViewOpened } from "@/shared/lib/analytics";
 
 // Domain types for expanded view content
 export type ExpandedViewContentType =
@@ -36,10 +37,11 @@ const initialState: ExpandedViewState = {
 
 export const useExpandedViewStore = create<ExpandedViewStore>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
       openExpandedView: (content: ExpandedViewContent) => {
+        trackExpandedViewOpened({ type: content.type, source_rule_id: content.sourceRuleId });
         set({
           isActive: true,
           content,
@@ -47,6 +49,10 @@ export const useExpandedViewStore = create<ExpandedViewStore>()(
       },
 
       closeExpandedView: () => {
+        const current = get().content;
+        if (current) {
+          trackExpandedViewClosed({ type: current.type });
+        }
         set({
           isActive: false,
           content: null,

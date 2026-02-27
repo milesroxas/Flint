@@ -5,6 +5,7 @@ import { useAnimationStore } from "@/features/linter/store/animation.store";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { selectElementById } from "@/features/window/select-element";
+import { trackThirdPartyListViewed, trackViolationOpened } from "@/shared/lib/analytics";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
@@ -95,6 +96,13 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     setOpenId(nextId || undefined);
     if (!nextId) return;
     const violation = idToViolation.get(nextId);
+    if (violation) {
+      trackViolationOpened({
+        rule_id: violation.ruleId,
+        severity: violation.severity,
+        class_name: violation.className ?? undefined,
+      });
+    }
     const elementId = violation?.elementId;
     if (!elementId || !autoSelectElement) return;
     try {
@@ -121,6 +129,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   );
 
   const handleViewLibraryClasses = () => {
+    trackThirdPartyListViewed({ ignored_count: ignoredOnly.length });
     openExpandedView({
       type: "third-party-libraries",
       title: "Third-party library classes",

@@ -3,6 +3,7 @@ import path from "node:path";
 import react from "@vitejs/plugin-react";
 import chokidar from "chokidar";
 import { defineConfig, type Plugin } from "vite";
+import pkg from "./package.json";
 
 const wfDesignerExtensionPlugin = (): Plugin => {
   let webflowHTML = "";
@@ -75,9 +76,14 @@ const wfDesignerExtensionPlugin = (): Plugin => {
   };
 };
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: "./",
   plugins: [react(), wfDesignerExtensionPlugin()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_CHANNEL__: JSON.stringify(mode),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -100,4 +106,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
