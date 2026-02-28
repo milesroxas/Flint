@@ -81,7 +81,8 @@ export const createRuleRunner = (
     graph?: { getTag?: (id: string) => Promise<string | null> },
     getTagName?: (id: string) => string | null,
     getElementType?: (id: string) => string | null,
-    skipPageRules: boolean = false
+    skipPageRules: boolean = false,
+    grammarElementSeparator?: string
   ): RuleResult[] => {
     debug.log(
       "runRulesOnStylesWithContext: styles count",
@@ -202,6 +203,7 @@ export const createRuleRunner = (
               return byElementClassNames.get(id) ?? [];
             },
             parseClass,
+            grammarElementSeparator,
             getTagName,
             getElementType,
           });

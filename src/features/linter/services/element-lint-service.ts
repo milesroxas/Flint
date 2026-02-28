@@ -99,7 +99,8 @@ export function createElementLintService(deps: { contextService: LintContextServ
       { getTag: context.graph.getTag },
       (id: string) => context.tagByElementId.get(id) ?? null,
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
-      !pageContext // Skip page rules when no page context available
+      !pageContext, // Skip page rules when no page context available
+      context.grammarElementSeparator
     );
 
     debug.log("lintElement: rule results count", results.length);

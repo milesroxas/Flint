@@ -83,6 +83,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
     const pattern = /^[a-z0-9_]+$/;
     if (!pattern.test(className)) {
       const suggested = normalizeToUnderscoreFormat(className);
+      const hasValidSuggestion = suggested && /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(suggested);
 
       return {
         ruleId: "lumos:naming:class-format",
@@ -92,7 +93,10 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         className,
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
-        metadata: suggested && /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(suggested) ? { suggestedName: suggested } : undefined,
+        metadata: hasValidSuggestion ? { suggestedName: suggested } : undefined,
+        fix: hasValidSuggestion
+          ? { kind: "rename-class", from: className, to: suggested, scope: "element" }
+          : undefined,
       };
     }
 
@@ -111,6 +115,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
         metadata: { suggestedName: suggestedFix },
+        fix: { kind: "rename-class", from: className, to: suggestedFix, scope: "element" },
       };
     }
 
@@ -129,6 +134,7 @@ export const createLumosCustomClassFormatRule = (): NamingRule => ({
         isCombo: false,
         example: "footer_wrap or hero_secondary_content_wrap",
         metadata: { suggestedName: suggestedFix },
+        fix: { kind: "rename-class", from: className, to: suggestedFix, scope: "element" },
       };
     }
 

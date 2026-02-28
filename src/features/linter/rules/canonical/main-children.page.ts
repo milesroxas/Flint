@@ -17,7 +17,7 @@ export const createMainChildrenPageRule = (): PageRule => ({
     // Find the main element
     const mainEntry = Object.entries(rolesByElement).find(([, role]) => role === "main");
 
-    if (!mainEntry) return []; //
+    if (!mainEntry) return [];
 
     const [mainElementId] = mainEntry;
 
@@ -26,17 +26,8 @@ export const createMainChildrenPageRule = (): PageRule => ({
     const visited = new Set<string>();
     let hasSemanticContent = false;
 
-    // DEBUG: Log graph children detection
-    console.log(`[DEBUG] Graph children for main ${mainElementId}:`, graph.getChildrenIds(mainElementId));
-
     // Track found content for better error messages
     const foundRoles: ElementRole[] = [];
-
-    // DEBUG: Log initial search state
-    console.log(`[DEBUG] Main-children rule starting BFS for ${mainElementId}:`, {
-      initialQueue: queue,
-      rolesByElement,
-    });
 
     while (queue.length > 0 && !hasSemanticContent) {
       const currentElementId = queue.shift();
@@ -50,15 +41,9 @@ export const createMainChildrenPageRule = (): PageRule => ({
       const elementType = getElementType(currentElementId);
       foundRoles.push(role);
 
-      // DEBUG: Log each element being processed
-      console.log(`[DEBUG] Processing element ${currentElementId}: role=${role}, type=${elementType}`);
-
       // Check if we found semantic content
       // ComponentInstance elements are treated as component roots even without class detection
       if (role === "section" || role === "componentRoot" || elementType === "ComponentInstance") {
-        console.log(
-          `[DEBUG] Found semantic content! Element ${currentElementId} has role=${role}, type=${elementType}`
-        );
         hasSemanticContent = true;
         break;
       }

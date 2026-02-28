@@ -47,6 +47,7 @@ export interface LintContext {
   signature: string;
   activePreset: ReturnType<typeof resolvePresetOrFallback>;
   parseClass: (name: string) => any;
+  grammarElementSeparator: string;
   tagByElementId: Map<string, string | null>;
   elementTypeByElementId: Map<string, string | null>;
 }
@@ -314,6 +315,7 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       signature,
       activePreset,
       parseClass,
+      grammarElementSeparator: grammar.elementSeparator,
       tagByElementId,
       elementTypeByElementId,
     };

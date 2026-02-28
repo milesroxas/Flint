@@ -13,6 +13,11 @@ export const CF_CORE_STRUCTURE_CLASSES = new Set([
   "spacing-clean",
 ]);
 
+/** Check whether a class name represents the page-wrapper role. */
+export function isPageWrapperClass(cls: string): boolean {
+  return cls === "page-wrapper" || cls.endsWith("-page-wrapper");
+}
+
 /**
  * Prefixes for core structure utility systems in Client-First.
  */
@@ -37,10 +42,21 @@ function getClassType(name: string): ClassType {
   return "utility";
 }
 
+/**
+ * Check if a token ends with a wrapper suffix.
+ * In Client-First, element names use dashes, so "content-wrapper" is a single token
+ * where "-wrapper" is the suffix.
+ */
+function isWrapperToken(token: string): boolean {
+  const lower = token.toLowerCase();
+  return lower === "wrap" || lower === "wrapper" || lower.endsWith("-wrap") || lower.endsWith("-wrapper");
+}
+
 function parseCustom(name: string): ParsedClass {
-  // Client-First commonly uses kebab for structure; normalize tokens for role extraction
-  const normalized = name.replace(/-/g, "_");
-  const tokens = normalized.split("_").filter(Boolean);
+  // Client-First: underscore `_` is the ONLY folder separator.
+  // Dashes within each segment are meaningful (e.g., "team-list_headshot-image"
+  // = folder "team-list", element "headshot-image"). Do NOT normalize dashes.
+  const tokens = name.split("_").filter(Boolean);
   const parsed: ParsedClass = {
     raw: name,
     kind: "custom",
@@ -52,10 +68,10 @@ function parseCustom(name: string): ParsedClass {
   if (tokens.length >= 2) parsed.elementToken = tokens[tokens.length - 1];
 
   // Extract componentKey: for wrapper patterns, exclude the wrapper suffix
-  // e.g., "home-testimonials_wrapper" -> "home_testimonials", "home-testimonial-cta_wrapper" -> "home_testimonial"
+  // e.g., "home-testimonials_wrapper" -> "home-testimonials", "team-list_headshot-wrapper" -> "team-list"
   if (tokens.length >= 2) {
-    const lastToken = tokens[tokens.length - 1]?.toLowerCase();
-    if (lastToken === "wrap" || lastToken === "wrapper") {
+    const lastToken = tokens[tokens.length - 1] ?? "";
+    if (isWrapperToken(lastToken)) {
       // Remove wrapper suffix and use the remaining tokens as componentKey
       const keyTokens = tokens.slice(0, -1);
       if (keyTokens.length >= 2) {
@@ -68,7 +84,7 @@ function parseCustom(name: string): ParsedClass {
         parsed.componentKey = null;
       }
     } else {
-      // Client-First: treat `section_[root]-[variant]` as component root and key = `root_variant`
+      // Client-First: treat `section_[root]` as component root and key = root token
       if (tokens[0]?.toLowerCase() === "section") {
         if (tokens.length >= 3) {
           parsed.componentKey = tokens.slice(1, 3).join("_");
@@ -79,14 +95,11 @@ function parseCustom(name: string): ParsedClass {
         }
       } else {
         // For other non-wrapper classes in Client-First:
-        // Component key extraction depends on the element's role:
-        // - Component roots (single or two tokens): use first token only
-        // - Child groups (3+ tokens): use first two tokens to capture variant
+        // - 3+ underscore-tokens (nested folders): use first two as componentKey
+        // - 1-2 underscore-tokens: use first token as componentKey
         if (tokens.length >= 3) {
-          // Likely child group: use first two tokens (name + variant)
           parsed.componentKey = tokens.slice(0, 2).join("_");
         } else if (tokens.length >= 1) {
-          // Likely component root: use first token only
           parsed.componentKey = tokens[0];
         } else {
           parsed.componentKey = null;
@@ -100,12 +113,20 @@ function parseCustom(name: string): ParsedClass {
   return parsed;
 }
 
+/**
+ * Tokenize a Client-First custom class name by splitting on underscore only.
+ * Dashes within segments are preserved (e.g., "team-list_headshot-image" → ["team-list", "headshot-image"]).
+ * This is the single source of truth for CF tokenization — use this instead of manual splitting.
+ */
+export const tokenizeCFCustomClass = (name: string): string[] => name.split("_").filter(Boolean);
+
 export const clientFirstGrammar: GrammarAdapter = {
   id: "client-first",
   isCustomFirstRequired: true,
   utilityPrefix: "u-",
   componentPrefix: "c-",
   comboPrefix: "is-",
+  elementSeparator: "-",
   parse(name: string): ParsedClass {
     const kind = getClassType(name);
     if (kind !== "custom") {

@@ -70,6 +70,7 @@ export const lumosGrammar: GrammarAdapter = {
   utilityPrefix: "u-",
   componentPrefix: "c-",
   comboPrefix: "is-",
+  elementSeparator: "_",
   parse(name: string): ParsedClass {
     const kind = getClassType(name);
     if (kind !== "custom") {

@@ -142,20 +142,21 @@ function analyzeContentByMessageStructure(
  * Detects if content appears to be a Webflow class name
  */
 function isWebflowClassName(content: string): boolean {
-  // Common Webflow class patterns
+  // Webflow class patterns supporting both Lumos (underscore) and Client-First (mixed dash/underscore)
   const webflowPatterns = [
-    /^[a-z]+_[a-z_]+$/, // Lumos pattern: component_element, component_variant_element
-    /^[a-z]+-[a-z-]+$/, // Client-First pattern: component-element
+    /^[a-z]+_[a-z_]+$/, // Lumos: component_element, component_variant_element
+    /^[a-z]+-[a-z-]+$/, // Utility/global: text-size-large
+    /^[a-z][a-z0-9-]*_[a-z][a-z0-9_-]*$/, // Client-First: folder-name_element-name (mixed separators)
     /^page_/, // Page-level classes
-    /^section_/, // Section classes
-    /^component_/, // Component classes
+    /^section[_-]/, // Section classes (both conventions)
     /^hero_/, // Hero classes
     /^nav_/, // Navigation classes
     /^footer_/, // Footer classes
-    /_wrap$/, // Wrapper classes
+    /[_-]wrap$/, // Wrapper classes (both conventions)
+    /[_-]wrapper$/, // Wrapper classes (both conventions)
     /_contain$/, // Container classes
-    /_main$/, // Main classes
-    /_content$/, // Content classes
+    /[_-]main$/, // Main classes
+    /[_-]content$/, // Content classes
   ];
 
   return webflowPatterns.some((pattern) => pattern.test(content));

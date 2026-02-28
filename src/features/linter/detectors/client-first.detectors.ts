@@ -5,6 +5,7 @@ import {
   isStructuralChildGroup,
   SUBPART_HINTS,
 } from "@/features/linter/detectors/shared/wrapper-detection";
+import { isPageWrapperClass } from "@/features/linter/grammar/client-first.grammar";
 import type { ElementSnapshot, RoleDetector } from "@/features/linter/model/preset.types";
 
 export const clientFirstRoleDetectors: RoleDetector[] = [
@@ -21,9 +22,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
         if (parentId) {
           // Check if parent is page-wrapper (or elements ending with page-wrapper)
           const parentElement = context.allElements?.find((el) => el.id === parentId);
-          const hasPageWrapper = parentElement?.classes.some(
-            (cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper")
-          );
+          const hasPageWrapper = parentElement?.classes.some((cls) => isPageWrapperClass(cls));
 
           if (!hasPageWrapper) {
             // Not a child of page-wrapper, lower confidence
@@ -56,14 +55,22 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
     id: "client-first-wrapper-detector",
     description: "Detects component roots and child groups using Client-First wrapper naming patterns",
     classifyNaming: (firstClass: string) => {
-      // For Client-First, use simplified token count heuristic
-      const tokenCount = firstClass.split(/[_-]/).filter(Boolean).length;
+      // Client-First: split on underscore only (dashes are within segments)
+      const underscoreTokens = firstClass.split("_").filter(Boolean);
+      const tokenCount = underscoreTokens.length;
 
-      // If it has clear naming hints, use classifyWrapName
+      // Check for subpart hints within dash-words of each underscore-token
+      // e.g., "hero_content-wrapper" → check "hero", "content", "wrapper"
+      const dashWords = underscoreTokens.flatMap((t) => t.split("-"));
+      const wrapStripped = dashWords.filter((w) => w.toLowerCase() !== "wrap" && w.toLowerCase() !== "wrapper");
+      const hasSubpartHint = wrapStripped.some((w) => SUBPART_HINTS.has(w.toLowerCase()));
+      if (hasSubpartHint) return "childGroup";
+
+      // If it has clear naming hints from shared logic, use them
       const classified = classifyWrapName(firstClass);
       if (classified) return classified;
 
-      // Fallback: simple token count rule for Client-First
+      // Fallback: underscore-token count (3+ folders = nested = childGroup)
       return tokenCount >= 3 ? "childGroup" : "componentRoot";
     },
   }),
@@ -101,9 +108,11 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
       // If it already ends with wrap/wrapper, let the wrapper detector handle it
       if (/(?:^|[_-])(wrap|wrapper)$/i.test(firstClass)) return null;
 
-      // Tokenize and look at the tail segment (supports hyphen or underscore)
-      const tokens = firstClass.split(/[_-]+/).filter(Boolean);
-      const last = tokens[tokens.length - 1]?.toLowerCase();
+      // Client-First: split on underscore only, then check dash-words of the element part
+      const underscoreTokens = firstClass.split("_").filter(Boolean);
+      const elementPart = underscoreTokens[underscoreTokens.length - 1] ?? "";
+      const dashWords = elementPart.split("-");
+      const last = dashWords[dashWords.length - 1]?.toLowerCase();
 
       // Prefer elements that actually wrap a group (have children), but don't require it
       // since the canonical rule has grammar-based fallback validation anyway
@@ -152,9 +161,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
         const parentId = context.graph.getParentId(element.id);
         if (parentId) {
           const parentElement = context.allElements.find((el) => el.id === parentId);
-          const isUnderPageWrapper = parentElement?.classes.some(
-            (cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper")
-          );
+          const isUnderPageWrapper = parentElement?.classes.some((cls) => isPageWrapperClass(cls));
 
           if (isUnderPageWrapper) {
             // Count how many page slots exist under page-wrapper
@@ -167,7 +174,7 @@ export const clientFirstRoleDetectors: RoleDetector[] = [
               if (!slotParentId) return false;
 
               const slotParent = context.allElements?.find((p) => p.id === slotParentId);
-              return slotParent?.classes.some((cls) => cls === "page-wrapper" || cls.endsWith("-page-wrapper"));
+              return slotParent?.classes.some((cls) => isPageWrapperClass(cls));
             });
 
             if (allPageSlots.length === 1) {

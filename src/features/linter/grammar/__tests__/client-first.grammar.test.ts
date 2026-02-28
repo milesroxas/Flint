@@ -51,23 +51,57 @@ describe("Client-First grammar adapter", () => {
   });
 
   describe("custom class parsing", () => {
-    it("extracts tokens from underscore-based custom classes", () => {
+    it("extracts tokens splitting on underscore only (preserving dashes)", () => {
       const parsed = clientFirstGrammar.parse("hero_wrapper");
       expect(parsed.kind).toBe("custom");
-      expect(parsed.tokens).toBeDefined();
+      expect(parsed.tokens).toEqual(["hero", "wrapper"]);
       expect(parsed.type).toBe("hero");
     });
 
-    it("extracts componentKey from custom classes", () => {
+    it("preserves dashes within underscore-separated segments", () => {
       const parsed = clientFirstGrammar.parse("team-list_headshot-image");
       expect(parsed.kind).toBe("custom");
-      expect(parsed.componentKey).toBeDefined();
+      expect(parsed.tokens).toEqual(["team-list", "headshot-image"]);
+      expect(parsed.type).toBe("team-list");
+      expect(parsed.elementToken).toBe("headshot-image");
+      expect(parsed.componentKey).toBe("team-list");
+    });
+
+    it("extracts componentKey from wrapper classes", () => {
+      const parsed = clientFirstGrammar.parse("hero_wrapper");
+      expect(parsed.componentKey).toBe("hero");
+    });
+
+    it("extracts componentKey from dash-suffixed wrapper classes", () => {
+      const parsed = clientFirstGrammar.parse("hero_content-wrapper");
+      expect(parsed.componentKey).toBe("hero");
     });
 
     it("handles section_identifier pattern", () => {
       const parsed = clientFirstGrammar.parse("section_about");
       expect(parsed.kind).toBe("custom");
       expect(parsed.type).toBe("section");
+      expect(parsed.componentKey).toBe("about");
+    });
+
+    it("handles multi-folder custom classes", () => {
+      const parsed = clientFirstGrammar.parse("blog-feed_item_title");
+      expect(parsed.tokens).toEqual(["blog-feed", "item", "title"]);
+      expect(parsed.componentKey).toBe("blog-feed_item");
+    });
+
+    it("handles simple folder_element classes", () => {
+      const parsed = clientFirstGrammar.parse("header_background-layer");
+      expect(parsed.tokens).toEqual(["header", "background-layer"]);
+      expect(parsed.type).toBe("header");
+      expect(parsed.elementToken).toBe("background-layer");
+      expect(parsed.componentKey).toBe("header");
+    });
+
+    it("handles faq_item pattern", () => {
+      const parsed = clientFirstGrammar.parse("faq_item");
+      expect(parsed.tokens).toEqual(["faq", "item"]);
+      expect(parsed.componentKey).toBe("faq");
     });
   });
 

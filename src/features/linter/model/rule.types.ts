@@ -1,5 +1,5 @@
 import type { ElementGraph } from "@/entities/element/services/element-graph.service";
-import type { StyleInfo } from "@/entities/style/model/style.types";
+import type { StyleInfo, StyleWithElement } from "@/entities/style/model/style.types";
 import type { ElementRole, ParsedClass, RolesByElement } from "@/features/linter/model/linter.types";
 
 // -------------------------
@@ -169,7 +169,7 @@ export interface RuleContext {
 export interface PageAnalysisArgs {
   rolesByElement: RolesByElement;
   graph: ElementGraph;
-  styles: StyleInfo[];
+  styles: StyleWithElement[];
   getRoleForElement(id: string): ElementRole | "unknown";
   getRuleConfig<T extends Record<string, unknown>>(
     ruleId: string
@@ -212,6 +212,8 @@ export interface ElementAnalysisArgs {
 
   getClassNamesForElement?: (elementId: string) => string[];
   parseClass?: (name: string) => ParsedClass;
+  /** Element separator from the active grammar (e.g., "-" for CF, "_" for Lumos) */
+  grammarElementSeparator?: string;
   getTagName?: (elementId: string) => string | null;
   getElementType?: (elementId: string) => string | null;
 }

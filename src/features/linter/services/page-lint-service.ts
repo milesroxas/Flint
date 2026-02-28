@@ -56,7 +56,9 @@ export function createPageLintService(deps: { contextService: LintContextService
       context.parseClass,
       { getTag: context.graph.getTag },
       (id: string) => context.tagByElementId.get(id) ?? null,
-      (id: string) => context.elementTypeByElementId.get(id) ?? null
+      (id: string) => context.elementTypeByElementId.get(id) ?? null,
+      false,
+      context.grammarElementSeparator
     );
 
     return { results, ignoredClassNames };

@@ -3,6 +3,7 @@ import { clientFirstGrammar } from "@/features/linter/grammar/client-first.gramm
 import type { Preset } from "@/features/linter/model/preset.types";
 import type { PresetElementsConfig } from "@/features/linter/model/preset-elements.types";
 import type { Rule } from "@/features/linter/model/rule.types";
+import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
 import {
   createCFComboNotAloneRule,
   createCFPaddingSectionRequiresGlobalRule,
@@ -70,6 +71,7 @@ export const clientFirstPreset: Preset & {
 
     // Client-First structure rules
     createCFNavOutsideMainRule(),
+    createSectionParentIsMainRule(),
 
     // Client-First property rules
     createCFPaddingGlobalHorizontalOnlyRule(),

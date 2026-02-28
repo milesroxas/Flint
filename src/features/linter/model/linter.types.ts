@@ -29,6 +29,15 @@ export interface GrammarAdapter {
   utilityPrefix?: string;
   componentPrefix?: string;
   comboPrefix?: string;
+  /**
+   * Separator used within element/suffix parts of custom class names.
+   * - Lumos: "_" (e.g., hero_primary_cta_wrap)
+   * - Client-First: "-" (e.g., hero_content-wrapper)
+   *
+   * The folder separator is always "_" for both grammars.
+   * This property controls how element suffixes are joined in suggestions.
+   */
+  elementSeparator: string;
 }
 
 /** Role detection outputs and helpers */

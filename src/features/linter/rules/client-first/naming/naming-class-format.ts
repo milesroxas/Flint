@@ -1,3 +1,4 @@
+import { tokenizeCFCustomClass } from "@/features/linter/grammar/client-first.grammar";
 import type { NamingRule, RuleConfigSchema, RuleContext, RuleResult } from "@/features/linter/model/rule.types";
 
 /** Single source of truth for Client-First recognised element tokens */
@@ -133,9 +134,14 @@ export const createCFNamingClassFormatRule = (): NamingRule => ({
     }
 
     // 3) Element recognition (suggestion-level) for non-utility classes
-    const tokens = className.split(/[-_]/).filter(Boolean);
-    if (tokens.length < 2) return null;
-    const finalElement = tokens[tokens.length - 1];
+    // Use grammar's tokenizer: split on underscore only (preserving dashes within segments)
+    const folderTokens = tokenizeCFCustomClass(className);
+    if (folderTokens.length < 2) return null;
+
+    // The element is the last underscore-separated segment; check its last dash-word
+    const elementPart = folderTokens[folderTokens.length - 1];
+    const dashWords = elementPart.split("-");
+    const finalElement = dashWords[dashWords.length - 1];
 
     const knownElements = getClientFirstKnownElements();
     const projectTerms: string[] =
@@ -154,10 +160,9 @@ export const createCFNamingClassFormatRule = (): NamingRule => ({
       };
     }
 
-    // 4) Fallback suggestion: preserve delimiter and suggest wrapper
-    const delimiter = className.includes("_") ? "_" : "-";
-    const baseSegments = tokens.slice(0, -1);
-    const suggestedFix = `${baseSegments.join(delimiter)}${delimiter}wrapper`;
+    // 4) Fallback suggestion: use CF convention (folder_element-wrapper)
+    const folderPart = folderTokens.slice(0, -1).join("_");
+    const suggestedFix = `${folderPart}_wrapper`;
 
     return {
       ruleId: "cf:naming:class-format",

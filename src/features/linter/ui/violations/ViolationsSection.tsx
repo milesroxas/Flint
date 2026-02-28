@@ -47,6 +47,12 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   const getItemId = (violation: RuleResult, index: number): string =>
     `${violation.ruleId}-${violation.className || "unknown"}-${index}`;
 
+  // IMPORTANT: Never return undefined - Radix Accordion needs empty string for "nothing open"
+  // Return the openId if it belongs to this section, otherwise empty string
+  const accordionValue = React.useMemo(() => {
+    return openId && sectionIds.has(openId) ? openId : "";
+  }, [openId, sectionIds]);
+
   if (items.length === 0) return null;
 
   return (
@@ -62,8 +68,7 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
       <Accordion
         type="single"
         collapsible
-        // Only control value for ids in this section; otherwise keep closed
-        value={openId && sectionIds.has(openId) ? openId : undefined}
+        value={accordionValue}
         className="w-full"
         onValueChange={(val) => onOpenChange?.(val || undefined)}
       >

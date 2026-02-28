@@ -3,6 +3,11 @@ import type { Rule } from "@/features/linter/model/rule.types";
 import { resolvePresetOrFallback } from "@/features/linter/presets";
 import { createChildGroupKeyMatchRule } from "@/features/linter/rules/canonical/child-group-key-match";
 import { createMainChildrenPageRule } from "@/features/linter/rules/canonical/main-children.page";
+import {
+  createCFGlobalStylesRequiredRule,
+  createCFMainWrapperParentRule,
+  createCFPageWrapperRequiredRule,
+} from "@/features/linter/rules/client-first/structure";
 import { createRuleConfigurationService } from "@/features/linter/services/rule-configuration-service";
 import { createRuleRegistry } from "@/features/linter/services/rule-registry";
 
@@ -23,6 +28,15 @@ export function initializeRuleRegistry(mode: OpinionMode = "balanced", presetId?
 
   // 2) register canonical page rules globally (preset-agnostic)
   ruleRegistry.registerPageRules([createMainChildrenPageRule()]);
+
+  // 2a) register preset-specific page rules
+  if (selected.id === "client-first") {
+    ruleRegistry.registerPageRules([
+      createCFPageWrapperRequiredRule(),
+      createCFMainWrapperParentRule(),
+      createCFGlobalStylesRequiredRule(),
+    ]);
+  }
   const childGroupRule = createChildGroupKeyMatchRule();
 
   // 2b) register canonical element rules

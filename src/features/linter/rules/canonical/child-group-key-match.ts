@@ -27,6 +27,7 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
     parseClass,
     getClassType,
     getClassNamesForElement,
+    grammarElementSeparator,
   }) => {
     if (!elementId || !getRoleForElement) return [];
 
@@ -157,13 +158,21 @@ export const createChildGroupKeyMatchRule = (): Rule => ({
 
     if (shouldEnforce && (!childKey || !rootKey || (childKey !== rootKey && !childExtendsAllowedSingleTokenRoot))) {
       const baseName = baseChildName ?? "";
+      // Use grammar's element separator for suggestion formatting.
+      // "_" for Lumos (hero_primary_cta_wrap), "-" for Client-First (hero_content-wrap).
+      const elemSep = grammarElementSeparator ?? "_";
+      const isCFStyle = elemSep === "-";
       const msg = !childKey
-        ? `Could not extract component key from "${baseName}". Use "<name>_<variant>_<group>_wrap".`
+        ? isCFStyle
+          ? `Could not extract component key from "${baseName}". Use "<folder>_<element>${elemSep}wrap".`
+          : `Could not extract component key from "${baseName}". Use "<name>_<variant>_<group>_wrap".`
         : !rootKey
-          ? `Could not extract component key from root "${rootBaseInfo.base}". Use "<name>_<variant>_wrap".`
+          ? isCFStyle
+            ? `Could not extract component key from root "${rootBaseInfo.base}". Use "<folder>_wrap".`
+            : `Could not extract component key from root "${rootBaseInfo.base}". Use "<name>_<variant>_wrap".`
           : isSingleTokenRoot && childKeyParts[0] === rootKey && childKeyParts.length >= 2
             ? `Child group key "${childKey}" introduces a variant but root key "${rootKey}" has none. Prefer "${rootKey}_${parsedChild?.elementToken ?? "[element]"}".`
-            : `Child group key "${childKey}" does not match root key "${rootKey}". Rename to "${rootKey}_[element]_wrap".`;
+            : `Child group key "${childKey}" does not match root key "${rootKey}". Rename to "${rootKey}_[element]${elemSep}wrap".`;
 
       return [
         {

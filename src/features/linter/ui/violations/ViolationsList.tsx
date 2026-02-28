@@ -53,6 +53,7 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
   // Global single-open id across all sections
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   const lastAutoOpenSignatureRef = React.useRef<string | null>(null);
+  const userClosedSingleItemRef = React.useRef<boolean>(false);
 
   // Compute id map for selection and list signature
   const { idToViolation, signature, totalCount, onlyId } = useMemo(() => {
@@ -81,10 +82,17 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     }
   }, [idToViolation, openId]);
 
+  // Reset user closed flag when the list signature changes (new violations)
+  useEffect(() => {
+    if (lastAutoOpenSignatureRef.current !== signature) {
+      userClosedSingleItemRef.current = false;
+    }
+  }, [signature]);
+
   // Auto-open when exactly one violation exists, but allow manual close.
   // Triggers only once per unique list signature.
   useEffect(() => {
-    if (totalCount === 1 && !openId) {
+    if (totalCount === 1 && !openId && !userClosedSingleItemRef.current) {
       if (lastAutoOpenSignatureRef.current !== signature) {
         if (onlyId) setOpenId(onlyId);
         lastAutoOpenSignatureRef.current = signature;
@@ -94,7 +102,15 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
 
   const handleOpenChange = async (nextId: string | undefined) => {
     setOpenId(nextId || undefined);
-    if (!nextId) return;
+    if (!nextId) {
+      // Only set the flag if we're closing a single-item list
+      if (totalCount === 1) {
+        userClosedSingleItemRef.current = true;
+      }
+      return;
+    }
+    // Reset the flag when user manually opens any item
+    userClosedSingleItemRef.current = false;
     const violation = idToViolation.get(nextId);
     if (violation) {
       trackViolationOpened({
