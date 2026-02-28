@@ -3,8 +3,23 @@ import { clientFirstGrammar } from "@/features/linter/grammar/client-first.gramm
 import type { Preset } from "@/features/linter/model/preset.types";
 import type { PresetElementsConfig } from "@/features/linter/model/preset-elements.types";
 import type { Rule } from "@/features/linter/model/rule.types";
-import { createCFNamingClassFormatRule } from "@/features/linter/rules/client-first/naming";
+import {
+  createCFComboNotAloneRule,
+  createCFPaddingSectionRequiresGlobalRule,
+} from "@/features/linter/rules/client-first/composition";
+import {
+  createCFComboIsPrefixRule,
+  createCFNamingClassFormatRule,
+  createCFNoAbbreviationsRule,
+  createCFSectionFormatRule,
+  createCFUtilityNoUnderscoreRule,
+} from "@/features/linter/rules/client-first/naming";
 import { getClientFirstKnownElements } from "@/features/linter/rules/client-first/naming/naming-class-format";
+import {
+  createCFPaddingGlobalHorizontalOnlyRule,
+  createCFPreferRemRule,
+} from "@/features/linter/rules/client-first/property";
+import { createCFNavOutsideMainRule } from "@/features/linter/rules/client-first/structure";
 import {
   createColorVariableRule,
   createDuplicateOfUtilityRule,
@@ -42,15 +57,30 @@ export const clientFirstPreset: Preset & {
   elementsConfig: clientFirstElementsConfig,
 
   rules: [
-    // naming
+    // Client-First naming rules
     createCFNamingClassFormatRule(),
+    createCFUtilityNoUnderscoreRule(),
+    createCFComboIsPrefixRule(),
+    createCFSectionFormatRule(),
+    createCFNoAbbreviationsRule(),
 
-    // Shared Property rules
+    // Client-First composition rules
+    createCFComboNotAloneRule(),
+    createCFPaddingSectionRequiresGlobalRule(),
+
+    // Client-First structure rules
+    createCFNavOutsideMainRule(),
+
+    // Client-First property rules
+    createCFPaddingGlobalHorizontalOnlyRule(),
+    createCFPreferRemRule(),
+
+    // Shared property rules
     createDuplicateOfUtilityRule(),
     createColorVariableRule(),
     createUtilityDuplicatePropertyRule(),
 
-    // Shared Structure rules
+    // Shared structure rules
     createMissingClassOnDivRule(),
   ],
 };

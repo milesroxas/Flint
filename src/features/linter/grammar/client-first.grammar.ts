@@ -1,11 +1,40 @@
 import type { GrammarAdapter, ParsedClass } from "@/features/linter/model/linter.types";
 import type { ClassType } from "@/features/linter/model/rule.types";
 
+/**
+ * Core structure class names that are global/structural in Client-First.
+ * These use dashes only and are NOT custom-folder classes.
+ */
+export const CF_CORE_STRUCTURE_CLASSES = new Set([
+  "page-wrapper",
+  "main-wrapper",
+  "padding-global",
+  "global-styles",
+  "spacing-clean",
+]);
+
+/**
+ * Prefixes for core structure utility systems in Client-First.
+ */
+export const CF_CORE_STRUCTURE_PREFIXES = ["container-", "padding-section-"] as const;
+
+/**
+ * Client-First class type classification.
+ *
+ * Key convention:
+ * - Underscore `_` in the name → **custom** (folder convention: `folder_element`)
+ * - `is-` prefix → **combo** (variant modifier)
+ * - `u-` prefix → **utility** (explicit utility prefix)
+ * - Everything else (dash-only) → **utility** (Client-First utility/global class)
+ */
 function getClassType(name: string): ClassType {
   if (name.startsWith("u-")) return "utility";
   if (name.startsWith("c-")) return "component" as ClassType;
   if (name.startsWith("is-")) return "combo";
-  return "custom";
+  // Client-First convention: underscore = custom folder class
+  if (name.includes("_")) return "custom";
+  // Dash-only classes are utility/global in Client-First
+  return "utility";
 }
 
 function parseCustom(name: string): ParsedClass {

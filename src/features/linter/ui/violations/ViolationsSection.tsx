@@ -25,18 +25,15 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
   shouldAnimate = false,
 }) => {
   // Determine if the controlled openId belongs to this section
-  const sectionIdsRef = React.useRef<Set<string>>(new Set());
-  // Initialize to current animation intent to avoid duplicate entrance animations
-  const [isVisible, setIsVisible] = React.useState<boolean>(shouldAnimate);
-
-  // Track the ids in this section for quick membership checks
-  React.useEffect(() => {
+  const sectionIds = React.useMemo(() => {
     const ids = new Set<string>();
     items.forEach((violation, index) => {
       ids.add(`${violation.ruleId}-${violation.className || "unknown"}-${index}`);
     });
-    sectionIdsRef.current = ids;
+    return ids;
   }, [items]);
+  // Initialize to current animation intent to avoid duplicate entrance animations
+  const [isVisible, setIsVisible] = React.useState<boolean>(shouldAnimate);
 
   // Trigger animation based on shouldAnimate prop
   React.useEffect(() => {
@@ -66,7 +63,7 @@ export const ViolationsSection: React.FC<ViolationsSectionProps> = ({
         type="single"
         collapsible
         // Only control value for ids in this section; otherwise keep closed
-        value={openId && sectionIdsRef.current.has(openId) ? openId : undefined}
+        value={openId && sectionIds.has(openId) ? openId : undefined}
         className="w-full"
         onValueChange={(val) => onOpenChange?.(val || undefined)}
       >
