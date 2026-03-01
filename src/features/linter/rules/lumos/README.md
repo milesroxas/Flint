@@ -17,8 +17,8 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 - **Name**: Lumos Custom Class Format
 - **Type**: Naming Rule
-- **Severity**: Error
-- **Target Classes**: Custom classes
+- **Severity**: Error (format); Suggestion (project-defined or unrecognized element)
+- **Target Classes**: Custom
 - **Configurable**: ✅ (project-defined elements)
 
 **Description**: Custom classes must be lowercase and underscore-separated with at least 2 segments: `type_element` or `type_variant_element`. Child group roots may include additional group segments before the final element (e.g., `type[_variant]_[group]_wrap`). The final segment should describe the element.
@@ -52,7 +52,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 }
 ```
 
-**Auto-fix**: ❌ (Provides suggestions for manual fixes)
+**Auto-fix**: ✅ (rename-class when suggestion available; no fix for unrecognized element suggestion)
 
 ---
 
@@ -225,7 +225,7 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 - **Name**: Use Color Variables
 - **Type**: Property Rule
-- **Severity**: Warning
+- **Severity**: Error
 - **Target Classes**: Custom, Utility, Combo
 - **Configurable**: ✅
 
@@ -302,17 +302,17 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 ## Rule Summary
 
-| Rule ID                                   | Name                                           | Type        | Severity | Auto-fix | Configurable |
-| ----------------------------------------- | ---------------------------------------------- | ----------- | -------- | -------- | ------------ |
-| `lumos:naming:class-format`               | Lumos Custom Class Format                      | Naming      | Error    | ❌       | ✅           |
-| `lumos:naming:combo-class-format`         | Combo class format                             | Naming      | Error    | ✅       | ❌           |
-| `lumos:composition:class-order`           | Base class must precede variants and utilities | Structure   | Error    | ✅       | ❌           |
-| `lumos:composition:variant-requires-base` | Variant requires a base class                  | Composition | Error    | ❌       | ✅           |
-| `lumos:composition:combo-limit`           | Limit classes after base                       | Composition | Error    | ❌       | ✅           |
-| `shared:property:duplicate-of-utility`    | Avoid duplicate of existing utility            | Structure   | Warning  | ❌       | ✅           |
-| `shared:property:color-variable`          | Use Color Variables                            | Property    | Warning  | ❌       | ✅           |
-| `canonical:utility-duplicate-property`    | Consolidate duplicate utility properties        | Structure   | Warning  | ❌       | ✅           |
-| `shared:structure:missing-class-on-div`   | Block elements must have style classes         | Structure   | Warning  | ❌       | ❌           |
+| Rule ID                                   | Name                                           | Type        | Severity  | Auto-fix | Configurable |
+| ----------------------------------------- | ---------------------------------------------- | ----------- | --------- | -------- | ------------ |
+| `lumos:naming:class-format`               | Lumos Custom Class Format                      | Naming      | Error     | ✅       | ✅           |
+| `lumos:naming:combo-class-format`         | Combo class format                             | Naming      | Error     | ✅       | ❌           |
+| `lumos:composition:class-order`          | Base class must precede variants and utilities | Structure   | Error     | ✅       | ❌           |
+| `lumos:composition:variant-requires-base` | Variant requires a base class                  | Composition | Error     | ❌       | ✅           |
+| `lumos:composition:combo-limit`           | Limit classes after base                       | Composition | Error     | ❌       | ✅           |
+| `shared:property:duplicate-of-utility`    | Avoid duplicate of existing utility            | Structure   | Warning   | ❌       | ✅           |
+| `shared:property:color-variable`          | Use Color Variables                            | Property    | Error     | ❌       | ✅           |
+| `canonical:utility-duplicate-property`    | Consolidate duplicate utility properties      | Structure   | Warning   | ❌       | ✅           |
+| `shared:structure:missing-class-on-div`   | Block elements must have style classes         | Structure   | Warning   | ❌       | ❌           |
 
 ## Lumos Class Naming Convention
 
