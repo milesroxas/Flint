@@ -4,6 +4,7 @@ import { useLinterSettings } from "@/features/linter/store/linterSettings.store"
 import { WINDOW_PRESETS } from "@/features/window/components/HeightSwitcher";
 import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
 import { trackSettingChanged } from "@/shared/lib/analytics";
+import { buildInfo } from "@/shared/lib/build-info";
 import { useTheme } from "@/shared/providers/theme-provider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
@@ -91,7 +92,10 @@ export const SettingsPanel: React.FC = () => {
         description="Skip known library classes (e.g. Swiper, Splide) during linting."
         checked={ignoreThirdPartyClasses}
         onCheckedChange={(checked) => {
-          trackSettingChanged({ setting: "ignore_third_party_classes", value: checked });
+          trackSettingChanged({
+            setting: "ignore_third_party_classes",
+            value: checked,
+          });
           setIgnoreThirdPartyClasses(checked);
         }}
       />
@@ -101,7 +105,10 @@ export const SettingsPanel: React.FC = () => {
         description="Automatically select the canvas element when opening a violation."
         checked={autoSelectElement}
         onCheckedChange={(checked) => {
-          trackSettingChanged({ setting: "auto_select_on_canvas", value: checked });
+          trackSettingChanged({
+            setting: "auto_select_on_canvas",
+            value: checked,
+          });
           setAutoSelectElement(checked);
         }}
       />
@@ -117,6 +124,13 @@ export const SettingsPanel: React.FC = () => {
         }}
         options={windowPresetOptions}
       />
+      <div className="mt-4 pt-3">
+        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          v{buildInfo.version} &middot; {buildInfo.channel} &middot; {buildInfo.recipient}
+          <br />
+          Built {new Date(buildInfo.buildTime).toLocaleString()}
+        </p>
+      </div>
     </div>
   );
 };
