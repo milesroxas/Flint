@@ -13,6 +13,32 @@ export const CF_CORE_STRUCTURE_CLASSES = new Set([
   "spacing-clean",
 ]);
 
+/**
+ * All utility classes that ship with the standard Client-First template.
+ * These should be excluded from duplicate-property checks since users did not
+ * create them — they are premade by the template and may intentionally share
+ * property values.
+ */
+export const CF_BUILTIN_UTILITY_CLASSES: readonly string[] = [
+  // Structure
+  "page-wrapper",
+  "main-wrapper",
+  "global-styles",
+  "spacing-clean",
+  // Padding — horizontal wrappers
+  "padding-global",
+  "padding-custom1",
+  "padding-custom2",
+  // Padding — vertical section sizes
+  "padding-section-small",
+  "padding-section-medium",
+  "padding-section-large",
+  // Containers — max-width constraints
+  "container-small",
+  "container-medium",
+  "container-large",
+];
+
 /** Check whether a class name represents the page-wrapper role. */
 export function isPageWrapperClass(cls: string): boolean {
   return cls === "page-wrapper" || cls.endsWith("-page-wrapper");

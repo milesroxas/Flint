@@ -6,6 +6,8 @@ import type { ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/
 type UtilityDuplicatePropertyConfig = {
   /** Ignored aliases that are intentionally equivalent */
   ignoredAliases?: string[][];
+  /** Utility classes to skip entirely (e.g. premade template classes) */
+  ignoredClasses?: string[];
   /** Minimum class count to report duplicates */
   minClassCount?: number;
   /** Only report single-property utilities */
@@ -18,6 +20,7 @@ type UtilityDuplicatePropertyConfig = {
 
 const DEFAULT_CONFIG: UtilityDuplicatePropertyConfig = {
   ignoredAliases: [],
+  ignoredClasses: [],
   minClassCount: 2,
   onlySingleProperty: false, // Allow both single and multi-property duplicate detection
   propertyAllowlist: undefined,
@@ -27,8 +30,13 @@ const DEFAULT_CONFIG: UtilityDuplicatePropertyConfig = {
 /**
  * Rule: flags utility classes that duplicate the same property/value as other utilities.
  * This helps teams identify and consolidate alias utilities.
+ *
+ * @param presetDefaults - Optional config baked in by the preset (e.g. ignoredClasses for
+ *   template-provided utilities). User-facing customSettings take precedence over these.
  */
-export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
+export const createUtilityDuplicatePropertyRule = (
+  presetDefaults: Partial<UtilityDuplicatePropertyConfig> = {}
+): StructureRule => ({
   id: "canonical:utility-duplicate-property",
   name: "Consolidate duplicate utility properties",
   description:
@@ -46,11 +54,25 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
     const ruleConfig = getRuleConfig("canonical:utility-duplicate-property");
     const userConfig = ruleConfig?.customSettings || {};
 
-    // Merge with default config
+    // Merge: defaults < preset < user
     const config: UtilityDuplicatePropertyConfig = {
       ...DEFAULT_CONFIG,
+      ...presetDefaults,
       ...userConfig,
+      // Merge array fields so preset and user entries are both respected
+      ignoredClasses: [
+        ...(DEFAULT_CONFIG.ignoredClasses ?? []),
+        ...(presetDefaults.ignoredClasses ?? []),
+        ...((userConfig as UtilityDuplicatePropertyConfig).ignoredClasses ?? []),
+      ],
+      ignoredAliases: [
+        ...(DEFAULT_CONFIG.ignoredAliases ?? []),
+        ...(presetDefaults.ignoredAliases ?? []),
+        ...((userConfig as UtilityDuplicatePropertyConfig).ignoredAliases ?? []),
+      ],
     };
+
+    const ignoredClassesSet = new Set(config.ignoredClasses ?? []);
 
     // Build a site-wide property map from allStyles for duplicate detection
     const propertyToClassesMap = new Map<string, Map<string, Set<string>>>();
@@ -62,6 +84,9 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
       // Only analyze utility classes
       const classType = getClassType(style.name);
       if (classType !== "utility") continue;
+
+      // Skip premade/template classes
+      if (ignoredClassesSet.has(style.name)) continue;
 
       const propEntries = Object.entries(style.properties);
 
@@ -105,6 +130,9 @@ export const createUtilityDuplicatePropertyRule = (): StructureRule => ({
 
       // Only analyze utility classes
       if (classType !== "utility") continue;
+
+      // Skip premade/template classes
+      if (ignoredClassesSet.has(className)) continue;
 
       // Find the style info for this class
       const styleInfo = allStyles.find((s) => s.name === className);

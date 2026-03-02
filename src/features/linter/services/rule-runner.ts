@@ -22,10 +22,7 @@ export const createRuleRunner = (
   const getClassType = (className: string, isComboFlag?: boolean): ClassType => {
     if (typeof classTypeResolver === "function") {
       try {
-        const resolved = classTypeResolver(className, isComboFlag);
-        if (resolved !== "custom") return resolved;
-        if (isComboFlag === true) return "combo";
-        return "custom";
+        return classTypeResolver(className, isComboFlag);
       } catch {
         console.error(`Error resolving class type for ${className}`);
       }

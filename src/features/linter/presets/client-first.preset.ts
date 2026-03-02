@@ -1,5 +1,5 @@
 import { clientFirstRoleDetectors } from "@/features/linter/detectors/client-first.detectors";
-import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
+import { CF_BUILTIN_UTILITY_CLASSES, clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import type { Preset } from "@/features/linter/model/preset.types";
 import type { PresetElementsConfig } from "@/features/linter/model/preset-elements.types";
 import type { Rule } from "@/features/linter/model/rule.types";
@@ -80,7 +80,7 @@ export const clientFirstPreset: Preset & {
     // Shared property rules
     createDuplicateOfUtilityRule(),
     createColorVariableRule(),
-    createUtilityDuplicatePropertyRule(),
+    createUtilityDuplicatePropertyRule({ ignoredClasses: [...CF_BUILTIN_UTILITY_CLASSES] }),
 
     // Shared structure rules
     createMissingClassOnDivRule(),

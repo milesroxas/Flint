@@ -26,12 +26,15 @@ export function createLinterServices() {
     activePreset.grammar || ({ parse: (n: string) => ({ raw: n, kind: "custom" as const }) } as any);
 
   const ruleRunner = createRuleRunner(getRuleRegistry(), analyzer, (name: string, isCombo?: boolean) => {
-    if (isCombo === true) return "combo";
     const kind = activeGrammar.parse(name).kind as any;
-    // Map component kind to custom (component classes are handled as custom with prefix checks)
+    // Grammar takes priority: naming conventions (is-*, u-*, dash-only) are authoritative.
+    // This prevents utility classes like padding-section-* from being reclassified as combo
+    // just because Webflow applied them as secondary classes alongside padding-global.
     if (kind === "utility" || kind === "combo") return kind;
     // Treat component classes as utility to exclude them from custom class rules
     if (kind === "component") return "utility";
+    // For custom-named classes, respect Webflow's combo flag (secondary class application)
+    if (isCombo === true) return "combo";
     return "custom";
   });
 
