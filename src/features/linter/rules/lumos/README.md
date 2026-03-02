@@ -32,11 +32,11 @@ The Lumos preset enforces a custom class naming convention and structural patter
 
 **Known Element Terms**:
 
-- Layout: `wrap`, `main`, `contain`, `container`, `layout`, `inner`, `content`, `section`
+- Layout: `wrap`, `main`, `contain`, `container`, `layout`, `inner`, `content`, `section`, `backdrop`, `scroll`
 - Content: `text`, `title`, `heading`, `eyebrow`, `label`, `marker`
-- Media: `icon`, `img`, `image`
+- Media: `icon`, `img`, `image`, `logo`, `visual`, `svg`
 - Interactive: `button`, `link`, `field`
-- Structure: `group`, `item`, `list`, `card`
+- Structure: `group`, `item`, `list`, `card`, `component`, `line`
 - Testing: `x`, `y`, `z`
 
 **Examples**:

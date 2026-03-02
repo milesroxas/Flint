@@ -29,8 +29,10 @@ export function createPageLintService(deps: { contextService: LintContextService
 
     // 3) Apply third-party class filter before running rules
     const ignoredClassNames: string[] = [];
+    const filteredElementIds = new Set<string>();
     const classFilter = options?.classFilter;
     if (classFilter) {
+      const beforeFilterIds = new Set(allAppliedStyles.map((s) => s.elementId));
       const seen = new Set<string>();
       allAppliedStyles = allAppliedStyles.filter((s) => {
         if (!classFilter(s.name)) {
@@ -42,6 +44,10 @@ export function createPageLintService(deps: { contextService: LintContextService
         }
         return true;
       });
+      const afterFilterIds = new Set(allAppliedStyles.map((s) => s.elementId));
+      for (const id of beforeFilterIds) {
+        if (!afterFilterIds.has(id)) filteredElementIds.add(id);
+      }
     }
 
     // 4) Run rules via runner (page and element rules are handled by the runner)
@@ -58,7 +64,8 @@ export function createPageLintService(deps: { contextService: LintContextService
       (id: string) => context.tagByElementId.get(id) ?? null,
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
       false,
-      context.grammarElementSeparator
+      context.grammarElementSeparator,
+      filteredElementIds
     );
 
     return { results, ignoredClassNames };

@@ -16,6 +16,8 @@ function getLumosKnownElements(): string[] {
     "inner",
     "content",
     "section",
+    "backdrop",
+    "scroll",
     // Content elements
     "text",
     "title",
@@ -27,6 +29,9 @@ function getLumosKnownElements(): string[] {
     "icon",
     "img",
     "image",
+    "logo",
+    "visual",
+    "svg",
     // Interactive elements
     "button",
     "link",
@@ -36,6 +41,8 @@ function getLumosKnownElements(): string[] {
     "item",
     "list",
     "card",
+    "component",
+    "line",
     // Testing elements
     "x",
     "y",

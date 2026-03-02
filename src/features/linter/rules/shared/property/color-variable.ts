@@ -32,6 +32,14 @@ const isColorVariable = (value: unknown): boolean => {
   );
 };
 
+const isZeroOpacity = (value: string): boolean => {
+  const rgbaMatch = value.match(/^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)$/i);
+  if (rgbaMatch) return parseFloat(rgbaMatch[1]) === 0;
+  const hslaMatch = value.match(/^hsla?\(\s*[\d.]+\s*,\s*[\d.%]+\s*,\s*[\d.%]+\s*,\s*([\d.]+)\s*\)$/i);
+  if (hslaMatch) return parseFloat(hslaMatch[1]) === 0;
+  return false;
+};
+
 /**
  * Shared rule: ensures color properties use Webflow variables instead of hardcoded values.
  * Supports configurable list of color properties to check.
@@ -70,8 +78,15 @@ export const createColorVariableRule = (): PropertyRule => ({
       for (const propertyName of ruleConfig.targetProperties) {
         const propertyValue = properties[propertyName];
 
-        // Skip if property is not set
-        if (propertyValue === undefined || propertyValue === null) {
+        // Skip if property is not set, a CSS keyword, or a fully transparent color
+        if (
+          propertyValue === undefined ||
+          propertyValue === null ||
+          propertyValue === "inherit" ||
+          propertyValue === "currentColor" ||
+          propertyValue === "transparent" ||
+          (typeof propertyValue === "string" && isZeroOpacity(propertyValue))
+        ) {
           continue;
         }
 

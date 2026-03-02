@@ -73,8 +73,10 @@ export function createElementLintService(deps: { contextService: LintContextServ
 
     // 3) Apply third-party class filter before running rules
     const ignoredClassNames: string[] = [];
+    const filteredElementIds = new Set<string>();
     const classFilter = options?.classFilter;
     if (classFilter) {
+      const beforeFilterIds = new Set(stylesToAnalyze.map((s) => s.elementId));
       const filtered = stylesToAnalyze.filter((s) => {
         if (!classFilter(s.name)) {
           ignoredClassNames.push(s.name);
@@ -83,6 +85,10 @@ export function createElementLintService(deps: { contextService: LintContextServ
         return true;
       });
       stylesToAnalyze = filtered;
+      const afterFilterIds = new Set(stylesToAnalyze.map((s) => s.elementId));
+      for (const id of beforeFilterIds) {
+        if (!afterFilterIds.has(id)) filteredElementIds.add(id);
+      }
     }
 
     // 4) Execute rules via the same runner API used by page scans
@@ -100,7 +106,8 @@ export function createElementLintService(deps: { contextService: LintContextServ
       (id: string) => context.tagByElementId.get(id) ?? null,
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
       !pageContext, // Skip page rules when no page context available
-      context.grammarElementSeparator
+      context.grammarElementSeparator,
+      filteredElementIds
     );
 
     debug.log("lintElement: rule results count", results.length);

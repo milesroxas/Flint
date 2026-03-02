@@ -18,11 +18,11 @@ import { createMissingClassOnDivRule } from "@/features/linter/rules/shared/stru
 export const lumosElementsConfig: PresetElementsConfig = {
   getElements: getLumosKnownElements,
   categoryMap: {
-    layout: ["wrap", "main", "contain", "container", "layout", "inner", "content", "section"],
+    layout: ["wrap", "main", "contain", "container", "layout", "inner", "content", "section", "backdrop", "scroll"],
     content: ["text", "title", "heading", "eyebrow", "label", "marker"],
-    media: ["icon", "img", "image"],
+    media: ["icon", "img", "image", "logo", "visual", "svg"],
     interactive: ["button", "link", "field"],
-    structure: ["group", "item", "list", "card"],
+    structure: ["group", "item", "list", "card", "component", "line"],
     testing: ["x", "y", "z"],
   },
   separator: "_",

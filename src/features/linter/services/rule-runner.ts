@@ -79,7 +79,8 @@ export const createRuleRunner = (
     getTagName?: (id: string) => string | null,
     getElementType?: (id: string) => string | null,
     skipPageRules: boolean = false,
-    grammarElementSeparator?: string
+    grammarElementSeparator?: string,
+    filteredElementIds?: Set<string>
   ): RuleResult[] => {
     debug.log(
       "runRulesOnStylesWithContext: styles count",
@@ -169,6 +170,10 @@ export const createRuleRunner = (
     const allRules = ruleRegistry.getAllRules();
 
     for (const [elId, list] of byElement.entries()) {
+      // Skip element-level analysis for elements whose classes were all filtered out
+      // (e.g. by the 3rd party class filter). They appear empty but are not truly unclassed.
+      if (filteredElementIds?.has(elId) && list.length === 0) continue;
+
       for (const rule of allRules) {
         if (typeof rule.analyzeElement === "function") {
           const cfg = ruleRegistry.getRuleConfiguration(rule.id);

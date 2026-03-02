@@ -6,6 +6,7 @@ import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
 import { ensureLinterInitialized, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
+import { getLinterServices } from "@/features/linter/services/linter-service-singleton";
 import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
 import { trackLintElementCompleted, trackStructuralContextToggled } from "@/shared/lib/analytics";
@@ -59,6 +60,7 @@ export const useElementLintStore = create<ElementLintStore>()(
         if (get().loading) return;
         try {
           ensureLinterInitialized("balanced");
+          getLinterServices().contextService.clearCache();
           set({ loading: true, error: null });
           const wf: any = (window as any).webflow;
           if (!wf || typeof wf.getSelectedElement !== "function") {
