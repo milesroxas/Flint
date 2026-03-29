@@ -1,5 +1,3 @@
-@@
-
 # How It All Works — Webflow Designer Linter
 
 This guide explains the linter end‑to‑end: what happens when you lint a selected element or an entire page, how rules run, how grammar/roles work, how contexts are classified, where configuration and caching live, and how the UI renders results. It reflects the current application state.
@@ -15,15 +13,13 @@ flowchart TD
   A[User action] -->|Select element or Lint Page| B(Initialize registry)
   B --> C[StyleService: getAllStyles / getAppliedStyles]
   C --> D[UtilityClassAnalyzer: build property maps]
-  C --> E[Collect class names per element]
-  E --> F[ElementContextClassifier: classify contexts]
-  E --> G[Grammar + RoleResolver: compute role]
-  F --> H[RuleRunner: run rules with context]
-  D --> H
-  C --> H
-  G --> H
-  H --> I[Results with metadata]
-  I --> J[UI Components]
+  C --> E[LintContextService: graph + rolesByElement]
+  E --> F[Grammar + roleDetectors: compute role]
+  F --> G[RuleRunner: run rules with context]
+  D --> G
+  C --> G
+  G --> H[Results with metadata]
+  H --> I[UI Components]
 ```
 
 ## Runtime lifecycles
@@ -32,14 +28,13 @@ flowchart TD
 
 1. The user selects an element, triggering `useElementLint`.
 2. `ensureLinterInitialized()` builds/loads the registry once from the active preset and persisted config.
-3. `createElementLintService()`
+3. `createElementLintService()` (via `LintContextService` bootstrap)
    - Loads site‑wide styles (cached for the session) and builds utility duplicate maps
-   - Retrieves styles applied to the selected element and sorts them
-   - Builds or reuses a page‑level parent map and classifies contexts for all elements on the page
-   - Parses the first custom class with the preset grammar and maps it to an `ElementRole` via the preset role resolver; reconciles `wrap` with the DOM context
+   - Retrieves styles for the selected element (or subtree in structural mode) and builds a page/slice graph
+   - Runs preset `roleDetectors` with grammar + graph to assign `ElementRole` per element (wrappers reconcile `componentRoot` vs `childGroup` using `detectors/shared/wrapper-detection.ts` when needed)
    - Runs `RuleRunner.runRulesOnStylesWithContext`
-   - Stamps `metadata.role` per violation when resolvable; the role is derived from the first custom class via the active preset’s grammar and role resolver, with `_wrap` demoted to `childGroup` when not a root context
-4. Hook returns `{ violations, contexts, classNames, roles, isLoading }` to the UI.
+   - Stamps `metadata.role` on violations when the runner supplies role metadata
+4. `useElementLint` exposes `{ results, classNames, ignoredClassNames, roles, loading, … }` to the UI (`useElementLintStore`).
 
 ### Full page
 
@@ -47,7 +42,7 @@ flowchart TD
 2. `ensureLinterInitialized()` ensures the shared registry is ready.
 3. `scanCurrentPageWithMeta(elements)` creates a `PageLintService` with a `RuleRunner` configured for the active preset.
 4. Loads all site styles, builds utility maps, extracts class names per element.
-5. Classifies DOM contexts, computes per‑element roles, runs rules across all elements.
+5. Builds roles via detectors + graph, runs rules across all elements.
 6. Store updates `results` and `passedClassNames` and flips loading flags for the UI.
 
 ## Presets, grammar, and roles
@@ -55,9 +50,9 @@ flowchart TD
 - Presets live under `src/features/linter/presets/` and define:
   - `id`: preset identifier (e.g., `lumos`, `client-first`, or any custom id)
   - `grammar`: `GrammarAdapter` implementation that parses a class name into a structured `ParsedClass`
-  - `roles`: `RoleResolver` that maps a `ParsedClass` to an `ElementRole`
-  - `rules`: `Rule[]` (naming, property, context‑aware)
-  - `contextConfig`: configuration passed to the element‑context classifier
+  - `roleDetectors` (+ optional `roleDetectionConfig`): score‑based detectors that assign `ElementRole` from DOM/class context
+  - `rules`: `Rule[]` (naming, property, structure/composition, page rules as registered)
+  - Optional `elementsConfig` for the Recognized Elements UI (see `preset-elements.types.ts`)
 
 ### Grammar basics
 
@@ -75,23 +70,11 @@ flowchart TD
   - `content|title|text|actions|button|link|icon|list|item` → semantic roles
 - Client‑first adds awareness of collection classes and wrapper/section patterns.
 
-## DOM context classification
+## Roles, graph, and wrappers
 
-`src/entities/element/model/element-context-classifier.ts`
-
-- Contexts: `componentRoot`, `childGroup`, `childGroupInvalid`.
-- Defaults (overridable via `preset.contextConfig`):
-  - `wrapSuffix`: `_wrap`
-  - `parentClassPatterns`: `"section_contain"`, `/^u-section/`, `/^c-/`, `/^page_main/`
-  - `requireDirectParentContainerForRoot`: `true`
-  - `childGroupRequiresSharedTypePrefix`: `true`
-  - `typePrefixSeparator`: `_`, `typePrefixSegmentIndex`: `0`
-  - `groupNamePattern`: `/^[a-z0-9]+(?:_[a-z0-9]+)*$/`, `childGroupPrefixJoiner`: `_`
-- Behavior:
-  - `componentRoot`: element ends with `_wrap` and its immediate parent matches any container pattern
-  - `childGroup`: `_wrap` element nested under a root wrap; when required, its prefix must match the parent’s configured type prefix and group name must pass validation
-  - `childGroupInvalid`: nested under a root wrap but prefix/group name validation fails
-- Batch method `classifyPageElements` returns an elementId → contexts[] map; caches a parent map keyed by the current element count signature.
+- **`lint-context.service.ts`** builds cached page (or structural slice) contexts: style snapshots, element graph (`getParentId` / `getChildrenIds` / …), and `rolesByElement` by running the active preset’s `roleDetectors` with `DetectionContext`.
+- **`detectors/shared/wrapper-detection.ts`** (`createWrapperDetector`, `isStructuralChildGroup`, `canBeComponentRoot`) reconciles `*_wrap` naming with the graph so `componentRoot` vs `childGroup` matches DOM structure.
+- **Preset detectors**: `detectors/lumos.detectors.ts`, `detectors/client-first.detectors.ts` — additional naming and layout heuristics per framework.
 
 ## Rule registry and configuration
 
@@ -108,38 +91,18 @@ flowchart TD
 
 ## Rule execution pipeline
 
-`src/features/linter/services/rule-runner.ts`
+`src/features/linter/services/rule-runner.ts` (`runRulesOnStylesWithContext`)
 
-1. Build an elementId → styles list and find the base custom class order per element.
-2. Element‑level checks (configurable via registry):
-   - Utilities before base custom → `lumos-utilities-after-custom-ordering`
-   - Combos before base custom → `lumos-combos-after-custom-ordering`
-   - Over limit combos (`maxCombos`, default 2) → `lumos-combo-class-limit`
-   - Variant requires base → `lumos-variant-requires-base`
-3. For each style:
-   - Determine `ClassType` via a grammar‑derived resolver; fall back to `u-`/`is-` heuristics
-   - Filter rules by class type, enabled state, and targeted context (if any)
-   - Execute:
-     - Naming rules: prefer `evaluate(name, { config })` else fallback `test(name)`
-     - Property rules: analyze `properties` with access to utility duplicate maps and all styles
-4. Utility duplicate handling is centralized in the analyzer (see below). Results include a formatted single‑property payload when applicable, and `exactMatches` for full‑property identical utilities.
-5. Every result includes `metadata.elementId` for UI integrations. Services may stamp `metadata.role` for badges.
+1. **Page rules** (when enabled): registered `analyzePage` rules run once with `rolesByElement`, graph helpers, and page styles.
+2. **Element rules**: for each element, every registered rule that defines `analyzeElement` runs with class lists, graph/role helpers, and `getRuleConfig`.
+3. **Per-class rules**: for each applied style row, resolve `ClassType` via the preset’s grammar resolver (with combo flag from Webflow when available), then run enabled **naming** and **property** rules for that type. Naming uses `naming-rule-executor` (`evaluate` when present, else `test`). Property rules use `property-rule-executor` and the utility analyzer where applicable.
+4. Utility duplicate metadata comes from `createUtilityClassAnalyzer()` (see below). The runner merges `metadata.role` / `parentId` from the graph when stamping element-scoped results.
 
-Result object highlights (`RuleResult`):
-
-- `ruleId`, `name`, `message`, `severity`
-- `className`, `isCombo`, optional `example`, optional `context`
-- `metadata` may include:
-  - `elementId`
-  - `formattedProperty` for exact single‑property utility duplicates
-  - `exactMatches` for full‑property exact duplicates (list of identical utility classes)
-  - Ordering metadata: `currentOrder`, `properOrder`
-  - Combo metadata: `combos`, `maxCombos`, `suggestedName` (when available)
-  - `role` for UI role badges
+`RuleResult` commonly includes `ruleId`, `name`, `message`, `severity`, `className`, `isCombo`, and `metadata` (`elementId`, duplicate-utility fields, ordering/combo hints when a rule supplies them).
 
 ## Utility class duplicate analysis
 
-`src/features/linter/services/utility-class-analyzer.ts`
+`src/features/linter/services/analyzers/utility-class-analyzer.ts`
 
 - Builds:
   - `utilityClassPropertiesMap`: `u-*` → style entries with properties
@@ -222,10 +185,8 @@ Result object highlights (`RuleResult`):
 
 ## Testing
 
-- Run tests: `pnpm test` or `pnpm exec vitest`
-- Tests live under:
-  - `src/features/linter/rules/lumos/**/__tests__/` (naming, composition)
-  - `src/features/linter/rules/canonical/__tests__/` (page rules)
+- Run: `pnpm test`, `pnpm test:run`, or `pnpm test:coverage`
+- Suites are colocated under `**/__tests__/`; see root `README.md` → **Testing** for layout (rules, services, grammar, presets, `src/__tests__/integration/`, shared utilities)
 
 ## Extensibility
 

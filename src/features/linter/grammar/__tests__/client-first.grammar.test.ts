@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
+import {
+  clientFirstGrammar,
+  isContainerUtilityClass,
+} from "@/features/linter/grammar/client-first.grammar";
 
 describe("Client-First grammar adapter", () => {
   describe("class type classification", () => {
@@ -102,6 +105,18 @@ describe("Client-First grammar adapter", () => {
       const parsed = clientFirstGrammar.parse("faq_item");
       expect(parsed.tokens).toEqual(["faq", "item"]);
       expect(parsed.componentKey).toBe("faq");
+    });
+  });
+
+  describe("isContainerUtilityClass", () => {
+    it("returns true for container utilities", () => {
+      expect(isContainerUtilityClass("container-large")).toBe(true);
+      expect(isContainerUtilityClass("container-small")).toBe(true);
+    });
+
+    it("returns false for non-container classes", () => {
+      expect(isContainerUtilityClass("padding-global")).toBe(false);
+      expect(isContainerUtilityClass("max-width-large")).toBe(false);
     });
   });
 

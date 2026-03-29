@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import fs from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
@@ -104,6 +105,16 @@ export default defineConfig(({ mode }) => ({
         assetFileNames: (assetInfo: any) =>
           assetInfo.name?.endsWith(".css") ? "styles.css" : "assets/[name]-[hash][extname]",
       },
+    },
+  },
+  test: {
+    environment: "node",
+    globals: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["**/*.d.ts", "**/__tests__/**", "**/vite-env.d.ts"],
     },
   },
 }));

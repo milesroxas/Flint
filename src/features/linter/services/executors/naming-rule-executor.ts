@@ -34,8 +34,9 @@ export const createNamingRuleExecutor = (): NamingRuleExecutor => {
 
     const classType = getClassType(className, isCombo);
 
-    // Most naming rules should ignore utilities
-    if (classType === "utility") return [];
+    // Naming rules that only target custom/combo should not run on utility-classified names.
+    // Rules that target utilities (e.g. Client-First utility/section conventions) must run.
+    if (classType === "utility" && !rule.targetClassTypes.includes("utility")) return [];
 
     // Normalize severity via injected resolver
     const severity: Severity = resolveSeverity?.(rule.id) ?? severityDefault;

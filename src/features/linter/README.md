@@ -20,7 +20,7 @@ The linter now features an intelligent color coding system that enhances message
 - **Naming validation**: format rules for each class type
 - **Duplicate detection**: exact duplicate utility detection (full property set). Overlap-only checks are disabled by default.
 - **Canonical roles + graph**: rules analyze elements using detected roles and element graph helpers
-- **Role identification**: parses the first custom class using a preset GrammarAdapter and maps it to an ElementRole via a RoleResolver (e.g., title, text, actions, container). Services attach `metadata.role` on violations for UI badges.
+- **Role identification**: preset `GrammarAdapter` + `roleDetectors` assign `ElementRole` (e.g. title, container, childGroup). The runner may attach `metadata.role` on violations for UI badges.
 - **Config persistence**: per-rule settings merged from schemas and stored in localStorage
 - **Structural element linting**: when enabled, analyzes the selected element and all its descendants using the same logic as page scans
 

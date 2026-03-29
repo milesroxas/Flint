@@ -31,7 +31,7 @@ const buildComparableDecls = (decls: Record<string, string>, cfg: DuplicateOfUti
   const block = cfg.propertyBlocklist?.length ? new Set(cfg.propertyBlocklist) : null;
 
   for (const [prop, raw] of Object.entries(decls)) {
-    if (cfg.ignoreCustomProperties) continue;
+    if (cfg.ignoreCustomProperties && prop.startsWith("--")) continue;
     if (allow && !allow.has(prop)) continue;
     if (block?.has(prop)) continue;
 

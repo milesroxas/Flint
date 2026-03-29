@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RuleContext } from "@/features/linter/model/rule.types";
 import { createCFComboIsPrefixRule } from "@/features/linter/rules/client-first/naming/combo-is-prefix";
+import { createCFNamingClassFormatRule } from "@/features/linter/rules/client-first/naming/naming-class-format";
 import { createCFNoAbbreviationsRule } from "@/features/linter/rules/client-first/naming/no-abbreviations";
 import { createCFSectionFormatRule } from "@/features/linter/rules/client-first/naming/section-format";
 import { createCFUtilityNoUnderscoreRule } from "@/features/linter/rules/client-first/naming/utility-no-underscore";
@@ -10,6 +11,52 @@ const emptyContext: RuleContext = {
   utilityClassPropertiesMap: new Map(),
   propertyToClassesMap: new Map(),
 };
+
+// ── cf:naming:class-format ──────────────────────────────────────────
+
+describe("cf:naming:class-format", () => {
+  const rule = createCFNamingClassFormatRule();
+
+  it("exposes correct rule metadata", () => {
+    expect(rule.id).toBe("cf:naming:class-format");
+    expect(rule.type).toBe("naming");
+    expect(rule.severity).toBe("error");
+    expect(rule.targetClassTypes).toEqual(["custom"]);
+  });
+
+  it("accepts valid custom folder_element patterns", () => {
+    expect(rule.evaluate?.("hero_wrapper", emptyContext)).toBeNull();
+    expect(rule.evaluate?.("section_about_content", emptyContext)).toBeNull();
+  });
+
+  it("flags invalid characters and casing", () => {
+    const r1 = rule.evaluate?.("Hero_Wrapper", emptyContext);
+    expect(r1?.severity).toBe("error");
+    expect(r1?.message).toContain("lowercase");
+
+    const r2 = rule.evaluate?.("hero wrapper", emptyContext);
+    expect(r2?.severity).toBe("error");
+  });
+
+  it("short-circuits known utility systems without element checks", () => {
+    expect(rule.evaluate?.("padding-global", emptyContext)).toBeNull();
+    expect(rule.evaluate?.("text-size-large", emptyContext)).toBeNull();
+  });
+
+  it("suggests for unrecognized element tokens in multi-segment names", () => {
+    const r = rule.evaluate?.("hero_unknownthing", emptyContext);
+    expect(r?.severity).toBe("suggestion");
+    expect(r?.metadata?.unrecognizedElement).toBe("unknownthing");
+  });
+
+  it("uses project-defined element terms from config", () => {
+    const ctx = {
+      ...emptyContext,
+      config: { projectDefinedElements: ["widget"] },
+    };
+    expect(rule.evaluate?.("hero_widget", ctx)?.severity).toBe("suggestion");
+  });
+});
 
 // ── cf:naming:utility-no-underscore ─────────────────────────────────
 

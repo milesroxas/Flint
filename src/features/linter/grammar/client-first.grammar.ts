@@ -44,10 +44,18 @@ export function isPageWrapperClass(cls: string): boolean {
   return cls === "page-wrapper" || cls.endsWith("-page-wrapper");
 }
 
+/** Client-First `container-[size]` utilities (padding-global → container chain). */
+export const CF_CONTAINER_CLASS_PREFIX = "container-" as const;
+
 /**
  * Prefixes for core structure utility systems in Client-First.
  */
-export const CF_CORE_STRUCTURE_PREFIXES = ["container-", "padding-section-"] as const;
+export const CF_CORE_STRUCTURE_PREFIXES = [CF_CONTAINER_CLASS_PREFIX, "padding-section-"] as const;
+
+/** True if the class is a Client-First container utility (e.g. container-large). */
+export function isContainerUtilityClass(name: string): boolean {
+  return name.startsWith(CF_CONTAINER_CLASS_PREFIX);
+}
 
 /**
  * Client-First class type classification.

@@ -15,11 +15,11 @@ Lint Webflow classes in real time. Validates naming, detects duplicate utilities
 
 ### Overview
 
-Flint is a React + Vite Designer extension written in strict TypeScript. It attaches to the Webflow Designer API, loads preset-driven linting rules for Lumos and Client-first, and renders results inside `src/features/linter/view/LinterPanel.tsx`. Grammar adapters (`src/features/linter/presets/*.preset.ts`) parse the first custom class on each element to determine its role, while context-aware services map DOM relationships so rules understand root wrappers, child groups, and invalid combinations. Utility duplicate detection is powered by `src/features/linter/services/analyzers/utility-class-analyzer.ts`, and UI state is managed with Zustand stores.
+Flint is a React + Vite Designer extension written in strict TypeScript. It attaches to the Webflow Designer API, loads preset-driven linting rules for Lumos and Client-first, and renders results inside `src/features/linter/view/LinterPanel.tsx`. Presets (`src/features/linter/presets/*.preset.ts`) wire `GrammarAdapter` implementations (`src/features/linter/grammar/*.grammar.ts`) and `roleDetectors` so each element gets a resolved `ElementRole`; `lint-context.service.ts` supplies the element graph and cached style data. Utility duplicate detection lives in `src/features/linter/services/analyzers/utility-class-analyzer.ts`. UI state uses Zustand stores.
 
 ### Features
 
-- Preset-aware linting: `src/features/linter/presets/client-first.preset.ts` and `lumos.preset.ts` register grammar, rule, and role resolvers. Enable/disable them per environment via `VITE_ENABLE_CLIENT_FIRST` / `VITE_ENABLE_LUMOS` in `.env.*`.
+- Preset-aware linting: `client-first.preset.ts` and `lumos.preset.ts` register grammar, rules, and role detectors. Enable/disable them per environment via `VITE_ENABLE_CLIENT_FIRST` / `VITE_ENABLE_LUMOS` in `.env.*`.
 - Context + role detection: `lint-context.service.ts` builds cached page contexts (element graphs, parent relationships, tags, and role maps) so rules know when wraps or child groups violate the preset conventions.
 - Duplicate utilities and metadata: `createUtilityClassAnalyzer()` fingerprints utility classes, surfaces full-property `exactMatches`, and produces formatted payloads for single-property duplicates consumed by `ViolationDetails`.
 - Element vs structural scans: `useElementLintStore` supports a structural-context toggle that reuses the page context to lint a component boundary, while `usePageLintStore` runs a full `scanCurrentPageWithMeta()` across all Designer elements.
@@ -87,7 +87,8 @@ Flint is a React + Vite Designer extension written in strict TypeScript. It atta
 - **Guides**
   - `docs/guides/how-it-all-works.md` — walkthrough of the runtime lifecycle, registry, and UI flow.
   - `docs/guides/framework_config.md` — environment variable switches for enabling Client-first vs Lumos presets.
-  - `docs/guides/linting.md` — Biome + TypeScript lint/type-check practices (`pnpm lint:all`, `pnpm format`).
+  - `docs/guides/extending-presets.md` — adding or extending presets (grammar, detectors, rules).
+  - `docs/guides/linting.md` — Biome + TypeScript (`pnpm lint:all`, `pnpm format`).
 - **Notes**
   - `docs/notes/rules.md` — catalog of rule categories and Lumos rule behavior.
 - **Module READMEs & references**
@@ -112,25 +113,30 @@ Flint is a React + Vite Designer extension written in strict TypeScript. It atta
 
 ### Testing
 
-- Run the full suite (Vitest):
+- Run Vitest:
   ```bash
-  pnpm test        # interactive
-  pnpm test:run    # one-off CI run
-  pnpm test:watch  # watch mode
+  pnpm test          # interactive UI
+  pnpm test:run      # CI / one-off
+  pnpm test:watch    # watch mode
+  pnpm test:coverage # coverage report (v8)
   ```
-- Current coverage focuses on rule behavior:
-  - Lumos naming + composition suites under `src/features/linter/rules/lumos/**/__tests__/`.
-  - Canonical page rules under `src/features/linter/rules/canonical/__tests__/`.
-  - There are no dedicated `src/features/linter/services/__tests__` or `src/entities/style/services/__tests__` directories today; service changes should be validated manually or by adding new Vitest suites alongside the affected modules.
+- Tests are colocated under `**/__tests__/` throughout `src/`. Notable areas:
+  - Integration: `src/__tests__/integration/` (fixtures in `src/__tests__/fixtures/`)
+  - Rules: `src/features/linter/rules/{lumos,client-first,canonical,shared}/**/__tests__/`
+  - Linter services: `src/features/linter/services/**/__tests__/` (registry, executors, analyzers)
+  - Grammar + presets: `src/features/linter/grammar/__tests__/`, `src/features/linter/presets/__tests__/`
+  - Shared + entities: `src/shared/**/__tests__/`, `src/entities/**/__tests__/`
+- Focused scripts: `pnpm test:class-order` (Lumos class-order rule), `pnpm test:structure` (Client-First structure rules)
 
 ### Project structure
 
 ```
 ├── docs/
-│   ├── guides/ (framework_config.md, how-it-all-works.md, linting.md)
+│   ├── guides/ (framework_config, how-it-all-works, extending-presets, linting)
 │   ├── notes/rules.md
 │   └── rfcs/template.md
 ├── src/
+│   ├── __tests__/                     # integration tests + shared fixtures
 │   ├── app/ui/…                       # shell + header
 │   ├── entities/
 │   │   ├── element/…                 # id helpers, model/types, services

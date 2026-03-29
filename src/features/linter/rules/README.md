@@ -19,7 +19,7 @@ This directory contains all rules that the linter executes. It includes:
 
 ```txt
 src/features/linter/rules/
-├── canonical/                    # Preset-agnostic structural rules
+├── canonical/                    # Preset-agnostic structural / page rules
 │   ├── __tests__/
 │   ├── child-group-key-match.ts
 │   ├── main-children.page.ts
@@ -30,34 +30,26 @@ src/features/linter/rules/
 │   │   ├── __tests__/
 │   │   ├── color-variable.ts
 │   │   ├── utility-duplicate-properties.ts
+│   │   ├── utility-duplicate-property.ts
 │   │   └── index.ts
 │   ├── structure/
+│   │   ├── __tests__/
 │   │   ├── missing-class-on-div.ts
 │   │   └── index.ts
 │   └── index.ts
-├── lumos/                        # Lumos preset-specific rules
-│   ├── composition/
-│   │   ├── __tests__/
-│   │   ├── class-order.element.ts
-│   │   ├── combo-limit.element.ts
-│   │   ├── variant-requires-base.element.ts
-│   │   └── index.ts
-│   ├── naming/
-│   │   ├── __tests__/
-│   │   ├── combo-class-format.element.ts
-│   │   ├── naming-class-format.ts
-│   │   └── index.ts
+├── lumos/
+│   ├── composition/__tests__/
+│   ├── naming/__tests__/
 │   ├── property/
-│   │   ├── utility-class-duplicate-properties.ts
-│   │   └── utility-class-exact-duplicate.ts
 │   ├── README.md
-│   └── index.ts
-├── client-first/                  # Client-First preset-specific rules
-│   ├── naming/
-│   │   ├── naming-class-format.ts
-│   │   └── index.ts
+│   └── …
+├── client-first/
+│   ├── composition/__tests__/
+│   ├── naming/__tests__/
+│   ├── property/__tests__/
+│   ├── structure/__tests__/
 │   ├── README.md
-│   └── index.ts
+│   └── …
 └── README.md
 ```
 
@@ -135,9 +127,9 @@ These shared rules are imported and used by multiple presets to avoid duplicatio
 - **Composition**: `class-order.element.ts`, `variant-requires-base.element.ts`, `combo-limit.element.ts`
 - **Property**: Uses shared rules only. Lumos-specific files `utility-class-duplicate-properties.ts` and `utility-class-exact-duplicate.ts` exist but are not currently included in the preset.
 
-### Client‑First (naming, shared property/structure)
+### Client‑First (naming, composition, property, structure, + shared)
 
-- **Naming**: `naming-class-format.ts`
+- **Naming**, **composition**, **property**, **structure**: see `client-first/README.md` and `client-first/**/*.ts`
 
 ---
 
@@ -180,7 +172,7 @@ These shared rules are imported and used by multiple presets to avoid duplicatio
 
 ## Testing
 
-See `docs/guides/testing-rules.md`. Prefer small unit tests for detectors and rules with focused positive/negative fixtures. Ensure no duplication with canonical rules.
+See root `README.md` → **Testing**. Colocate Vitest files under `**/__tests__/` next to the code under test.
 
 ---
 

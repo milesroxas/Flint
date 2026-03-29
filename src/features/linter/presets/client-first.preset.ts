@@ -20,7 +20,10 @@ import {
   createCFPaddingGlobalHorizontalOnlyRule,
   createCFPreferRemRule,
 } from "@/features/linter/rules/client-first/property";
-import { createCFNavOutsideMainRule } from "@/features/linter/rules/client-first/structure";
+import {
+  createCFNavOutsideMainRule,
+  createCFPaddingGlobalChildContainerRule,
+} from "@/features/linter/rules/client-first/structure";
 import {
   createColorVariableRule,
   createDuplicateOfUtilityRule,
@@ -71,6 +74,7 @@ export const clientFirstPreset: Preset & {
 
     // Client-First structure rules
     createCFNavOutsideMainRule(),
+    createCFPaddingGlobalChildContainerRule(),
     createSectionParentIsMainRule(),
 
     // Client-First property rules

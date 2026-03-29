@@ -11,6 +11,7 @@
       "**",
       "!!**/dist",
       "!!**/bundle",
+      "!!**/coverage",
       "!!**/node_modules",
       "!**/*.config.js",
       "!**/*.config.mjs",
