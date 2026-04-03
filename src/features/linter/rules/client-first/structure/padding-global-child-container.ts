@@ -11,15 +11,11 @@ function hasContainerLikeProperties(props: Record<string, unknown>): boolean {
 
   const hasMaxWidth = keys.some((k) => k === "max-width" || k === "maxWidth");
 
-  const ml = props["margin-left"] ?? props["marginLeft"];
-  const mr = props["margin-right"] ?? props["marginRight"];
-  const margin = props["margin"] ?? props["margin"];
+  const ml = props["margin-left"] ?? props.marginLeft;
+  const mr = props["margin-right"] ?? props.marginRight;
+  const margin = props.margin ?? props.margin;
 
-  const marginAutoBoth =
-    typeof ml === "string" &&
-    ml.includes("auto") &&
-    typeof mr === "string" &&
-    mr.includes("auto");
+  const marginAutoBoth = typeof ml === "string" && ml.includes("auto") && typeof mr === "string" && mr.includes("auto");
   const marginShorthandAuto = typeof margin === "string" && /\bauto\b/.test(margin);
 
   return hasMaxWidth || marginAutoBoth || marginShorthandAuto;

@@ -12,7 +12,6 @@ describe("client-first preset", () => {
       "cf:naming:no-abbreviations",
       "cf:composition:combo-not-alone",
       "cf:composition:padding-section-requires-global",
-      "cf:structure:nav-outside-main",
       "cf:structure:padding-global-child-container",
       "canonical:section-parent-is-main",
       "cf:property:padding-global-horizontal-only",

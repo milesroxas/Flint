@@ -163,6 +163,8 @@ export interface PageAnalysisArgsOptions {
   tagMap?: Record<string, string | null>;
   elementTypeMap?: Record<string, string | null>;
   ruleConfigs?: Record<string, { enabled: boolean; severity: Severity }>;
+  siteComponentNameById?: ReadonlyMap<string, string>;
+  componentIdByElementId?: ReadonlyMap<string, string>;
 }
 
 export function createPageAnalysisArgs(opts: PageAnalysisArgsOptions = {}): PageAnalysisArgs {
@@ -209,6 +211,8 @@ export function createPageAnalysisArgs(opts: PageAnalysisArgsOptions = {}): Page
     }),
     getTagName: (id: string) => opts.tagMap?.[id] ?? null,
     getElementType: (id: string) => opts.elementTypeMap?.[id] ?? null,
+    siteComponentNameById: opts.siteComponentNameById,
+    componentIdByElementId: opts.componentIdByElementId,
   };
 }
 

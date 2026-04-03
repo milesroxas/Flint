@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { StyleInfo } from "@/entities/style/model/style.types";
+import type { StyleInfo, StyleWithElement } from "@/entities/style/model/style.types";
 import { CF_BUILTIN_UTILITY_CLASSES } from "@/features/linter/grammar/client-first.grammar";
 import type { ClassType, ElementAnalysisArgs, ElementClassItem, RuleContext } from "@/features/linter/model/rule.types";
 import { createColorVariableRule } from "@/features/linter/rules/shared/property/color-variable";
 import { createDuplicateOfUtilityRule } from "@/features/linter/rules/shared/property/utility-duplicate-properties";
 import { createUtilityDuplicatePropertyRule } from "@/features/linter/rules/shared/property/utility-duplicate-property";
+import { createUtilityClassAnalyzer } from "@/features/linter/services/analyzers/utility-class-analyzer";
+import { createRuleRegistry } from "@/features/linter/services/rule-registry";
+import { createRuleRunner } from "@/features/linter/services/rule-runner";
 
 const emptyContext: RuleContext = {
   allStyles: [],
@@ -16,7 +19,7 @@ const emptyContext: RuleContext = {
 function clientFirstClassType(name: string, isCombo?: boolean): ClassType {
   if (isCombo === true) return "combo";
   if (name.startsWith("u-")) return "utility";
-  if (name.startsWith("c-")) return "component";
+  if (name.startsWith("c-")) return "custom";
   if (name.startsWith("is-")) return "combo";
   if (name.includes("_")) return "custom";
   return "utility";
@@ -30,11 +33,9 @@ function elementArgs(
 ): ElementAnalysisArgs {
   return {
     elementId: "el-1",
-    allStyles: overrides.allStyles,
-    classes: overrides.classes,
+    ...overrides,
     getClassType: overrides.getClassType ?? ((name: string, combo?: boolean) => clientFirstClassType(name, combo)),
     getRuleConfig: overrides.getRuleConfig ?? (() => undefined),
-    ...overrides,
   };
 }
 
@@ -144,6 +145,30 @@ describe("canonical:utility-duplicate-property (Client-First preset config)", ()
     expect(out[0].ruleId).toBe("canonical:utility-duplicate-property");
   });
 
+  it("does not flag utilities that overlap third-party library classes", () => {
+    const allStyles: StyleInfo[] = [
+      {
+        id: "tp",
+        name: "swiper-portfolio",
+        properties: { display: "block" },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "u",
+        name: "block",
+        properties: { display: "block" },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "block", order: 1, elementId: "el-1" }],
+    });
+    expect(rule.analyzeElement?.(args) ?? []).toEqual([]);
+  });
+
   it("does not flag built-in Client-First template utilities that share properties", () => {
     const allStyles: StyleInfo[] = [
       {
@@ -168,5 +193,142 @@ describe("canonical:utility-duplicate-property (Client-First preset config)", ()
     });
 
     expect(rule.analyzeElement(args)).toEqual([]);
+  });
+
+  it("mergedIgnoredLintClasses excludes listed utilities from duplicate detection (single-property)", () => {
+    const allStyles: StyleInfo[] = [
+      {
+        id: "x",
+        name: "user-ignored-alias",
+        properties: { "margin-top": "1rem" },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "y",
+        name: "duplicate-of-alias",
+        properties: { "margin-top": "1rem" },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "duplicate-of-alias", order: 1, elementId: "el-1" }],
+      mergedIgnoredLintClasses: new Set(["user-ignored-alias"]),
+    });
+
+    expect(rule.analyzeElement(args)).toEqual([]);
+  });
+
+  it("without mergedIgnoredLintClasses still flags duplicate single-property utilities (control)", () => {
+    const allStyles: StyleInfo[] = [
+      {
+        id: "x",
+        name: "user-ignored-alias",
+        properties: { "margin-top": "1rem" },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "y",
+        name: "duplicate-of-alias",
+        properties: { "margin-top": "1rem" },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "duplicate-of-alias", order: 1, elementId: "el-1" }],
+    });
+
+    const out = rule.analyzeElement(args);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out[0].ruleId).toBe("canonical:utility-duplicate-property");
+  });
+
+  it("mergedIgnoredLintClasses excludes listed utilities from duplicate detection (multi-property)", () => {
+    const allStyles: StyleInfo[] = [
+      {
+        id: "x",
+        name: "user-ignored-base",
+        properties: { "margin-top": "1rem", "margin-left": "0px" },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "y",
+        name: "duplicate-base",
+        properties: { "margin-top": "1rem", "margin-left": "0px" },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "duplicate-base", order: 1, elementId: "el-1" }],
+      mergedIgnoredLintClasses: new Set(["user-ignored-base"]),
+    });
+
+    expect(rule.analyzeElement(args)).toEqual([]);
+  });
+});
+
+describe("canonical:utility-duplicate-property (rule runner forwards mergedIgnoredLintClasses)", () => {
+  it("passes mergedIgnoredLintClasses through runRulesOnStylesWithContext", () => {
+    const registry = createRuleRegistry();
+    registry.registerRule(createUtilityDuplicatePropertyRule({ ignoredClasses: [...CF_BUILTIN_UTILITY_CLASSES] }));
+
+    const utilityAnalyzer = createUtilityClassAnalyzer({
+      isUtilityName: (name) => clientFirstClassType(name) === "utility",
+    });
+    utilityAnalyzer.buildPropertyMaps([]);
+
+    const runner = createRuleRunner(registry, utilityAnalyzer, clientFirstClassType);
+
+    const styles: StyleWithElement[] = [
+      {
+        id: "x",
+        name: "user-ignored-alias",
+        properties: { "margin-top": "1rem" },
+        order: 0,
+        isCombo: false,
+        elementId: "el-1",
+      },
+      {
+        id: "y",
+        name: "duplicate-of-alias",
+        properties: { "margin-top": "1rem" },
+        order: 1,
+        isCombo: false,
+        elementId: "el-1",
+      },
+    ];
+
+    const results = runner.runRulesOnStylesWithContext(
+      styles,
+      {} as Record<string, never[]>,
+      styles,
+      { "el-1": "unknown" },
+      () => null,
+      () => [],
+      () => [],
+      undefined,
+      undefined,
+      () => null,
+      () => null,
+      false,
+      "-",
+      undefined,
+      undefined,
+      undefined,
+      new Set(["user-ignored-alias"])
+    );
+
+    expect(results.filter((r) => r.ruleId === "canonical:utility-duplicate-property")).toHaveLength(0);
   });
 });

@@ -13,6 +13,7 @@ function filterValidElements(elements: any[]): any[] {
   return (elements || []).filter((el: any) => {
     if (!el) return false;
     if (typeof el.getStyles === "function") return true;
+    if (el?.type === "ComponentInstance") return true;
     const hasComponentElementId = el?.id?.component && el?.id?.element;
     const hasNoType = !el.type || el.type === "";
     return hasComponentElementId && hasNoType;

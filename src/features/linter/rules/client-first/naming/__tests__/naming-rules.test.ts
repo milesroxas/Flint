@@ -187,7 +187,8 @@ describe("cf:naming:section-format", () => {
   it("suggests underscore format for section classes", () => {
     const result = rule.evaluate?.("section-about", emptyContext);
     expect(result).not.toBeNull();
-    expect(result?.message).toContain("section_about");
+    expect(result?.message).toContain("section-about");
+    expect(result?.metadata?.suggestedName).toBe("section_about");
     expect(result?.fix).toEqual({
       kind: "rename-class",
       from: "section-about",

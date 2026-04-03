@@ -13,6 +13,14 @@ import { createRoleDetectionService } from "@/features/linter/services/role-dete
 let cachedPageContext: LintContext | null = null;
 
 /**
+ * createContext() memo: signature → last built LintContext. Must be cleared together with
+ * cachedPageContext when the canvas changes; previously only cachedPageContext was nulled
+ * and stale graphs could be reused after deleting elements (e.g. components).
+ */
+let cachedLintContext: LintContext | null = null;
+let lastLintContextSignature: string | null = null;
+
+/**
  * Set page context cache for page mode performance
  */
 export function setPageContextCache(context: LintContext): void {
@@ -27,10 +35,12 @@ export function getPageContextCache(): LintContext | null {
 }
 
 /**
- * Invalidate page context cache when page changes
+ * Invalidate all lint context caches when the page/canvas changes or before a fresh scan.
  */
 export function invalidatePageContextCache(): void {
   cachedPageContext = null;
+  cachedLintContext = null;
+  lastLintContextSignature = null;
 }
 
 import { toElementKey } from "@/entities/element/lib/id";
@@ -50,6 +60,8 @@ export interface LintContext {
   grammarElementSeparator: string;
   tagByElementId: Map<string, string | null>;
   elementTypeByElementId: Map<string, string | null>;
+  /** For ComponentInstance elements: element key → component definition id (Designer API) */
+  componentIdByElementId: Map<string, string>;
 }
 
 export interface LintContextService {
@@ -75,7 +87,9 @@ function filterValidElements(elements: WebflowElement[]): WebflowElement[] {
     const hasNoType = !el.type || el.type === "";
     const isPageSlot = hasComponentElementId && hasNoType;
 
-    const shouldInclude = hasGetStyles || isPageSlot;
+    const isComponentInstance = el?.type === "ComponentInstance";
+
+    const shouldInclude = hasGetStyles || isPageSlot || isComponentInstance;
 
     return shouldInclude;
   });
@@ -168,10 +182,6 @@ export function createLintContextService(deps: { styleService: StyleService }): 
   const { styleService } = deps;
   const debug = createDebugger("lint-context");
 
-  // Cache for page contexts to avoid redundant computation
-  let cachedContext: LintContext | null = null;
-  let lastSignature: string | null = null;
-
   async function createContext(elements: WebflowElement[]): Promise<LintContext> {
     if (!Array.isArray(elements)) {
       throw new Error("Elements must be an array");
@@ -250,9 +260,9 @@ export function createLintContextService(deps: { styleService: StyleService }): 
     const signature = createSignature(allElementStylePairs, parentIdByChildId);
 
     // 7) Check cache
-    if (cachedContext && lastSignature === signature) {
+    if (cachedLintContext && lastLintContextSignature === signature) {
       debug.log("createContext: cache hit", signature);
-      return cachedContext;
+      return cachedLintContext;
     }
 
     // 8) Build ElementWithClassNames for role detection
@@ -299,6 +309,16 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       }
     }
 
+    // 12b) Component instances (no styles): map element → component definition id for page rules
+    const componentIdByElementId = new Map<string, string>();
+    for (const el of allValidElements) {
+      const id = toElementKey(el);
+      const t = (el as any)?.type;
+      if (t === "ComponentInstance" && (el as any)?.id?.component != null) {
+        componentIdByElementId.set(id, String((el as any).id.component));
+      }
+    }
+
     // 13) Create element style map for quick lookup
     const elementStyleMap = new Map<string, StyleWithElement[]>();
     for (const pair of allElementStylePairs) {
@@ -318,11 +338,12 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       grammarElementSeparator: grammar.elementSeparator,
       tagByElementId,
       elementTypeByElementId,
+      componentIdByElementId,
     };
 
     // Cache for future use
-    cachedContext = context;
-    lastSignature = signature;
+    cachedLintContext = context;
+    lastLintContextSignature = signature;
 
     // Also set in lightweight context cache for page mode performance
     setPageContextCache(context);
@@ -468,8 +489,6 @@ export function createLintContextService(deps: { styleService: StyleService }): 
   }
 
   function clearCache() {
-    cachedContext = null;
-    lastSignature = null;
     invalidatePageContextCache();
   }
 

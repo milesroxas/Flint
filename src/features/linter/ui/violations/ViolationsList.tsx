@@ -5,7 +5,7 @@ import { useAnimationStore } from "@/features/linter/store/animation.store";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { selectElementById } from "@/features/window/select-element";
-import { trackThirdPartyListViewed, trackViolationOpened } from "@/shared/lib/analytics";
+import { trackIgnoredClassListsViewed, trackViolationOpened } from "@/shared/lib/analytics";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
@@ -144,11 +144,11 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
     [ignoredClassNames, failedSet]
   );
 
-  const handleViewLibraryClasses = () => {
-    trackThirdPartyListViewed({ ignored_count: ignoredOnly.length });
+  const handleViewIgnoredClasses = () => {
+    trackIgnoredClassListsViewed({ source: "violations_list" });
     openExpandedView({
-      type: "third-party-libraries",
-      title: "Third-party library classes",
+      type: "ignored-classes-lists",
+      title: "Ignored class lists",
     });
   };
 
@@ -219,16 +219,16 @@ export const ViolationsList: React.FC<ViolationsListProps> = ({
               style={{ transitionDelay: "700ms" }}
             >
               <div className="flex items-center justify-between">
-                <div className="text-[11px] text-muted-foreground">Ignored — 3rd party ({ignoredOnly.length})</div>
+                <div className="text-[11px] text-muted-foreground">Ignored ({ignoredOnly.length})</div>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
-                  onClick={handleViewLibraryClasses}
-                  title="View the list of third-party library classes"
+                  onClick={handleViewIgnoredClasses}
+                  title="View global, preset, and third-party ignore terms"
                 >
                   <List className="h-3 w-3" />
-                  View list
+                  View terms
                 </Button>
               </div>
               <div className="grid grid-cols-1 gap-1 pr-2">

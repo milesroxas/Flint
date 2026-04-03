@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  clientFirstGrammar,
-  isContainerUtilityClass,
-} from "@/features/linter/grammar/client-first.grammar";
+import { clientFirstGrammar, isContainerUtilityClass } from "@/features/linter/grammar/client-first.grammar";
 
 describe("Client-First grammar adapter", () => {
   describe("class type classification", () => {

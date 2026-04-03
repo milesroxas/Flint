@@ -36,10 +36,13 @@ export const createCFSectionFormatRule = (): NamingRule => ({
     return {
       ruleId: "cf:naming:section-format",
       name: "Client-First: Section naming format",
-      message: `Section class "${className}" uses a dash. Use the folder convention: "${suggested}".`,
+      message: `Section class "${className}" uses a dash after "section". Use the underscore folder convention below.`,
       severity: "warning",
       className,
       isCombo: false,
+      metadata: {
+        suggestedName: suggested,
+      },
       fix: {
         kind: "rename-class",
         from: className,

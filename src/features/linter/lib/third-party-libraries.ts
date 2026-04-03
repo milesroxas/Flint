@@ -84,6 +84,10 @@ export const THIRD_PARTY_LIBRARIES: ThirdPartyLibrary[] = [
 // Derived set for O(1) lookups — computed once at module load, never duplicated elsewhere
 export const THIRD_PARTY_CLASS_SET: Set<string> = new Set(THIRD_PARTY_LIBRARIES.flatMap((lib) => lib.classes));
 
+/** Site-specific or BEM-style names that start with a known library prefix (e.g. swiper-portfolio). */
+const THIRD_PARTY_CLASS_PREFIXES: readonly string[] = ["swiper-"];
+
 export function isThirdPartyClass(className: string): boolean {
-  return THIRD_PARTY_CLASS_SET.has(className);
+  if (THIRD_PARTY_CLASS_SET.has(className)) return true;
+  return THIRD_PARTY_CLASS_PREFIXES.some((prefix) => className.startsWith(prefix));
 }

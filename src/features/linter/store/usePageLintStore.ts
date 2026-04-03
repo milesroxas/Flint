@@ -2,11 +2,10 @@
 import posthog from "posthog-js";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
+import { getLintClassFilter, getMergedIgnoredLintClassSet } from "@/features/linter/lib/lint-class-filter";
 import { ensureLinterInitialized, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { invalidatePageContextCache } from "@/features/linter/services/lint-context.service";
-import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanCurrentPageWithMeta } from "@/features/linter/use-cases/scan-current-page";
 import { trackLintPageCompleted } from "@/shared/lib/analytics";
 import { useAnimationStore } from "./animation.store";
@@ -36,9 +35,11 @@ const initialState: PageLintState = {
   hasRun: false,
 };
 
-function buildClassFilter(): ((name: string) => boolean) | undefined {
-  const { ignoreThirdPartyClasses } = useLinterSettingsStore.getState();
-  return ignoreThirdPartyClasses ? (name: string) => !isThirdPartyClass(name) : undefined;
+function buildPageLintOptions() {
+  return {
+    classFilter: getLintClassFilter(),
+    mergedIgnoredLintClasses: getMergedIgnoredLintClassSet(),
+  };
 }
 
 export const usePageLintStore = create<PageLintStore>()(
@@ -62,9 +63,10 @@ export const usePageLintStore = create<PageLintStore>()(
           invalidatePageContextCache();
 
           const elements = await webflow.getAllElements();
-          const { results, classNames, ignoredClassNames } = await scanCurrentPageWithMeta(elements, {
-            classFilter: buildClassFilter(),
-          });
+          const { results, classNames, ignoredClassNames } = await scanCurrentPageWithMeta(
+            elements,
+            buildPageLintOptions()
+          );
           set({ results, passedClassNames: classNames, ignoredClassNames, loading: false });
 
           trackLintPageCompleted({

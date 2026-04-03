@@ -1,5 +1,6 @@
 // src/features/linter/services/page-lint-service.ts
 
+import { fetchSiteComponentNameById } from "@/entities/component/services/component-catalog.service";
 import type { WebflowElement } from "@/entities/element/model/element.types";
 import type { StyleWithElement } from "@/entities/style/model/style.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
@@ -8,6 +9,7 @@ import type { RuleRunner } from "@/features/linter/services/rule-runner";
 
 export interface PageLintOptions {
   classFilter?: (name: string) => boolean;
+  mergedIgnoredLintClasses?: ReadonlySet<string>;
 }
 
 export interface PageLintResult {
@@ -50,7 +52,10 @@ export function createPageLintService(deps: { contextService: LintContextService
       }
     }
 
-    // 4) Run rules via runner (page and element rules are handled by the runner)
+    // 4) Site component catalog (Designer getAllComponents) for page rules that need it
+    const siteComponentNameById = await fetchSiteComponentNameById();
+
+    // 5) Run rules via runner (page and element rules are handled by the runner)
     const results = ruleRunner.runRulesOnStylesWithContext(
       allAppliedStyles,
       {},
@@ -65,7 +70,10 @@ export function createPageLintService(deps: { contextService: LintContextService
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
       false,
       context.grammarElementSeparator,
-      filteredElementIds
+      filteredElementIds,
+      siteComponentNameById,
+      context.componentIdByElementId,
+      options?.mergedIgnoredLintClasses
     );
 
     return { results, ignoredClassNames };

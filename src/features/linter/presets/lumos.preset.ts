@@ -37,6 +37,7 @@ export const lumosPreset: Preset & {
   elementsConfig: PresetElementsConfig;
 } = {
   id: "lumos",
+  ignoredLintClasses: [],
   grammar: lumosGrammar,
   roleDetectors: lumosRoleDetectors,
   roleDetectionConfig: { threshold: 0.6 },

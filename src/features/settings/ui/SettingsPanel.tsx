@@ -1,13 +1,20 @@
 import type React from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { parseIgnoredClassesInput } from "@/features/linter/lib/class-lint-ignore";
+import { getCurrentPreset, subscribePresetChanged } from "@/features/linter/model/linter.factory";
+import { getPresetIds } from "@/features/linter/presets";
+import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import type { WindowPreset } from "@/features/linter/store/linterSettings.store";
 import { useLinterSettings } from "@/features/linter/store/linterSettings.store";
 import { WINDOW_PRESETS } from "@/features/window/components/HeightSwitcher";
 import { applyWindowPreset } from "@/features/window/lib/apply-window-preset";
-import { trackSettingChanged } from "@/shared/lib/analytics";
+import { trackIgnoredClassListsViewed, trackSettingChanged } from "@/shared/lib/analytics";
 import { buildInfo } from "@/shared/lib/build-info";
 import { useTheme } from "@/shared/providers/theme-provider";
+import { Button } from "@/shared/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 interface SettingsRowProps {
   label: string;
@@ -58,14 +65,37 @@ const SettingsSelectRow: React.FC<SettingsSelectRowProps> = ({ label, descriptio
 
 export const SettingsPanel: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  const { openExpandedView } = useExpandedView();
   const {
     autoSelectElement,
     ignoreThirdPartyClasses,
     windowPreset,
+    globalIgnoredClasses,
+    presetIgnoredClasses,
     setAutoSelectElement,
     setIgnoreThirdPartyClasses,
     setWindowPreset,
+    setGlobalIgnoredClasses,
+    setPresetIgnoredClasses,
   } = useLinterSettings();
+
+  const activePresetId = useSyncExternalStore(subscribePresetChanged, getCurrentPreset, getCurrentPreset);
+  const presetIds = getPresetIds();
+  const [editingPresetId, setEditingPresetId] = useState(activePresetId);
+  const [globalDraft, setGlobalDraft] = useState(() => globalIgnoredClasses.join("\n"));
+  const [presetDraft, setPresetDraft] = useState(() => (presetIgnoredClasses[editingPresetId] ?? []).join("\n"));
+
+  useEffect(() => {
+    setEditingPresetId(activePresetId);
+  }, [activePresetId]);
+
+  useEffect(() => {
+    setGlobalDraft(globalIgnoredClasses.join("\n"));
+  }, [globalIgnoredClasses]);
+
+  useEffect(() => {
+    setPresetDraft((presetIgnoredClasses[editingPresetId] ?? []).join("\n"));
+  }, [editingPresetId, presetIgnoredClasses]);
 
   const isDark = theme === "dark";
 
@@ -75,62 +105,135 @@ export const SettingsPanel: React.FC = () => {
   }));
 
   return (
-    <div className="px-4 py-2">
-      <SettingsRow
-        id="settings-dark-mode"
-        label="Dark mode"
-        description="Switch between light and dark appearance."
-        checked={isDark}
-        onCheckedChange={(checked) => {
-          trackSettingChanged({ setting: "dark_mode", value: checked });
-          setTheme(checked ? "dark" : "light");
-        }}
-      />
-      <SettingsRow
-        id="settings-third-party"
-        label="Ignore third-party classes"
-        description="Skip known library classes (e.g. Swiper, Splide) during linting."
-        checked={ignoreThirdPartyClasses}
-        onCheckedChange={(checked) => {
-          trackSettingChanged({
-            setting: "ignore_third_party_classes",
-            value: checked,
-          });
-          setIgnoreThirdPartyClasses(checked);
-        }}
-      />
-      <SettingsRow
-        id="settings-auto-select"
-        label="Auto-select on canvas"
-        description="Automatically select the canvas element when opening a violation."
-        checked={autoSelectElement}
-        onCheckedChange={(checked) => {
-          trackSettingChanged({
-            setting: "auto_select_on_canvas",
-            value: checked,
-          });
-          setAutoSelectElement(checked);
-        }}
-      />
-      <SettingsSelectRow
-        label="Window size"
-        description="Set the default height of the extension panel."
-        value={windowPreset}
-        onValueChange={(v) => {
-          const preset = v as WindowPreset;
-          trackSettingChanged({ setting: "window_size", value: preset });
-          void applyWindowPreset(preset);
-          setWindowPreset(preset);
-        }}
-        options={windowPresetOptions}
-      />
-      <div className="mt-4 pt-3">
+    <Tabs defaultValue="linting" className="gap-0">
+      <div className="sticky top-0 z-10 border-b border-border bg-background px-4 py-2">
+        <TabsList className="grid h-8 w-full grid-cols-3">
+          <TabsTrigger value="linting">Linting</TabsTrigger>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="about">About</TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="linting" className="mt-0 px-4 py-2">
+        <SettingsRow
+          id="settings-third-party"
+          label="Ignore third-party classes"
+          description="Skip known library classes (e.g. Swiper, Splide) during linting."
+          checked={ignoreThirdPartyClasses}
+          onCheckedChange={(checked) => {
+            trackSettingChanged({
+              setting: "ignore_third_party_classes",
+              value: checked,
+            });
+            setIgnoreThirdPartyClasses(checked);
+          }}
+        />
+        <SettingsRow
+          id="settings-auto-select"
+          label="Auto-select on canvas"
+          description="Automatically select the canvas element when opening a violation."
+          checked={autoSelectElement}
+          onCheckedChange={(checked) => {
+            trackSettingChanged({
+              setting: "auto_select_on_canvas",
+              value: checked,
+            });
+            setAutoSelectElement(checked);
+          }}
+        />
+        <div className="py-3 border-b border-border space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-xs font-medium text-foreground">Ignored classes (global)</span>
+              <span className="text-[11px] text-muted-foreground leading-snug">
+                One class name per line or comma-separated. Applied for every framework preset.
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 shrink-0 px-2 text-[10px] text-muted-foreground"
+              onClick={() => {
+                trackIgnoredClassListsViewed({ source: "settings" });
+                openExpandedView({
+                  type: "ignored-classes-lists",
+                  title: "Ignored class lists",
+                  backTo: { type: "settings", title: "Settings" },
+                });
+              }}
+            >
+              View terms
+            </Button>
+          </div>
+          <textarea
+            id="settings-global-ignored-classes"
+            className="w-full min-h-[72px] rounded-md border border-input bg-background px-2 py-1.5 text-[11px] font-mono leading-snug resize-y"
+            value={globalDraft}
+            onChange={(e) => setGlobalDraft(e.target.value)}
+            onBlur={() => setGlobalIgnoredClasses(parseIgnoredClassesInput(globalDraft))}
+            spellCheck={false}
+          />
+        </div>
+        <div className="py-3 border-b border-border last:border-0 space-y-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-foreground">Ignored classes (per preset)</span>
+            <span className="text-[11px] text-muted-foreground leading-snug">
+              Extra class names to skip when a preset is active, in addition to global and built-in preset terms.
+            </span>
+          </div>
+          <Select value={editingPresetId} onValueChange={setEditingPresetId}>
+            <SelectTrigger className="h-7 w-full text-[11px] px-2 py-1">
+              <SelectValue placeholder="Preset" />
+            </SelectTrigger>
+            <SelectContent>
+              {presetIds.map((id) => (
+                <SelectItem key={id} value={id} className="text-[11px]">
+                  {id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <textarea
+            id="settings-preset-ignored-classes"
+            className="w-full min-h-[72px] rounded-md border border-input bg-background px-2 py-1.5 text-[11px] font-mono leading-snug resize-y"
+            value={presetDraft}
+            onChange={(e) => setPresetDraft(e.target.value)}
+            onBlur={() => setPresetIgnoredClasses(editingPresetId, parseIgnoredClassesInput(presetDraft))}
+            spellCheck={false}
+          />
+        </div>
+      </TabsContent>
+      <TabsContent value="general" className="mt-0 px-4 py-2">
+        <SettingsRow
+          id="settings-dark-mode"
+          label="Dark mode"
+          description="Switch between light and dark appearance."
+          checked={isDark}
+          onCheckedChange={(checked) => {
+            trackSettingChanged({ setting: "dark_mode", value: checked });
+            setTheme(checked ? "dark" : "light");
+          }}
+        />
+        <SettingsSelectRow
+          label="Window size"
+          description="Set the default height of the extension panel."
+          value={windowPreset}
+          onValueChange={(v) => {
+            const preset = v as WindowPreset;
+            trackSettingChanged({ setting: "window_size", value: preset });
+            void applyWindowPreset(preset);
+            setWindowPreset(preset);
+          }}
+          options={windowPresetOptions}
+        />
+      </TabsContent>
+      <TabsContent value="about" className="mt-0 px-4 py-3">
         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
           v{buildInfo.version} &middot; {buildInfo.channel} &middot; {buildInfo.recipient}
           <br />
           Built {new Date(buildInfo.buildTime).toLocaleString()}
         </p>
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };

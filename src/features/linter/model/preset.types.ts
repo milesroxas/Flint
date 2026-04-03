@@ -46,6 +46,8 @@ export interface Preset {
   readonly id: string;
   readonly name?: string;
   readonly description?: string;
+  /** Built-in class names skipped during lint when this preset is active. */
+  readonly ignoredLintClasses?: readonly string[];
   readonly grammar?: GrammarAdapter;
   readonly roleDetectors?: readonly RoleDetector[];
   readonly roleDetectionConfig?: {

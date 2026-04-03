@@ -19,7 +19,7 @@ describe("lumos preset", () => {
 
   it("uses Lumos grammar and preset id", () => {
     expect(lumosPreset.id).toBe("lumos");
-    expect(lumosPreset.grammar.id).toBe("lumos");
+    expect(lumosPreset.grammar?.id).toBe("lumos");
     expect(lumosPreset.roleDetectors).toBeDefined();
   });
 });

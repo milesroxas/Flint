@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ClassType, ElementAnalysisArgs, ElementClassItem } from "@/features/linter/model/rule.types";
+import type {
+  ClassType,
+  ElementAnalysisArgs,
+  ElementClassItem,
+  StructureRule,
+} from "@/features/linter/model/rule.types";
 import { createSectionParentIsMainRule } from "@/features/linter/rules/canonical/section-parent-is-main";
 
 function mockArgs(options: {
@@ -33,7 +38,7 @@ function mockArgs(options: {
 }
 
 describe("canonical:section-parent-is-main", () => {
-  const rule = createSectionParentIsMainRule();
+  const rule = createSectionParentIsMainRule() as StructureRule;
 
   it("exposes expected metadata", () => {
     expect(rule.id).toBe("canonical:section-parent-is-main");

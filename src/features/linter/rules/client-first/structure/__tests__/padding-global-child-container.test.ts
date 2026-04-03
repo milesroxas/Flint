@@ -74,7 +74,9 @@ describe("cf:structure:padding-global-child-container", () => {
     const results = rule.analyzeElement(
       createMockArgs({
         classes: [{ className: "container-large", order: 0, elementId: "el-child" }],
-        allStyles: [{ id: "st", name: "container-large", properties: { "max-width": "80rem" }, order: 0, isCombo: false }],
+        allStyles: [
+          { id: "st", name: "container-large", properties: { "max-width": "80rem" }, order: 0, isCombo: false },
+        ],
       })
     );
     expect(results).toEqual([]);
@@ -97,7 +99,13 @@ describe("cf:structure:padding-global-child-container", () => {
       createMockArgs({
         classes: [{ className: "hero_content-wrapper", order: 0, elementId: "el-child" }],
         allStyles: [
-          { id: "st", name: "hero_content-wrapper", properties: { display: "flex", gap: "1rem" }, order: 0, isCombo: false },
+          {
+            id: "st",
+            name: "hero_content-wrapper",
+            properties: { display: "flex", gap: "1rem" },
+            order: 0,
+            isCombo: false,
+          },
         ],
       })
     );

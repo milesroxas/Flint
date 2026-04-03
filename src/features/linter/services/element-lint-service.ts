@@ -1,5 +1,6 @@
 // src/features/linter/services/element-lint-service.ts
 
+import { fetchSiteComponentNameById } from "@/entities/component/services/component-catalog.service";
 import { toElementKey } from "@/entities/element/lib/id";
 import type { WebflowElement } from "@/entities/element/model/element.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
@@ -9,6 +10,7 @@ import { createDebugger } from "@/shared/utils/debug";
 
 export interface ElementLintOptions {
   classFilter?: (name: string) => boolean;
+  mergedIgnoredLintClasses?: ReadonlySet<string>;
 }
 
 export interface ElementLintResult {
@@ -93,6 +95,8 @@ export function createElementLintService(deps: { contextService: LintContextServ
 
     // 4) Execute rules via the same runner API used by page scans
     //    Skip page rules when no page context is available
+    const siteComponentNameById = pageContext ? await fetchSiteComponentNameById() : undefined;
+
     const results = ruleRunner.runRulesOnStylesWithContext(
       stylesToAnalyze,
       {},
@@ -107,7 +111,10 @@ export function createElementLintService(deps: { contextService: LintContextServ
       (id: string) => context.elementTypeByElementId.get(id) ?? null,
       !pageContext, // Skip page rules when no page context available
       context.grammarElementSeparator,
-      filteredElementIds
+      filteredElementIds,
+      siteComponentNameById,
+      pageContext ? context.componentIdByElementId : undefined,
+      options?.mergedIgnoredLintClasses
     );
 
     debug.log("lintElement: rule results count", results.length);

@@ -9,13 +9,16 @@ export type ExpandedViewContentType =
   | "diagnostic-details"
   | "settings"
   | "suggested-fixes"
-  | "third-party-libraries";
+  | "third-party-libraries"
+  | "ignored-classes-lists";
 
 export interface ExpandedViewContent {
   type: ExpandedViewContentType;
   title: string;
   data?: unknown;
   sourceRuleId?: string;
+  /** When set, the expanded header back action navigates here instead of closing to the main panel. */
+  backTo?: ExpandedViewContent;
 }
 
 interface ExpandedViewState {

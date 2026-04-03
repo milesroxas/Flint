@@ -20,10 +20,7 @@ import {
   createCFPaddingGlobalHorizontalOnlyRule,
   createCFPreferRemRule,
 } from "@/features/linter/rules/client-first/property";
-import {
-  createCFNavOutsideMainRule,
-  createCFPaddingGlobalChildContainerRule,
-} from "@/features/linter/rules/client-first/structure";
+import { createCFPaddingGlobalChildContainerRule } from "@/features/linter/rules/client-first/structure";
 import {
   createColorVariableRule,
   createDuplicateOfUtilityRule,
@@ -39,7 +36,7 @@ export const clientFirstElementsConfig: PresetElementsConfig = {
   categoryMap: {
     layout: ["wrapper", "container", "inner", "section"],
     content: ["text", "title", "heading", "subtitle", "label"],
-    components: ["card", "button", "link", "form", "nav"],
+    components: ["card", "button", "link", "form", "nav", "menu"],
     media: ["image", "icon", "video"],
     utility: ["spacer", "divider", "overlay"],
   },
@@ -55,6 +52,7 @@ export const clientFirstPreset: Preset & {
   elementsConfig: PresetElementsConfig;
 } = {
   id: "client-first",
+  ignoredLintClasses: [],
   grammar: clientFirstGrammar,
   roleDetectors: clientFirstRoleDetectors,
   roleDetectionConfig: { threshold: 0.6 },
@@ -73,7 +71,7 @@ export const clientFirstPreset: Preset & {
     createCFPaddingSectionRequiresGlobalRule(),
 
     // Client-First structure rules
-    createCFNavOutsideMainRule(),
+    // createCFNavOutsideMainRule(),
     createCFPaddingGlobalChildContainerRule(),
     createSectionParentIsMainRule(),
 

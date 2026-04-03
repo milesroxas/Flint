@@ -17,7 +17,10 @@ function getClientFirstKnownElements(): string[] {
     "heading",
     "subtitle",
     "label",
+    "item",
+
     // Component
+    "component",
     "header",
     "footer",
     "hero",
@@ -26,6 +29,9 @@ function getClientFirstKnownElements(): string[] {
     "link",
     "form",
     "nav",
+    "menu",
+    "logo",
+    "brand",
     // Media
     "image",
     "icon",

@@ -2,12 +2,11 @@ import posthog from "posthog-js";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { toElementKey } from "@/entities/element/lib/id";
-import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
+import { getLintClassFilter, getMergedIgnoredLintClassSet } from "@/features/linter/lib/lint-class-filter";
 import { ensureLinterInitialized, getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { ElementRole } from "@/features/linter/model/linter.types";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { getLinterServices } from "@/features/linter/services/linter-service-singleton";
-import { useLinterSettingsStore } from "@/features/linter/store/linterSettings.store";
 import { scanSelectedElement } from "@/features/linter/use-cases/scan-selected-element";
 import { trackLintElementCompleted, trackStructuralContextToggled } from "@/shared/lib/analytics";
 import { createDebugger } from "@/shared/utils/debug";
@@ -46,9 +45,11 @@ const initialState: ElementLintState = {
 
 const debug = createDebugger("element-lint-store");
 
-function buildClassFilter(): ((name: string) => boolean) | undefined {
-  const { ignoreThirdPartyClasses } = useLinterSettingsStore.getState();
-  return ignoreThirdPartyClasses ? (name: string) => !isThirdPartyClass(name) : undefined;
+function buildLintOptions() {
+  return {
+    classFilter: getLintClassFilter(),
+    mergedIgnoredLintClasses: getMergedIgnoredLintClassSet(),
+  };
 }
 
 export const useElementLintStore = create<ElementLintStore>()(
@@ -85,9 +86,11 @@ export const useElementLintStore = create<ElementLintStore>()(
             return;
           }
           const state = get();
-          const { results, ignoredClassNames } = await scanSelectedElement(el, state.structuralContext, {
-            classFilter: buildClassFilter(),
-          });
+          const { results, ignoredClassNames } = await scanSelectedElement(
+            el,
+            state.structuralContext,
+            buildLintOptions()
+          );
           set({
             results,
             ignoredClassNames,
@@ -166,9 +169,11 @@ export const useElementLintStore = create<ElementLintStore>()(
       try {
         const state = useElementLintStore.getState();
         debug.log("event: structuralContext", state.structuralContext);
-        const { results, ignoredClassNames } = await scanSelectedElement(el, state.structuralContext, {
-          classFilter: buildClassFilter(),
-        });
+        const { results, ignoredClassNames } = await scanSelectedElement(
+          el,
+          state.structuralContext,
+          buildLintOptions()
+        );
         useElementLintStore.setState({
           results,
           ignoredClassNames,

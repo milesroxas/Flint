@@ -1,21 +1,27 @@
-import { X } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
-import { Button } from "@/shared/ui/button";
+import { useCallback, useEffect, useState } from "react";
+import { PanelHeaderWithBack } from "@/shared/ui/panel-header";
+import { ScrollArea } from "@/shared/ui/scroll-area";
 import { cn } from "@/shared/utils";
 
 interface ExpandedContentProps {
   title: string;
-  onClose: () => void;
+  onBack: () => void;
   children: React.ReactNode;
   className?: string;
 }
 
-export const ExpandedContent: React.FC<ExpandedContentProps> = ({ title, onClose, children, className }) => {
+export const ExpandedContent: React.FC<ExpandedContentProps> = ({ title, onBack, children, className }) => {
   const [isVisible, setIsVisible] = useState(false);
+  /** Derived from the ScrollArea viewport via onIsScrolledChange — scroll position lives only in the DOM. */
+  const [headerCompact, setHeaderCompact] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
+  }, []);
+
+  const onScrollTopChange = useCallback((isScrolled: boolean) => {
+    setHeaderCompact(isScrolled);
   }, []);
 
   return (
@@ -26,16 +32,11 @@ export const ExpandedContent: React.FC<ExpandedContentProps> = ({ title, onClose
         className
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-sm font-medium">{title}</h2>
-        <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      <PanelHeaderWithBack title={title} onBack={onBack} compact={headerCompact} />
 
-      {/* Content */}
-      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+      <ScrollArea className="min-h-0 flex-1" onIsScrolledChange={onScrollTopChange}>
+        {children}
+      </ScrollArea>
     </div>
   );
 };

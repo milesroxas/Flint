@@ -38,6 +38,7 @@ webflow.getSiteInfo().then((siteInfo) => {
 import Header from "@/app/ui/Header";
 import { useExpandedView } from "@/features/linter/store/expandedView.store";
 import { ExpandedContent } from "@/features/linter/ui/expanded/ExpandedContent";
+import { IgnoredClassesListsView } from "@/features/linter/ui/expanded/IgnoredClassesListsView";
 import { RecognizedElementsView } from "@/features/linter/ui/expanded/RecognizedElementsView";
 import { ThirdPartyLibrariesView } from "@/features/linter/ui/expanded/ThirdPartyLibrariesView";
 import { LinterPanel } from "@/features/linter/view/LinterPanel";
@@ -48,7 +49,7 @@ import { ThemeProvider } from "@/shared/providers/theme-provider";
 import { cn } from "@/shared/utils";
 
 const Root = () => {
-  const { isActive, content, closeExpandedView } = useExpandedView();
+  const { isActive, content, closeExpandedView, openExpandedView } = useExpandedView();
 
   return (
     <ErrorBoundary>
@@ -76,7 +77,7 @@ const Root = () => {
               )}
             >
               {isActive && content && content.type === "recognized-elements" && (
-                <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <ExpandedContent title={content.title} onBack={closeExpandedView}>
                   <RecognizedElementsView
                     presetId={(content.data as any)?.presetId || ""}
                     projectElements={(content.data as any)?.projectElements || []}
@@ -84,13 +85,21 @@ const Root = () => {
                 </ExpandedContent>
               )}
               {isActive && content && content.type === "settings" && (
-                <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <ExpandedContent title={content.title} onBack={closeExpandedView}>
                   <SettingsPanel />
                 </ExpandedContent>
               )}
               {isActive && content && content.type === "third-party-libraries" && (
-                <ExpandedContent title={content.title} onClose={closeExpandedView}>
+                <ExpandedContent title={content.title} onBack={closeExpandedView}>
                   <ThirdPartyLibrariesView />
+                </ExpandedContent>
+              )}
+              {isActive && content && content.type === "ignored-classes-lists" && (
+                <ExpandedContent
+                  title={content.title}
+                  onBack={() => (content.backTo ? openExpandedView(content.backTo) : closeExpandedView())}
+                >
+                  <IgnoredClassesListsView />
                 </ExpandedContent>
               )}
             </div>

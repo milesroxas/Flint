@@ -181,6 +181,15 @@ export interface PageAnalysisArgs {
   };
   getTagName(id: string): string | null;
   getElementType(id: string): string | null;
+  /**
+   * Designer API `getAllComponents()`: component definition id → name from `getName()`.
+   * Used by presets that validate site-registered components (e.g. Global Styles embed).
+   */
+  siteComponentNameById?: ReadonlyMap<string, string>;
+  /**
+   * Page elements with `type === "ComponentInstance"`: element id → component definition id.
+   */
+  componentIdByElementId?: ReadonlyMap<string, string>;
 }
 
 // -------------------------
@@ -216,6 +225,8 @@ export interface ElementAnalysisArgs {
   grammarElementSeparator?: string;
   getTagName?: (elementId: string) => string | null;
   getElementType?: (elementId: string) => string | null;
+  /** Global + preset ignore lists (same merge as the lint class filter); excludes from duplicate-utility maps */
+  mergedIgnoredLintClasses?: ReadonlySet<string>;
 }
 
 export interface RuleConfiguration {

@@ -1,3 +1,4 @@
+import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
 import type { ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/linter/model/rule.types";
 
 /**
@@ -48,7 +49,7 @@ export const createUtilityDuplicatePropertyRule = (
   targetClassTypes: ["utility"],
 
   analyzeElement: (args: ElementAnalysisArgs): RuleResult[] => {
-    const { classes = [], allStyles = [], getClassType, getRuleConfig } = args;
+    const { classes = [], allStyles = [], getClassType, getRuleConfig, mergedIgnoredLintClasses } = args;
 
     // Get rule configuration
     const ruleConfig = getRuleConfig("canonical:utility-duplicate-property");
@@ -72,7 +73,10 @@ export const createUtilityDuplicatePropertyRule = (
       ],
     };
 
-    const ignoredClassesSet = new Set(config.ignoredClasses ?? []);
+    const ignoredClassesSet = new Set([
+      ...(config.ignoredClasses ?? []),
+      ...(mergedIgnoredLintClasses ? Array.from(mergedIgnoredLintClasses) : []),
+    ]);
 
     // Build a site-wide property map from allStyles for duplicate detection
     const propertyToClassesMap = new Map<string, Map<string, Set<string>>>();
@@ -84,6 +88,9 @@ export const createUtilityDuplicatePropertyRule = (
       // Only analyze utility classes
       const classType = getClassType(style.name);
       if (classType !== "utility") continue;
+
+      // Third-party / library classes are not comparable to Client-first (or other) utilities
+      if (isThirdPartyClass(style.name)) continue;
 
       // Skip premade/template classes
       if (ignoredClassesSet.has(style.name)) continue;
@@ -134,6 +141,8 @@ export const createUtilityDuplicatePropertyRule = (
       // Skip premade/template classes
       if (ignoredClassesSet.has(className)) continue;
 
+      if (isThirdPartyClass(className)) continue;
+
       // Find the style info for this class
       const styleInfo = allStyles.find((s) => s.name === className);
       if (!styleInfo || !styleInfo.properties) continue;
@@ -157,7 +166,13 @@ export const createUtilityDuplicatePropertyRule = (
 
         // Find all utilities with the exact same property set
         const utilitiesWithSameProperties = allStyles
-          .filter((s) => s.name && getClassType(s.name) === "utility")
+          .filter(
+            (s) =>
+              s.name &&
+              getClassType(s.name) === "utility" &&
+              !isThirdPartyClass(s.name) &&
+              !ignoredClassesSet.has(s.name)
+          )
           .filter((s) => {
             if (!s.properties) return false;
             const otherEntries = Object.entries(s.properties);

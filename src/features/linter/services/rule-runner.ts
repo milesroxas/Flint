@@ -80,7 +80,10 @@ export const createRuleRunner = (
     getElementType?: (id: string) => string | null,
     skipPageRules: boolean = false,
     grammarElementSeparator?: string,
-    filteredElementIds?: Set<string>
+    filteredElementIds?: Set<string>,
+    siteComponentNameById?: Map<string, string>,
+    componentIdByElementId?: Map<string, string>,
+    mergedIgnoredLintClasses?: ReadonlySet<string>
   ): RuleResult[] => {
     debug.log(
       "runRulesOnStylesWithContext: styles count",
@@ -156,6 +159,8 @@ export const createRuleRunner = (
           }),
           getTagName: getTagName ?? (() => null),
           getElementType: getElementType ?? (() => null),
+          siteComponentNameById,
+          componentIdByElementId,
         });
         // normalize severity from config
         const cfg = ruleRegistry.getRuleConfiguration(pr.id);
@@ -208,6 +213,7 @@ export const createRuleRunner = (
             grammarElementSeparator,
             getTagName,
             getElementType,
+            mergedIgnoredLintClasses,
           });
 
           for (const r of elementResults) {

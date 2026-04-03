@@ -40,6 +40,20 @@ function resolveInitialPreset(): string {
 
 let currentPreset: string = resolveInitialPreset();
 
+const presetChangeListeners = new Set<() => void>();
+
+/** Subscribe to active preset id changes (e.g. preset switcher). */
+export function subscribePresetChanged(onStoreChange: () => void): () => void {
+  presetChangeListeners.add(onStoreChange);
+  return () => presetChangeListeners.delete(onStoreChange);
+}
+
+function notifyPresetChanged(): void {
+  for (const listener of presetChangeListeners) {
+    listener();
+  }
+}
+
 export function ensureLinterInitialized(mode: OpinionMode = "balanced", preset: string = currentPreset): void {
   if (isInitialized && mode === currentMode && preset === currentPreset) return;
   initializeRuleRegistry(mode, preset);
@@ -76,6 +90,7 @@ export function setPreset(preset: string) {
   ensureLinterInitialized(currentMode, currentPreset);
   // Persist selection as well
   safeWriteStorage(PRESET_STORAGE_KEY, currentPreset);
+  notifyPresetChanged();
 }
 
 export function getCurrentPreset(): string {
