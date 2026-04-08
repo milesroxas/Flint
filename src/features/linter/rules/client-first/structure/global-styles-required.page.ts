@@ -7,8 +7,10 @@ function normalizeComponentLabel(name: string): string {
 }
 
 /**
- * True when the page includes a ComponentInstance whose definition is named like the
- * Client-First Global Styles embed (see `webflow.getAllComponents()` + `getName()`).
+ * True when the page includes a `ComponentInstance` whose site definition display name
+ * normalizes to `global-styles` (e.g. cloneable **Global Styles** from `getName()`).
+ * Same resolution path as `PageAnalysisArgs.componentIdByElementId` +
+ * `siteComponentNameById` in `rule.types.ts`.
  */
 function pageHasGlobalStylesComponentInstance(args: PageAnalysisArgs): boolean {
   const { siteComponentNameById, componentIdByElementId } = args;
@@ -28,15 +30,16 @@ function pageHasGlobalStylesComponentInstance(args: PageAnalysisArgs): boolean {
  * of the system. Global Styles embed component must be applied to every page
  * in the project."
  *
- * Detection: (1) class `global-styles` on an element, or (2) a **canvas** component instance
- * whose definition name normalizes to `global-styles`. `getAllComponents()` is only used to
- * resolve definition id → name; it lists **site-registered** components, not “on this page.”
+ * Detection: (1) a **ComponentInstance** on this page whose definition name from the site
+ * catalog normalizes to `global-styles` (typical: **Global Styles** embed), or (2) any element
+ * with the `global-styles` class. The catalog (`getAllComponents()` + `getName()`) maps
+ * definition id → name for (1); it lists site-registered components, not “only on this page.”
  */
 export const createCFGlobalStylesRequiredRule = (): PageRule => ({
   id: "cf:structure:global-styles-required",
   name: "Client-First: global-styles required",
   description:
-    "Every page should include the global-styles component (class or Global Styles embed instance) for project-wide custom CSS.",
+    "Every page should include the Global Styles embed (component instance) or a `global-styles` class for project-wide custom CSS.",
   example: "global-styles",
   type: "page",
   category: "structure",
@@ -52,7 +55,7 @@ export const createCFGlobalStylesRequiredRule = (): PageRule => ({
         ruleId: "cf:structure:global-styles-required",
         name: "Client-First: global-styles required",
         message:
-          'No "global-styles" element found on this page. Add the Global Styles embed (class or component instance) on every page.',
+          'No Global Styles embed or "global-styles" class on this page. Add the site\'s Global Styles component (or an element with the global-styles class) on every page.',
         severity: "suggestion",
         className: "",
         elementId: undefined,

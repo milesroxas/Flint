@@ -31,8 +31,11 @@ export const HeightSwitcher: React.FC = () => {
     <div className="relative">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="icon" className="group transition-colors">
-            <Scaling aria-hidden className="size-4 transition-transform duration-200 ease-out group-hover:scale-110" />
+          <Button variant="ghost" size="icon-sm" className="group transition-colors">
+            <Scaling
+              aria-hidden
+              className="size-3.5 transition-transform duration-200 ease-out group-hover:scale-110"
+            />
             <span className="sr-only">Change height: {presetLabel}</span>
           </Button>
         </CollapsibleTrigger>
@@ -45,7 +48,7 @@ export const HeightSwitcher: React.FC = () => {
                 onClick={() => {
                   void applyPreset(id);
                 }}
-                className={`block w-full text-left rounded-sm px-2 py-1.5 text-[11px] hover:bg-accent hover:text-accent-foreground ${
+                className={`block w-full text-left rounded-sm px-2 py-1.5 text-[11px] cursor-pointer hover:bg-accent hover:text-accent-foreground ${
                   windowPreset === id ? "bg-accent/60 text-accent-foreground" : ""
                 }`}
               >

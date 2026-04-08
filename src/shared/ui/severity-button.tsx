@@ -34,7 +34,7 @@ const severityBgActive: Record<Severity, string> = {
 };
 
 const severityButtonVariants = cva(
-  "relative overflow-hidden duration-300 ease-in-out outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[border-radius,background-color,color,opacity,padding] [border-radius:var(--rb)] [will-change:border-radius]",
+  "relative overflow-hidden cursor-pointer duration-300 ease-in-out outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[border-radius,background-color,color,opacity,padding] [border-radius:var(--rb)] [will-change:border-radius]",
   {
     variants: {
       severity: {

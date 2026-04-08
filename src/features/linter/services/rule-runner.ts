@@ -39,7 +39,8 @@ export const createRuleRunner = (
     className: string,
     properties: Record<string, unknown>,
     allStyles: StyleInfo[],
-    elementIdForLog?: string
+    elementIdForLog?: string,
+    variableNameById?: ReadonlyMap<string, string>
   ): RuleResult[] => {
     try {
       const config = ruleRegistry.getRuleConfiguration(rule.id);
@@ -52,7 +53,8 @@ export const createRuleRunner = (
           properties,
           effectiveSeverity,
           allStyles,
-          getClassType
+          getClassType,
+          variableNameById
         );
       }
       return [];
@@ -83,6 +85,9 @@ export const createRuleRunner = (
     filteredElementIds?: Set<string>,
     siteComponentNameById?: Map<string, string>,
     componentIdByElementId?: Map<string, string>,
+    placedComponentSubtreeElementIds?: ReadonlySet<string>,
+    isEditingComponentDefinition?: boolean,
+    variableNameById?: ReadonlyMap<string, string>,
     mergedIgnoredLintClasses?: ReadonlySet<string>
   ): RuleResult[] => {
     debug.log(
@@ -213,6 +218,11 @@ export const createRuleRunner = (
             grammarElementSeparator,
             getTagName,
             getElementType,
+            componentIdByElementId,
+            siteComponentNameById,
+            placedComponentSubtreeElementIds,
+            isEditingComponentDefinition,
+            variableNameById,
             mergedIgnoredLintClasses,
           });
 
@@ -290,7 +300,14 @@ export const createRuleRunner = (
         }
 
         // Property and other rule types
-        const ruleResults = executeRule(rule, name, properties as Record<string, unknown>, allStyles, elementId);
+        const ruleResults = executeRule(
+          rule,
+          name,
+          properties as Record<string, unknown>,
+          allStyles,
+          elementId,
+          variableNameById
+        );
 
         ruleResults.forEach((r) => {
           r.elementId = elementId;

@@ -1,8 +1,12 @@
 // src/features/linter/services/page-lint-service.ts
 
-import { fetchSiteComponentNameById } from "@/entities/component/services/component-catalog.service";
+import {
+  enrichSiteComponentNamesForDefinitions,
+  fetchSiteComponentNameById,
+} from "@/entities/component/services/component-catalog.service";
 import type { WebflowElement } from "@/entities/element/model/element.types";
 import type { StyleWithElement } from "@/entities/style/model/style.types";
+import { getIsEditingComponentDefinition } from "@/features/linter/lib/webflow-component-definition-edit-mode";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { LintContextService } from "@/features/linter/services/lint-context.service";
 import type { RuleRunner } from "@/features/linter/services/rule-runner";
@@ -52,8 +56,13 @@ export function createPageLintService(deps: { contextService: LintContextService
       }
     }
 
-    // 4) Site component catalog (Designer getAllComponents) for page rules that need it
-    const siteComponentNameById = await fetchSiteComponentNameById();
+    // 4) Site component catalog (Designer getAllComponents) + per-definition fill via getComponent(id)
+    const siteComponentNameById = await enrichSiteComponentNamesForDefinitions(
+      await fetchSiteComponentNameById(),
+      context.componentIdByElementId.values()
+    );
+
+    const isEditingComponentDefinition = await getIsEditingComponentDefinition();
 
     // 5) Run rules via runner (page and element rules are handled by the runner)
     const results = ruleRunner.runRulesOnStylesWithContext(
@@ -73,6 +82,9 @@ export function createPageLintService(deps: { contextService: LintContextService
       filteredElementIds,
       siteComponentNameById,
       context.componentIdByElementId,
+      context.placedComponentSubtreeElementIds,
+      isEditingComponentDefinition,
+      context.variableNameById,
       options?.mergedIgnoredLintClasses
     );
 

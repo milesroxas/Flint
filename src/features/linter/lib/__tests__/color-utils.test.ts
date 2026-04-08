@@ -10,4 +10,13 @@ describe("convertColorToHex", () => {
     expect(convertColorToHex("red")).toBe("red");
     expect(convertColorToHex("Blue")).toBe("Blue");
   });
+
+  it("converts rgb and rgba to hex", () => {
+    expect(convertColorToHex("rgb(255, 0, 0)")).toBe("#ff0000");
+    expect(convertColorToHex("rgba(255, 0, 0, 1)")).toBe("#ff0000");
+  });
+
+  it("converts hsl to hex", () => {
+    expect(convertColorToHex("hsl(0, 100%, 50%)")).toBe("#ff0000");
+  });
 });

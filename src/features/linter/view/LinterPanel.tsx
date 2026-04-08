@@ -4,6 +4,7 @@ import type { RuleResult } from "@/features/linter/model/rule.types";
 import { useElementLint } from "@/features/linter/store/elementLint.store";
 import { usePageLint } from "@/features/linter/store/pageLint.store";
 import { ActionBar } from "@/features/linter/ui/controls/ActionBar";
+import { FeedbackFab } from "@/features/linter/ui/controls/FeedbackFab";
 import { type LintViewMode, ModeToggle } from "@/features/linter/ui/controls/ModeToggle";
 import SeverityFilter, { type SeverityFilterValue } from "@/features/linter/ui/controls/SeverityFilter";
 import { StructuralContextToggle } from "@/features/linter/ui/controls/StructuralContextToggle";
@@ -94,11 +95,11 @@ export function LinterPanel() {
   return (
     <section
       className={cn(
-        "h-full flex flex-col transition-all duration-700 ease-spring",
+        "relative h-full flex flex-col transition-all duration-700 ease-spring",
         isPanelVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
       )}
     >
-      <div className="pl-4 pr-0 pb-14 flex-1 min-h-0 flex flex-col">
+      <div className="pl-4 pr-0 flex-1 min-h-0 flex flex-col">
         {error && (
           <div className="flex items-center gap-2 py-2 text-sm text-destructive">
             <AlertCircle className="h-3 w-3" />
@@ -114,7 +115,7 @@ export function LinterPanel() {
         )}
 
         {!error && (
-          <div className="flex flex-col min-h-0 ">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div
               className={cn(
                 "pt-4 transition-[opacity,transform,height,margin] duration-300 ease-gentle will-change-[opacity,transform]",
@@ -143,7 +144,7 @@ export function LinterPanel() {
                 Click the button to lint this page
               </div>
             ) : (
-              <div className="flex-1 min-h-0 flex flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
                 {mode === "page" && (
                   <div className="pr-4 sticky top-0 z-10 bg-gradient-to-b from-background to-transparent w-full">
                     <SeverityFilter
@@ -161,7 +162,7 @@ export function LinterPanel() {
                     />
                   </div>
                 )}
-                <div className="flex-1 min-h-0">
+                <div className="min-h-0 flex-1">
                   <ViolationsList
                     violations={filteredViolations}
                     passedClassNames={activePassedClassNames}
@@ -178,14 +179,12 @@ export function LinterPanel() {
                     }
                   />
                 </div>
-                {/* <div className="mt-2 text-[10px] text-muted-foreground px-4">
-                  Opinion: {opinionMode} · View: {mode}
-                </div> */}
               </div>
             )}
           </div>
         )}
       </div>
+      <FeedbackFab className="absolute bottom-16 right-4 z-20" />
       <ActionBar
         loading={isBusy}
         mode={mode}

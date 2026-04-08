@@ -70,6 +70,11 @@ export function ensureLinterInitialized(mode: OpinionMode = "balanced", preset: 
         styleCacheMod.resetStyleServiceCache();
       }
 
+      const variableNameMapMod = await import("@/entities/style/services/variable-name-map");
+      if (variableNameMapMod && typeof variableNameMapMod.resetVariableNameMapCache === "function") {
+        variableNameMapMod.resetVariableNameMapCache();
+      }
+
       const servicesMod = await import("@/features/linter/services/linter-service-singleton");
       if (servicesMod && typeof servicesMod.resetLinterServices === "function") {
         servicesMod.resetLinterServices();

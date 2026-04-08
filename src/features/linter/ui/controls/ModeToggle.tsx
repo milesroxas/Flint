@@ -41,7 +41,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ mode, onChange, classNam
         aria-selected={mode === "element"}
         aria-controls="element-content"
         className={cn(
-          "relative z-10 inline-flex items-center justify-center gap-1.5",
+          "relative z-10 inline-flex items-center justify-center gap-1.5 cursor-pointer",
           "px-2 py-0 text-xs font-medium whitespace-nowrap rounded-xs",
           "transition-colors duration-200 ease-out",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -60,7 +60,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({ mode, onChange, classNam
         aria-selected={mode === "page"}
         aria-controls="page-content"
         className={cn(
-          "relative z-10 inline-flex items-center justify-center gap-1.5",
+          "relative z-10 inline-flex items-center justify-center gap-1.5 cursor-pointer",
           "px-2 py-0 text-xs font-medium whitespace-nowrap rounded-xs",
           "transition-colors duration-200 ease-out",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

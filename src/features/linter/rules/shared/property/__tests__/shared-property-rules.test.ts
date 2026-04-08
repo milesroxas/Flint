@@ -250,6 +250,67 @@ describe("canonical:utility-duplicate-property (Client-First preset config)", ()
     expect(out[0].ruleId).toBe("canonical:utility-duplicate-property");
   });
 
+  it("Client-First: dash-free semantic utilities (e.g. button) are not consolidated against token utilities", () => {
+    const vid = "variable-9f6b6bb4-0795-c8ab-f302-bbebab6f2554";
+    const allStyles: StyleInfo[] = [
+      {
+        id: "a",
+        name: "background-color-primary",
+        properties: { "background-color": { id: vid } as unknown as string },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "b",
+        name: "button",
+        properties: { "background-color": { id: vid } as unknown as string },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "button", order: 1, elementId: "el-1" }],
+      grammarElementSeparator: "-",
+      variableNameById: new Map([[vid, "Background / Primary"]]),
+    });
+
+    expect(rule.analyzeElement(args)).toEqual([]);
+  });
+
+  it("uses variable display names in duplicate messages when variableNameById is provided", () => {
+    const vid = "variable-9f6b6bb4-0795-c8ab-f302-bbebab6f2554";
+    const allStyles: StyleInfo[] = [
+      {
+        id: "a",
+        name: "background-color-alt",
+        properties: { "background-color": { id: vid } as unknown as string },
+        order: 0,
+        isCombo: false,
+      },
+      {
+        id: "b",
+        name: "background-color-primary",
+        properties: { "background-color": { id: vid } as unknown as string },
+        order: 1,
+        isCombo: false,
+      },
+    ];
+
+    const args = elementArgs({
+      allStyles,
+      classes: [{ className: "background-color-primary", order: 1, elementId: "el-1" }],
+      grammarElementSeparator: "-",
+      variableNameById: new Map([[vid, "Background / Primary"]]),
+    });
+
+    const out = rule.analyzeElement(args);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out[0].message).toContain("Background / Primary");
+    expect(out[0].message).not.toContain(vid);
+  });
+
   it("mergedIgnoredLintClasses excludes listed utilities from duplicate detection (multi-property)", () => {
     const allStyles: StyleInfo[] = [
       {
@@ -325,6 +386,9 @@ describe("canonical:utility-duplicate-property (rule runner forwards mergedIgnor
       "-",
       undefined,
       undefined,
+      undefined,
+      undefined,
+      false,
       undefined,
       new Set(["user-ignored-alias"])
     );

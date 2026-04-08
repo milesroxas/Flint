@@ -96,7 +96,7 @@ export const ViolationItem: React.FC<ViolationItemProps> = ({
               ? {
                   showButton: true,
                   buttonText: primaryCapability.title || "View Details",
-                  buttonClassName: "cursor-pointer w-full",
+                  buttonClassName: "w-full",
                 }
               : undefined
           }

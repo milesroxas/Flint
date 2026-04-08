@@ -95,7 +95,7 @@ export const PresetSwitcher: React.FC<PresetSwitcherProps> = ({ onPresetChange }
                   setOpen(false);
                   onPresetChange?.(id);
                 }}
-                className={`w-full text-left rounded-xs px-2 py-1.5 mb-1 text-[11px] hover:bg-accent hover:text-accent-foreground ${
+                className={`w-full text-left rounded-xs px-2 py-1.5 mb-1 text-[11px] cursor-pointer hover:bg-accent hover:text-accent-foreground ${
                   preset === id ? "bg-accent/60 text-accent-foreground" : ""
                 }`}
               >

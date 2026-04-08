@@ -3,6 +3,7 @@ import { createElementGraphService, type ElementGraph } from "@/entities/element
 import { createParentRelationshipService } from "@/entities/element/services/parent-relationship.service";
 
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
+import { buildPlacedComponentSubtreeElementIds } from "@/features/linter/lib/is-element-under-placed-component-instance";
 import { getCurrentPreset } from "@/features/linter/model/linter.factory";
 import type { RoleDetectionConfig, RolesByElement } from "@/features/linter/model/linter.types";
 import type { RoleDetector } from "@/features/linter/model/preset.types";
@@ -41,11 +42,13 @@ export function invalidatePageContextCache(): void {
   cachedPageContext = null;
   cachedLintContext = null;
   lastLintContextSignature = null;
+  resetVariableNameMapCache();
 }
 
 import { toElementKey } from "@/entities/element/lib/id";
 import type { StyleInfo, StyleWithElement } from "@/entities/style/model/style.types";
 import type { StyleService } from "@/entities/style/services/style.service";
+import { getVariableNameByIdMap, resetVariableNameMapCache } from "@/entities/style/services/variable-name-map";
 import { createDebugger } from "@/shared/utils/debug";
 
 export interface LintContext {
@@ -58,10 +61,14 @@ export interface LintContext {
   activePreset: ReturnType<typeof resolvePresetOrFallback>;
   parseClass: (name: string) => any;
   grammarElementSeparator: string;
+  /** Webflow variable id → display name for lint messages */
+  variableNameById: ReadonlyMap<string, string>;
   tagByElementId: Map<string, string | null>;
   elementTypeByElementId: Map<string, string | null>;
   /** For ComponentInstance elements: element key → component definition id (Designer API) */
   componentIdByElementId: Map<string, string>;
+  /** Every element id at or under a placed instance root (graph-backed; used for reliable “inside component” checks). */
+  placedComponentSubtreeElementIds: ReadonlySet<string>;
 }
 
 export interface LintContextService {
@@ -95,6 +102,32 @@ function filterValidElements(elements: WebflowElement[]): WebflowElement[] {
   });
 
   return filtered;
+}
+
+/**
+ * Resolves each ComponentInstance to a component definition id for catalog lookups.
+ * Uses `element.getComponent()` when available so ids align with `webflow.getAllComponents()`.
+ */
+async function buildComponentDefinitionIdByElementId(allValidElements: WebflowElement[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const el of allValidElements) {
+    if ((el as any)?.type !== "ComponentInstance") continue;
+    const id = toElementKey(el);
+    let defId: string | null = null;
+    if (typeof (el as any).getComponent === "function") {
+      try {
+        const comp = await (el as any).getComponent();
+        if (comp?.id != null) defId = String(comp.id);
+      } catch {
+        /* fall through to id.component */
+      }
+    }
+    if (defId == null && (el as any)?.id?.component != null) {
+      defId = String((el as any).id.component);
+    }
+    if (defId != null) out.set(id, defId);
+  }
+  return out;
 }
 
 /**
@@ -259,10 +292,12 @@ export function createLintContextService(deps: { styleService: StyleService }): 
     // 6) Create signature for caching
     const signature = createSignature(allElementStylePairs, parentIdByChildId);
 
-    // 7) Check cache
+    const variableNameById = await getVariableNameByIdMap();
+
+    // 7) Check cache (always refresh variable names — not part of element/style signature)
     if (cachedLintContext && lastLintContextSignature === signature) {
       debug.log("createContext: cache hit", signature);
-      return cachedLintContext;
+      return { ...cachedLintContext, variableNameById };
     }
 
     // 8) Build ElementWithClassNames for role detection
@@ -309,15 +344,10 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       }
     }
 
-    // 12b) Component instances (no styles): map element → component definition id for page rules
-    const componentIdByElementId = new Map<string, string>();
-    for (const el of allValidElements) {
-      const id = toElementKey(el);
-      const t = (el as any)?.type;
-      if (t === "ComponentInstance" && (el as any)?.id?.component != null) {
-        componentIdByElementId.set(id, String((el as any).id.component));
-      }
-    }
+    // 12b) Component instances (no styles): map element → component definition id for page rules.
+    // Prefer `getComponent()` so the id matches `getAllComponents()` / `getComponent(id)` catalog keys.
+    const componentIdByElementId = await buildComponentDefinitionIdByElementId(allValidElements);
+    const placedComponentSubtreeElementIds = buildPlacedComponentSubtreeElementIds(graph, componentIdByElementId);
 
     // 13) Create element style map for quick lookup
     const elementStyleMap = new Map<string, StyleWithElement[]>();
@@ -336,9 +366,11 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       activePreset,
       parseClass,
       grammarElementSeparator: grammar.elementSeparator,
+      variableNameById,
       tagByElementId,
       elementTypeByElementId,
       componentIdByElementId,
+      placedComponentSubtreeElementIds,
     };
 
     // Cache for future use
@@ -388,8 +420,8 @@ export function createLintContextService(deps: { styleService: StyleService }): 
       return await createContext([element]);
     }
 
-    // For structural context without page context, we need to create a scoped, page-like context.
-    // Note: We do NOT auto-enter component context here. Entering is driven by the UI/store.
+    // For structural context without page context, we need a scoped, page-like context: prefer a
+    // semantic section, else the enclosing placed component (nav/header often has no section role).
 
     try {
       // Access Webflow Designer API
@@ -415,16 +447,20 @@ export function createLintContextService(deps: { styleService: StyleService }): 
         return await createContext([element]);
       }
 
-      // Find the section containing this element using the page context graph
       const sectionId = findSectionContainingElement(elementId, fullPageContext);
-      if (!sectionId) {
-        debug.log("createElementContextWithStructural: section not found, using fullPageContext");
-        return fullPageContext;
+      if (sectionId) {
+        debug.log("createElementContextWithStructural: scoped to section", sectionId);
+        return createScopedContextForSection(sectionId, fullPageContext);
       }
 
-      // Create scoped context for just the section
-      debug.log("createElementContextWithStructural: scoped to section", sectionId);
-      return createScopedContextForSection(sectionId, fullPageContext);
+      const placedRootId = findEnclosingPlacedComponentRoot(elementId, fullPageContext);
+      if (placedRootId) {
+        debug.log("createElementContextWithStructural: scoped to placed component", placedRootId);
+        return createScopedContextForSection(placedRootId, fullPageContext);
+      }
+
+      debug.log("createElementContextWithStructural: no section or placed component scope, using fullPageContext");
+      return fullPageContext;
     } catch (error) {
       debug.error("createElementContextWithStructural: unexpected error", error);
       return await createContext([element]);
@@ -451,7 +487,19 @@ export function createLintContextService(deps: { styleService: StyleService }): 
     return null;
   }
 
-  // Helper function to create a scoped context for a specific section
+  /** Nearest ancestor (or self) that is a placed `ComponentInstance` root in `componentIdByElementId`. */
+  function findEnclosingPlacedComponentRoot(elementId: string, context: LintContext): string | null {
+    const map = context.componentIdByElementId;
+    if (map.has(elementId)) return elementId;
+    let cur: string | null = context.graph.getParentId(elementId);
+    while (cur) {
+      if (map.has(cur)) return cur;
+      cur = context.graph.getParentId(cur);
+    }
+    return null;
+  }
+
+  // Helper: scope styles/roles to a subtree (section, main, or placed component root).
   function createScopedContextForSection(sectionId: string, fullContext: LintContext): LintContext {
     // Get all descendants of the section
     const sectionDescendants = fullContext.graph.getDescendantIds?.(sectionId) || [];

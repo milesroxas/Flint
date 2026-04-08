@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { clientFirstGrammar, isContainerUtilityClass } from "@/features/linter/grammar/client-first.grammar";
+import {
+  clientFirstGrammar,
+  isClientFirstDashlessSemanticClassName,
+  isContainerUtilityClass,
+} from "@/features/linter/grammar/client-first.grammar";
+
+describe("isClientFirstDashlessSemanticClassName", () => {
+  it("is true for single-token dash-free names used as semantic parts", () => {
+    expect(isClientFirstDashlessSemanticClassName("button")).toBe(true);
+    expect(isClientFirstDashlessSemanticClassName("icon")).toBe(true);
+  });
+
+  it("is false for token-style utilities and custom-folder names", () => {
+    expect(isClientFirstDashlessSemanticClassName("background-color-primary")).toBe(false);
+    expect(isClientFirstDashlessSemanticClassName("hero_cta")).toBe(false);
+    expect(isClientFirstDashlessSemanticClassName("u-hidden")).toBe(false);
+    expect(isClientFirstDashlessSemanticClassName("is-active")).toBe(false);
+  });
+});
 
 describe("Client-First grammar adapter", () => {
   describe("class type classification", () => {

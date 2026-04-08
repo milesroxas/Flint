@@ -1,8 +1,12 @@
 // src/features/linter/services/element-lint-service.ts
 
-import { fetchSiteComponentNameById } from "@/entities/component/services/component-catalog.service";
+import {
+  enrichSiteComponentNamesForDefinitions,
+  fetchSiteComponentNameById,
+} from "@/entities/component/services/component-catalog.service";
 import { toElementKey } from "@/entities/element/lib/id";
 import type { WebflowElement } from "@/entities/element/model/element.types";
+import { getIsEditingComponentDefinition } from "@/features/linter/lib/webflow-component-definition-edit-mode";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import type { LintContext, LintContextService } from "@/features/linter/services/lint-context.service";
 import type { RuleRunner } from "@/features/linter/services/rule-runner";
@@ -95,7 +99,14 @@ export function createElementLintService(deps: { contextService: LintContextServ
 
     // 4) Execute rules via the same runner API used by page scans
     //    Skip page rules when no page context is available
-    const siteComponentNameById = pageContext ? await fetchSiteComponentNameById() : undefined;
+    const siteComponentNameById = pageContext
+      ? await enrichSiteComponentNamesForDefinitions(
+          await fetchSiteComponentNameById(),
+          pageContext.componentIdByElementId.values()
+        )
+      : undefined;
+
+    const isEditingComponentDefinition = await getIsEditingComponentDefinition();
 
     const results = ruleRunner.runRulesOnStylesWithContext(
       stylesToAnalyze,
@@ -113,7 +124,11 @@ export function createElementLintService(deps: { contextService: LintContextServ
       context.grammarElementSeparator,
       filteredElementIds,
       siteComponentNameById,
-      pageContext ? context.componentIdByElementId : undefined,
+      // Always pass: structural / full-page context includes placed-instance ids; scan-selected has no pageContext but still needs this for rules (e.g. padding-global child severity).
+      context.componentIdByElementId,
+      context.placedComponentSubtreeElementIds,
+      isEditingComponentDefinition,
+      context.variableNameById,
       options?.mergedIgnoredLintClasses
     );
 

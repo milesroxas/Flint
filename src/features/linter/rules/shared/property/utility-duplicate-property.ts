@@ -1,3 +1,5 @@
+import { isClientFirstDashlessSemanticClassName } from "@/features/linter/grammar/client-first.grammar";
+import { formatStyleValueForLint } from "@/features/linter/lib/style-value-format";
 import { isThirdPartyClass } from "@/features/linter/lib/third-party-libraries";
 import type { ElementAnalysisArgs, RuleResult, StructureRule } from "@/features/linter/model/rule.types";
 
@@ -49,7 +51,18 @@ export const createUtilityDuplicatePropertyRule = (
   targetClassTypes: ["utility"],
 
   analyzeElement: (args: ElementAnalysisArgs): RuleResult[] => {
-    const { classes = [], allStyles = [], getClassType, getRuleConfig, mergedIgnoredLintClasses } = args;
+    const {
+      classes = [],
+      allStyles = [],
+      getClassType,
+      getRuleConfig,
+      mergedIgnoredLintClasses,
+      grammarElementSeparator,
+      variableNameById,
+    } = args;
+
+    const skipCfDashlessSemanticUtility =
+      grammarElementSeparator === "-" ? isClientFirstDashlessSemanticClassName : () => false;
 
     // Get rule configuration
     const ruleConfig = getRuleConfig("canonical:utility-duplicate-property");
@@ -88,6 +101,9 @@ export const createUtilityDuplicatePropertyRule = (
       // Only analyze utility classes
       const classType = getClassType(style.name);
       if (classType !== "utility") continue;
+
+      // Client-First: single-token dash-free names (e.g. button) are semantic, not token utilities
+      if (skipCfDashlessSemanticUtility(style.name)) continue;
 
       // Third-party / library classes are not comparable to Client-first (or other) utilities
       if (isThirdPartyClass(style.name)) continue;
@@ -138,6 +154,8 @@ export const createUtilityDuplicatePropertyRule = (
       // Only analyze utility classes
       if (classType !== "utility") continue;
 
+      if (skipCfDashlessSemanticUtility(className)) continue;
+
       // Skip premade/template classes
       if (ignoredClassesSet.has(className)) continue;
 
@@ -170,6 +188,7 @@ export const createUtilityDuplicatePropertyRule = (
             (s) =>
               s.name &&
               getClassType(s.name) === "utility" &&
+              !skipCfDashlessSemanticUtility(s.name) &&
               !isThirdPartyClass(s.name) &&
               !ignoredClassesSet.has(s.name)
           )
@@ -205,7 +224,7 @@ export const createUtilityDuplicatePropertyRule = (
               const otherUtilityNames = filteredUtilities.slice(0, -1).map((s) => s.name);
 
               const propertyList = propEntries
-                .map(([prop, val]) => `${prop}: ${typeof val === "string" ? val : JSON.stringify(val)}`)
+                .map(([prop, val]) => `${prop}: ${formatStyleValueForLint(val, variableNameById)}`)
                 .join(", ");
 
               results.push({
@@ -218,7 +237,9 @@ export const createUtilityDuplicatePropertyRule = (
                 className,
                 isCombo: false,
                 metadata: {
-                  properties: Object.fromEntries(propEntries),
+                  properties: Object.fromEntries(
+                    propEntries.map(([k, v]) => [k, formatStyleValueForLint(v, variableNameById)])
+                  ),
                   duplicates: otherUtilityNames,
                   canonicalSuggestion: oldestUtility.name,
                   isNewestDuplicate: true,
@@ -247,7 +268,7 @@ export const createUtilityDuplicatePropertyRule = (
           continue;
         }
 
-        const valueStr = typeof value === "string" ? value : JSON.stringify(value);
+        const valueStr = formatStyleValueForLint(value, variableNameById);
         const classesWithSameProperty = propertyToClassesMap.get(property)?.get(JSON.stringify(value));
 
         const minClassCount = config.minClassCount ?? DEFAULT_CONFIG.minClassCount ?? 2;

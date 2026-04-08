@@ -16,15 +16,17 @@
 import { describe, expect, it } from "vitest";
 import {
   clientFirstCleanPage,
+  clientFirstPaddingGlobalChildDriftInComponentPage,
   clientFirstPaddingGlobalChildDriftPage,
   clientFirstViolationsPage,
   lumosCleanPage,
   lumosViolationsPage,
   type PageFixture,
 } from "@/__tests__/fixtures/pages";
-import { clientFirstClassType, lumosClassType } from "@/__tests__/helpers/factories";
+import { clientFirstClassType, createMockElementGraph, lumosClassType } from "@/__tests__/helpers/factories";
 import { clientFirstGrammar } from "@/features/linter/grammar/client-first.grammar";
 import { lumosGrammar } from "@/features/linter/grammar/lumos.grammar";
+import { buildPlacedComponentSubtreeElementIds } from "@/features/linter/lib/is-element-under-placed-component-instance";
 import type { RuleResult } from "@/features/linter/model/rule.types";
 import { clientFirstPreset } from "@/features/linter/presets/client-first.preset";
 import { lumosPreset } from "@/features/linter/presets/lumos.preset";
@@ -65,6 +67,12 @@ function runPipeline(fixture: PageFixture, config: PresetConfig): RuleResult[] {
 
   const runner = createRuleRunner(registry, utilityAnalyzer, classTypeResolver);
 
+  const componentIdByElementId = new Map(Object.entries(fixture.componentIdByElementId ?? {}));
+  const placedComponentSubtreeElementIds = buildPlacedComponentSubtreeElementIds(
+    createMockElementGraph(fixture.parentMap, fixture.childrenMap ?? {}),
+    componentIdByElementId
+  );
+
   return runner.runRulesOnStylesWithContext(
     fixture.styles,
     {} as Record<string, never[]>,
@@ -86,7 +94,12 @@ function runPipeline(fixture: PageFixture, config: PresetConfig): RuleResult[] {
     (id) => fixture.tagMap[id] ?? null,
     (id) => fixture.elementTypeMap[id] ?? null,
     false,
-    grammar.elementSeparator
+    grammar.elementSeparator,
+    undefined,
+    undefined,
+    componentIdByElementId,
+    placedComponentSubtreeElementIds,
+    false
   );
 }
 
@@ -188,6 +201,15 @@ describe("Fixture Integration: Client-First preset", () => {
     expect(drift).toHaveLength(1);
     expect(drift[0].elementId).toBe("el-drift");
     expect(drift[0].className).toBe("hero_custom-inner");
+    expect(drift[0].severity).toBe("warning");
+  });
+
+  it("downgrades padding-global child drift to suggestion under a component instance (integration)", () => {
+    const results = runPipeline(clientFirstPaddingGlobalChildDriftInComponentPage, cfConfig);
+    const drift = results.filter((r) => r.ruleId === "cf:structure:padding-global-child-container");
+    expect(drift).toHaveLength(1);
+    expect(drift[0].elementId).toBe("el-drift");
+    expect(drift[0].severity).toBe("suggestion");
   });
 
   it("returns results with correct severity types", () => {

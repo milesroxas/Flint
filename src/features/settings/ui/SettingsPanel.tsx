@@ -1,3 +1,4 @@
+import { ExternalLink, Eye } from "lucide-react";
 import type React from "react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { parseIgnoredClassesInput } from "@/features/linter/lib/class-lint-ignore";
@@ -202,6 +203,29 @@ export const SettingsPanel: React.FC = () => {
             spellCheck={false}
           />
         </div>
+        <div className="rounded-md border border-border bg-muted/40 p-3 mt-3 space-y-2">
+          <p className="text-[11px] font-medium text-foreground">Recognized elements</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            View all element names that Flint recognizes for the active framework preset. Useful for understanding which
+            class name segments are valid.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-full"
+            onClick={() =>
+              openExpandedView({
+                type: "recognized-elements",
+                title: "Recognized Elements",
+                data: { presetId: activePresetId, projectElements: [] },
+                backTo: { type: "settings", title: "Settings" },
+              })
+            }
+          >
+            <Eye />
+            View recognized elements
+          </Button>
+        </div>
       </TabsContent>
       <TabsContent value="general" className="mt-0 px-4 py-2">
         <SettingsRow
@@ -227,7 +251,33 @@ export const SettingsPanel: React.FC = () => {
           options={windowPresetOptions}
         />
       </TabsContent>
-      <TabsContent value="about" className="mt-0 px-4 py-3">
+      <TabsContent value="about" className="mt-0 px-4 py-3 space-y-4">
+        <div className="space-y-1.5">
+          <h3 className="text-xs font-semibold text-foreground">Flint</h3>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            A Webflow Designer Extension that checks your project against framework best practices. It catches naming
+            issues, structural problems, and style conflicts so you can ship cleaner sites with confidence.
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border bg-muted/40 p-3 space-y-2">
+          <p className="text-[11px] font-medium text-foreground">Help us improve Flint</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Found a bug, have a feature request, or just want to share how things are going? We'd love to hear from you.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full bg-[oklch(0.65_0.17_55)] text-white hover:bg-[oklch(0.6_0.17_55)] active:bg-[oklch(0.55_0.17_55)] dark:bg-[oklch(0.72_0.15_55)] dark:hover:bg-[oklch(0.67_0.15_55)] dark:active:bg-[oklch(0.62_0.15_55)]"
+            asChild
+          >
+            <a href="https://www.milesroxas.com/flint-feedback" target="_blank" rel="noopener noreferrer">
+              Send feedback
+              <ExternalLink className="size-3" />
+            </a>
+          </Button>
+        </div>
+
         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
           v{buildInfo.version} &middot; {buildInfo.channel} &middot; {buildInfo.recipient}
           <br />

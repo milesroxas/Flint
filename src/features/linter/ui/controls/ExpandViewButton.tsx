@@ -1,6 +1,5 @@
-import { Eye, List } from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/utils";
 
@@ -12,39 +11,17 @@ interface ExpandViewButtonProps {
 }
 
 export const ExpandViewButton: React.FC<ExpandViewButtonProps> = ({ onClick, isExpanded = false, className, text }) => {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [prevExpanded, setPrevExpanded] = useState(isExpanded);
-
-  useEffect(() => {
-    if (prevExpanded !== isExpanded) {
-      setIsAnimating(true);
-      setPrevExpanded(isExpanded);
-      // CSS animation will handle the timing automatically
-    }
-  }, [isExpanded, prevExpanded]);
-
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={onClick}
-      className={cn(className, "cursor-pointer my-2 transition-all duration-200 ease-out", isAnimating && "scale-105")}
-      title={isExpanded ? "Back to violations" : "View recognized elements"}
-      onTransitionEnd={() => {
-        if (isAnimating) {
-          setIsAnimating(false);
-        }
-      }}
-    >
+    <Button size="sm" variant="outline" onClick={onClick} className={cn("h-7 w-full", className)}>
       {isExpanded ? (
         <>
-          <List className="h-3 w-3 mr-1" />
-          <span className="text-xs">Back</span>
+          <ArrowLeft />
+          Back to violations
         </>
       ) : (
         <>
-          <Eye className="h-3 w-3 mr-1" />
-          <span className="text-xs">{text || "View"}</span>
+          <Eye />
+          {text || "View recognized elements"}
         </>
       )}
     </Button>

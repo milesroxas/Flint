@@ -6,7 +6,7 @@ import { cn } from "@/shared/utils";
 const buttonVariants = cva(
   [
     // Base
-    "inline-flex items-center justify-center gap-2 shrink-0 whitespace-nowrap",
+    "inline-flex items-center justify-center gap-2 shrink-0 whitespace-nowrap cursor-pointer",
     "rounded-md text-sm font-medium transition-colors",
     "disabled:pointer-events-none disabled:opacity-50",
     // Icon sizing
@@ -37,6 +37,7 @@ const buttonVariants = cva(
         sm: "h-6 rounded-xs gap-1.5 px-2 has-[>svg]:px-1.5 text-[11px]",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
+        "icon-sm": "size-7",
       },
     },
     defaultVariants: {

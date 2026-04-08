@@ -154,6 +154,17 @@ function parseCustom(name: string): ParsedClass {
  */
 export const tokenizeCFCustomClass = (name: string): string[] => name.split("_").filter(Boolean);
 
+/**
+ * Dash-only names are classified as "utility" for Client-First, but a single segment without
+ * hyphens (e.g. `button`, `icon`) is a semantic part name inside components — not a token utility
+ * like `background-color-primary`. Those should not be consolidated against hyphenated utilities.
+ */
+export function isClientFirstDashlessSemanticClassName(className: string): boolean {
+  if (!className || className.includes("-") || className.includes("_")) return false;
+  if (className.startsWith("u-") || className.startsWith("is-") || className.startsWith("c-")) return false;
+  return true;
+}
+
 export const clientFirstGrammar: GrammarAdapter = {
   id: "client-first",
   isCustomFirstRequired: true,

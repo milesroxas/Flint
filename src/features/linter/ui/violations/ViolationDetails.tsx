@@ -108,7 +108,7 @@ export const ViolationDetails: React.FC<ViolationDetailsProps> = ({
                 onClick={onExpandedViewClick}
                 isExpanded={false}
                 text={expandedViewConfig.buttonText}
-                className={expandedViewConfig.buttonClassName || "cursor-pointer w-full"}
+                className={expandedViewConfig.buttonClassName || "w-full"}
               />
             </div>
           )}

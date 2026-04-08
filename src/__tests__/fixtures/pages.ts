@@ -30,6 +30,8 @@ export interface PageFixture {
   elementTypeMap: Record<string, string | null>;
   /** class names per element (for getClassNamesForElement) */
   classNamesMap: Record<string, string[]>;
+  /** Placed component roots: element id → component definition id (matches Designer `componentIdByElementId`) */
+  componentIdByElementId?: Record<string, string>;
 }
 
 // ── Lumos fixtures ─────────────────────────────────────────────────
@@ -595,6 +597,71 @@ export const clientFirstPaddingGlobalChildDriftPage: PageFixture = {
     "el-section": ["section_hero"],
     "el-pg": ["padding-global"],
     "el-drift": ["hero_custom-inner"],
+  },
+};
+
+/**
+ * Same drift as `clientFirstPaddingGlobalChildDriftPage`, but `padding-global` sits under a placed component root.
+ */
+export const clientFirstPaddingGlobalChildDriftInComponentPage: PageFixture = {
+  name: "cf-padding-global-child-drift-in-component",
+  description: "padding-global → custom inner under ComponentInstance",
+  parentMap: {
+    "el-main": null,
+    "el-comp": "el-main",
+    "el-pg": "el-comp",
+    "el-drift": "el-pg",
+  },
+  childrenMap: {
+    "el-main": ["el-comp"],
+    "el-comp": ["el-pg"],
+    "el-pg": ["el-drift"],
+  },
+  styles: [
+    { id: "s1", name: "main-wrapper", properties: {}, order: 0, isCombo: false, elementId: "el-main" },
+    {
+      id: "s3",
+      name: "padding-global",
+      properties: { "padding-left": "5%", "padding-right": "5%" },
+      order: 0,
+      isCombo: false,
+      elementId: "el-pg",
+    },
+    {
+      id: "s4",
+      name: "hero_custom-inner",
+      properties: { "max-width": "48rem", "margin-left": "auto", "margin-right": "auto" },
+      order: 0,
+      isCombo: false,
+      elementId: "el-drift",
+    },
+  ],
+  rolesByElement: {
+    "el-main": "main",
+    "el-comp": "unknown",
+    "el-pg": "unknown",
+    "el-drift": "unknown",
+  },
+  tagMap: {
+    "el-main": "div",
+    "el-comp": "div",
+    "el-pg": "div",
+    "el-drift": "div",
+  },
+  elementTypeMap: {
+    "el-main": "Block",
+    "el-comp": "ComponentInstance",
+    "el-pg": "Block",
+    "el-drift": "Block",
+  },
+  classNamesMap: {
+    "el-main": ["main-wrapper"],
+    "el-comp": [],
+    "el-pg": ["padding-global"],
+    "el-drift": ["hero_custom-inner"],
+  },
+  componentIdByElementId: {
+    "el-comp": "def-nav-component",
   },
 };
 

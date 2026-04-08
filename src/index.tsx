@@ -77,7 +77,10 @@ const Root = () => {
               )}
             >
               {isActive && content && content.type === "recognized-elements" && (
-                <ExpandedContent title={content.title} onBack={closeExpandedView}>
+                <ExpandedContent
+                  title={content.title}
+                  onBack={() => (content.backTo ? openExpandedView(content.backTo) : closeExpandedView())}
+                >
                   <RecognizedElementsView
                     presetId={(content.data as any)?.presetId || ""}
                     projectElements={(content.data as any)?.projectElements || []}
